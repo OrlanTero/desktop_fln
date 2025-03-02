@@ -1,0 +1,12 @@
+{
+    "require": {
+        "klein/klein": "^2.1",
+        "ext-pdo": "*",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Api\\": "./"
+        }
+    }
+} 
