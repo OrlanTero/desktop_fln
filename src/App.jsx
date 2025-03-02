@@ -9,6 +9,8 @@ import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Clients from './pages/Clients';
 import ClientTypes from './pages/ClientTypes';
+import ServiceCategories from './pages/ServiceCategories';
+import Services from './pages/Services';
 import Settings from './pages/Settings';
 
 // Import components
@@ -182,6 +184,22 @@ const App = () => {
           element={
             isAuthenticated ? 
               <ClientTypes user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/service-categories" 
+          element={
+            isAuthenticated ? 
+              <ServiceCategories user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/services" 
+          element={
+            isAuthenticated ? 
+              <Services user={currentUser} onLogout={handleLogout} /> : 
               <Navigate to="/login" replace />
           } 
         />

@@ -21,6 +21,7 @@ import {
   Business as ClientsIcon,
   People as UsersIcon,
   Category as ClientTypesIcon,
+  Category as CategoryIcon,
   Handyman as ServicesIcon,
   Assignment as ProjectManagerIcon,
   Description as ProposalsIcon,
@@ -50,6 +51,7 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
   // State to track which menu items are expanded
   const [expanded, setExpanded] = useState({
     administrator: false,
+    services: false,
     projectManager: false,
     finance: false,
     reports: false,
@@ -107,7 +109,18 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
     {
       text: 'Services',
       icon: <ServicesIcon />,
-      path: '/services',
+      children: [
+        {
+          text: 'Service Categories',
+          icon: <CategoryIcon />,
+          path: '/service-categories',
+        },
+        {
+          text: 'Services',
+          icon: <ServicesIcon />,
+          path: '/services',
+        },
+      ],
     },
     {
       text: 'Project Manager',

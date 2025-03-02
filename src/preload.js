@@ -149,5 +149,86 @@ contextBridge.exposeInMainWorld('api', {
     delete: async (id) => {
       return makeRequest(`${API_BASE_URL}/client-types/${id}`, 'DELETE');
     },
+  },
+  
+  // Service Category API
+  serviceCategory: {
+    // Get all service categories
+    getAll: async () => {
+      return makeRequest(`${API_BASE_URL}/service-categories`);
+    },
+    
+    // Get service category by ID
+    getById: async (id) => {
+      return makeRequest(`${API_BASE_URL}/service-categories/${id}`);
+    },
+    
+    // Create service category
+    create: async (categoryData) => {
+      return makeRequest(`${API_BASE_URL}/service-categories`, 'POST', categoryData);
+    },
+    
+    // Update service category
+    update: async (id, categoryData) => {
+      return makeRequest(`${API_BASE_URL}/service-categories/${id}`, 'PUT', categoryData);
+    },
+    
+    // Delete service category
+    delete: async (id) => {
+      return makeRequest(`${API_BASE_URL}/service-categories/${id}`, 'DELETE');
+    },
+  },
+  
+  // Service API
+  service: {
+    // Get all services
+    getAll: async () => {
+      return makeRequest(`${API_BASE_URL}/services`);
+    },
+    
+    // Get services by category
+    getByCategory: async (categoryId) => {
+      return makeRequest(`${API_BASE_URL}/services/category/${categoryId}`);
+    },
+    
+    // Get service by ID
+    getById: async (id) => {
+      return makeRequest(`${API_BASE_URL}/services/${id}`);
+    },
+    
+    // Create service
+    create: async (serviceData) => {
+      return makeRequest(`${API_BASE_URL}/services`, 'POST', serviceData);
+    },
+    
+    // Update service
+    update: async (id, serviceData) => {
+      return makeRequest(`${API_BASE_URL}/services/${id}`, 'PUT', serviceData);
+    },
+    
+    // Delete service
+    delete: async (id) => {
+      return makeRequest(`${API_BASE_URL}/services/${id}`, 'DELETE');
+    },
+    
+    // Get requirements for a service
+    getRequirements: async (id) => {
+      return makeRequest(`${API_BASE_URL}/services/${id}/requirements`);
+    },
+    
+    // Add requirement to a service
+    addRequirement: async (id, requirementData) => {
+      return makeRequest(`${API_BASE_URL}/services/${id}/requirements`, 'POST', requirementData);
+    },
+    
+    // Update requirement
+    updateRequirement: async (id, requirementData) => {
+      return makeRequest(`${API_BASE_URL}/requirements/${id}`, 'PUT', requirementData);
+    },
+    
+    // Delete requirement
+    deleteRequirement: async (id) => {
+      return makeRequest(`${API_BASE_URL}/requirements/${id}`, 'DELETE');
+    },
   }
 });
