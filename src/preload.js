@@ -93,5 +93,61 @@ contextBridge.exposeInMainWorld('api', {
     login: async (credentials) => {
       return makeRequest(`${API_BASE_URL}/login`, 'POST', credentials);
     },
+  },
+
+  // Client API
+  client: {
+    // Get all clients
+    getAll: async () => {
+      return makeRequest(`${API_BASE_URL}/clients`);
+    },
+    
+    // Get client by ID
+    getById: async (id) => {
+      return makeRequest(`${API_BASE_URL}/clients/${id}`);
+    },
+    
+    // Create client
+    create: async (clientData) => {
+      return makeRequest(`${API_BASE_URL}/clients`, 'POST', clientData);
+    },
+    
+    // Update client
+    update: async (id, clientData) => {
+      return makeRequest(`${API_BASE_URL}/clients/${id}`, 'PUT', clientData);
+    },
+    
+    // Delete client
+    delete: async (id) => {
+      return makeRequest(`${API_BASE_URL}/clients/${id}`, 'DELETE');
+    },
+  },
+
+  // Client Type API
+  clientType: {
+    // Get all client types
+    getAll: async () => {
+      return makeRequest(`${API_BASE_URL}/client-types`);
+    },
+    
+    // Get client type by ID
+    getById: async (id) => {
+      return makeRequest(`${API_BASE_URL}/client-types/${id}`);
+    },
+    
+    // Create client type
+    create: async (typeData) => {
+      return makeRequest(`${API_BASE_URL}/client-types`, 'POST', typeData);
+    },
+    
+    // Update client type
+    update: async (id, typeData) => {
+      return makeRequest(`${API_BASE_URL}/client-types/${id}`, 'PUT', typeData);
+    },
+    
+    // Delete client type
+    delete: async (id) => {
+      return makeRequest(`${API_BASE_URL}/client-types/${id}`, 'DELETE');
+    },
   }
 });

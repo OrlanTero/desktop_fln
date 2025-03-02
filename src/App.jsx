@@ -7,6 +7,9 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
+import Clients from './pages/Clients';
+import ClientTypes from './pages/ClientTypes';
+import Settings from './pages/Settings';
 
 // Import components
 import SplashScreen from './components/SplashScreen';
@@ -162,7 +165,31 @@ const App = () => {
           path="/users" 
           element={
             isAuthenticated ? 
-              <Users user={currentUser} /> : 
+              <Users user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/clients" 
+          element={
+            isAuthenticated ? 
+              <Clients user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/client-types" 
+          element={
+            isAuthenticated ? 
+              <ClientTypes user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/settings" 
+          element={
+            isAuthenticated ? 
+              <Settings user={currentUser} onLogout={handleLogout} /> : 
               <Navigate to="/login" replace />
           } 
         />

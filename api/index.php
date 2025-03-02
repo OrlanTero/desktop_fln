@@ -19,6 +19,8 @@ require_once 'config/database.php';
 
 // Include controllers
 require_once 'controllers/UserController.php';
+require_once 'controllers/ClientController.php';
+require_once 'controllers/ClientTypeController.php';
 
 // Initialize Klein router
 $router = new \Klein\Klein();
@@ -29,6 +31,8 @@ $db = $database->getConnection();
 
 // Initialize controllers
 $userController = new UserController($db);
+$clientController = new ClientController($db);
+$clientTypeController = new ClientTypeController($db);
 
 // Test route to check if API is working
 $router->respond('GET', '/test', function() {
@@ -138,6 +142,102 @@ $router->respond('POST', '/login', function() use ($userController) {
             "message" => "Email and password are required"
         ]);
     }
+});
+
+// Client Type routes
+// Get all client types
+$router->respond('GET', '/client-types', function() use ($clientTypeController) {
+    echo json_encode($clientTypeController->getAll());
+});
+
+// Get client type by ID
+$router->respond('GET', '/client-types/[i:id]', function($request) use ($clientTypeController) {
+    echo json_encode($clientTypeController->getById($request->id));
+});
+
+// Create client type
+$router->respond('POST', '/client-types', function($request) use ($clientTypeController) {
+    // Get posted data
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    // Check required fields
+    if(!empty($data['name'])) {
+        echo json_encode($clientTypeController->create($data));
+    } else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "Name is required"
+        ]);
+    }
+});
+
+// Update client type
+$router->respond('PUT', '/client-types/[i:id]', function($request) use ($clientTypeController) {
+    // Get posted data
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    // Check if data is not empty
+    if(!empty($data)) {
+        echo json_encode($clientTypeController->update($request->id, $data));
+    } else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "No data provided for update"
+        ]);
+    }
+});
+
+// Delete client type
+$router->respond('DELETE', '/client-types/[i:id]', function($request) use ($clientTypeController) {
+    echo json_encode($clientTypeController->delete($request->id));
+});
+
+// Client routes
+// Get all clients
+$router->respond('GET', '/clients', function() use ($clientController) {
+    echo json_encode($clientController->getAll());
+});
+
+// Get client by ID
+$router->respond('GET', '/clients/[i:id]', function($request) use ($clientController) {
+    echo json_encode($clientController->getById($request->id));
+});
+
+// Create client
+$router->respond('POST', '/clients', function($request) use ($clientController) {
+    // Get posted data
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    // Check required fields
+    if(!empty($data['client_name'])) {
+        echo json_encode($clientController->create($data));
+    } else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "Client name is required"
+        ]);
+    }
+});
+
+// Update client
+$router->respond('PUT', '/clients/[i:id]', function($request) use ($clientController) {
+    // Get posted data
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    // Check if data is not empty
+    if(!empty($data)) {
+        echo json_encode($clientController->update($request->id, $data));
+    } else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "No data provided for update"
+        ]);
+    }
+});
+
+// Delete client
+$router->respond('DELETE', '/clients/[i:id]', function($request) use ($clientController) {
+    echo json_encode($clientController->delete($request->id));
 });
 
 // Dispatch the router

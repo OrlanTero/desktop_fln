@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress } from '@mui/material';
 import { keyframes } from '@mui/system';
-import logoPath from '../../assets/images/logo.png';
+import logoPath from '../../assets/images/logo.jpg';
 
 // Define animation keyframes
 const fadeIn = keyframes`
@@ -63,7 +63,7 @@ const SplashScreen = ({ onFinish }) => {
         justifyContent: 'center',
         height: '100vh',
         width: '100vw',
-        background: 'linear-gradient(135deg, #842624 0%, #264888 100%)', // FLN colors gradient
+        background: '#fff', // FLN colors gradient
         position: 'fixed',
         top: 0,
         left: 0,
@@ -95,7 +95,7 @@ const SplashScreen = ({ onFinish }) => {
           variant="h4"
           component="h1"
           sx={{
-            color: 'white',
+            color: '#333', // Changed to dark gray
             fontWeight: 'bold',
             textAlign: 'center',
             mb: 1,
@@ -106,7 +106,7 @@ const SplashScreen = ({ onFinish }) => {
         <Typography
           variant="subtitle1"
           sx={{
-            color: 'white',
+            color: '#666', // Changed to medium gray
             textAlign: 'center',
             opacity: 0.9,
           }}
@@ -121,14 +121,14 @@ const SplashScreen = ({ onFinish }) => {
         size={60}
         thickness={4}
         sx={{
-          color: 'white',
+          color: '#333', // Changed to dark gray
           mt: 2,
         }}
       />
       <Typography
         variant="body1"
         sx={{
-          color: 'white',
+          color: '#666', // Changed to medium gray
           mt: 2,
           opacity: 0.9,
         }}

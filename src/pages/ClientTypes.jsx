@@ -33,19 +33,17 @@ import {
 } from '@mui/icons-material';
 import Layout from '../components/Layout';
 
-const Users = ({ user, onLogout }) => {
+const ClientTypes = ({ user, onLogout }) => {
   const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
+  const [clientTypes, setClientTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState('add'); // 'add', 'edit', 'delete'
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentClientType, setCurrentClientType] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    password: '',
-    role: 'employee',
+    description: '',
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -55,43 +53,40 @@ const Users = ({ user, onLogout }) => {
   const [anchorEl, setAnchorEl] = useState(null);
 
   useEffect(() => {
-    fetchUsers();
+    fetchClientTypes();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchClientTypes = async () => {
     setLoading(true);
     try {
-      const response = await window.api.user.getAll();
+      // Replace with your actual API call
+      const response = await window.api.clientType.getAll();
       if (response.success) {
-        setUsers(response.data);
+        setClientTypes(response.data);
       } else {
-        setError(response.message || 'Failed to fetch users');
+        setError(response.message || 'Failed to fetch client types');
       }
     } catch (err) {
-      console.error('Error fetching users:', err);
-      setError('An error occurred while fetching users');
+      console.error('Error fetching client types:', err);
+      setError('An error occurred while fetching client types');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenDialog = (type, userData = null) => {
+  const handleOpenDialog = (type, clientTypeData = null) => {
     setDialogType(type);
-    if (userData) {
-      setCurrentUser(userData);
+    if (clientTypeData) {
+      setCurrentClientType(clientTypeData);
       setFormData({
-        name: userData.name || '',
-        email: userData.email || '',
-        password: '',
-        role: userData.role || 'employee',
+        name: clientTypeData.name || '',
+        description: clientTypeData.description || '',
       });
     } else {
-      setCurrentUser(null);
+      setCurrentClientType(null);
       setFormData({
         name: '',
-        email: '',
-        password: '',
-        role: 'employee',
+        description: '',
       });
     }
     setOpenDialog(true);
@@ -114,32 +109,32 @@ const Users = ({ user, onLogout }) => {
       let response;
       
       if (dialogType === 'add') {
-        response = await window.api.user.create(formData);
+        response = await window.api.clientType.create(formData);
       } else if (dialogType === 'edit') {
-        response = await window.api.user.update(currentUser.id, formData);
+        response = await window.api.clientType.update(currentClientType.type_id, formData);
       } else if (dialogType === 'delete') {
-        response = await window.api.user.delete(currentUser.id);
+        response = await window.api.clientType.delete(currentClientType.type_id);
       }
       
       if (response.success) {
         setSnackbar({
           open: true,
-          message: `User ${dialogType === 'add' ? 'added' : dialogType === 'edit' ? 'updated' : 'deleted'} successfully`,
+          message: `Client type ${dialogType === 'add' ? 'added' : dialogType === 'edit' ? 'updated' : 'deleted'} successfully`,
           severity: 'success',
         });
-        fetchUsers();
+        fetchClientTypes();
       } else {
         setSnackbar({
           open: true,
-          message: response.message || `Failed to ${dialogType} user`,
+          message: response.message || `Failed to ${dialogType} client type`,
           severity: 'error',
         });
       }
     } catch (err) {
-      console.error(`Error ${dialogType}ing user:`, err);
+      console.error(`Error ${dialogType}ing client type:`, err);
       setSnackbar({
         open: true,
-        message: `An error occurred while ${dialogType}ing user`,
+        message: `An error occurred while ${dialogType}ing client type`,
         severity: 'error',
       });
     } finally {
@@ -206,17 +201,17 @@ const Users = ({ user, onLogout }) => {
   );
 
   return (
-    <Layout title="User Management" userMenu={userMenu}>
+    <Layout title="Client Types" userMenu={userMenu}>
       <Box sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5">Users</Typography>
+          <Typography variant="h5">Client Types</Typography>
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog('add')}
           >
-            Add User
+            Add Client Type
           </Button>
         </Box>
 
@@ -232,41 +227,43 @@ const Users = ({ user, onLogout }) => {
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Role</TableCell>
+                <TableCell>Description</TableCell>
+                <TableCell>Created At</TableCell>
+                <TableCell>Updated At</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={6} align="center">
                     Loading...
                   </TableCell>
                 </TableRow>
-              ) : users.length === 0 ? (
+              ) : clientTypes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    No users found
+                  <TableCell colSpan={6} align="center">
+                    No client types found
                   </TableCell>
                 </TableRow>
               ) : (
-                users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.id}</TableCell>
-                    <TableCell>{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.role}</TableCell>
+                clientTypes.map((clientType) => (
+                  <TableRow key={clientType.type_id}>
+                    <TableCell>{clientType.type_id}</TableCell>
+                    <TableCell>{clientType.name}</TableCell>
+                    <TableCell>{clientType.description}</TableCell>
+                    <TableCell>{new Date(clientType.created_at).toLocaleString()}</TableCell>
+                    <TableCell>{new Date(clientType.updated_at).toLocaleString()}</TableCell>
                     <TableCell align="right">
                       <IconButton
                         color="primary"
-                        onClick={() => handleOpenDialog('edit', user)}
+                        onClick={() => handleOpenDialog('edit', clientType)}
                       >
                         <EditIcon />
                       </IconButton>
                       <IconButton
                         color="error"
-                        onClick={() => handleOpenDialog('delete', user)}
+                        onClick={() => handleOpenDialog('delete', clientType)}
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -278,9 +275,9 @@ const Users = ({ user, onLogout }) => {
           </Table>
         </TableContainer>
 
-        {/* Add/Edit User Dialog */}
+        {/* Add/Edit Client Type Dialog */}
         <Dialog open={openDialog && dialogType !== 'delete'} onClose={handleCloseDialog}>
-          <DialogTitle>{dialogType === 'add' ? 'Add User' : 'Edit User'}</DialogTitle>
+          <DialogTitle>{dialogType === 'add' ? 'Add Client Type' : 'Edit Client Type'}</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -294,36 +291,15 @@ const Users = ({ user, onLogout }) => {
             />
             <TextField
               margin="dense"
-              name="email"
-              label="Email"
-              type="email"
+              name="description"
+              label="Description"
+              type="text"
               fullWidth
-              value={formData.email}
+              multiline
+              rows={4}
+              value={formData.description}
               onChange={handleInputChange}
             />
-            <TextField
-              margin="dense"
-              name="password"
-              label={dialogType === 'add' ? 'Password' : 'New Password (leave blank to keep current)'}
-              type="password"
-              fullWidth
-              value={formData.password}
-              onChange={handleInputChange}
-            />
-            <TextField
-              margin="dense"
-              name="role"
-              label="Role"
-              select
-              fullWidth
-              value={formData.role}
-              onChange={handleInputChange}
-            >
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="employee">Employee</MenuItem>
-              <MenuItem value="liaison">Liaison</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-            </TextField>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog}>Cancel</Button>
@@ -333,12 +309,12 @@ const Users = ({ user, onLogout }) => {
           </DialogActions>
         </Dialog>
 
-        {/* Delete User Dialog */}
+        {/* Delete Client Type Dialog */}
         <Dialog open={openDialog && dialogType === 'delete'} onClose={handleCloseDialog}>
-          <DialogTitle>Delete User</DialogTitle>
+          <DialogTitle>Delete Client Type</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete the user "{currentUser?.name}"? This action cannot be undone.
+              Are you sure you want to delete the client type "{currentClientType?.name}"? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -365,4 +341,4 @@ const Users = ({ user, onLogout }) => {
   );
 };
 
-export default Users; 
+export default ClientTypes; 
