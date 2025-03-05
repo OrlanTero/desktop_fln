@@ -37,6 +37,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import PreviewIcon from '@mui/icons-material/Preview';
 import ProposalDocumentNew from '../components/ProposalDocumentNew';
 import JobOrderList from '../components/JobOrderList';
+import EmailProposalForm from '../components/EmailProposalForm';
 
 const ProposalForm = ({ user, onLogout }) => {
   const { id } = useParams();
@@ -45,7 +46,7 @@ const ProposalForm = ({ user, onLogout }) => {
   
   // Add step state
   const [activeStep, setActiveStep] = useState(0);
-  const steps = ['Proposal Details', 'Document Preview'];
+  const steps = ['Proposal Details', 'Document Preview', 'Send Email'];
   
   // Add company info state
   const [companyInfo, setCompanyInfo] = useState({
@@ -92,6 +93,8 @@ const ProposalForm = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+
+  const [currentProposalId, setCurrentProposalId] = useState(null);
   
   // Inside the ProposalForm component, add new state for selected service details
   const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
@@ -100,6 +103,9 @@ const ProposalForm = ({ user, onLogout }) => {
   // Add local job orders state
   const [localJobOrders, setLocalJobOrders] = useState({});
   
+  // Add state for document base64
+  const [documentBase64, setDocumentBase64] = useState(null);
+  
   // Calculate totals
   const calculateSubtotal = () => {
     return selectedServices.reduce((total, service) => total + service.price, 0);
@@ -107,6 +113,11 @@ const ProposalForm = ({ user, onLogout }) => {
   
   const calculateDownpayment = () => {
     return formData.has_downpayment ? formData.downpayment_amount : 0;
+  };
+
+  const handleDocumentGenerated = (document) => {
+    setDocumentBase64(document.base64);
+    setDocumentUploaded(true);
   };
   
   // Load data on component mount
@@ -347,10 +358,23 @@ const ProposalForm = ({ user, onLogout }) => {
         
         setSuccess('Proposal saved successfully');
         setActiveStep((prevStep) => prevStep + 1);
+        setCurrentProposalId(proposalId);
       } catch (err) {
         setError('Error saving proposal: ' + err.message);
       } finally {
         setLoading(false);
+      }
+    } else if (activeStep === 1) {
+      // Before moving to email step, ensure we have the document in base64
+      try {
+        const response = await window.api.proposal.getDocument(currentProposalId);
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to get document');
+        }
+        setDocumentBase64(response.data.base64);
+        setActiveStep((prevStep) => prevStep + 1);
+      } catch (err) {
+        setError('Error getting document: ' + err.message);
       }
     } else {
       setActiveStep((prevStep) => prevStep + 1);
@@ -611,44 +635,24 @@ const ProposalForm = ({ user, onLogout }) => {
           proposalData={formData}
           clientName={clients.find(c => c.client_id === formData.client_id)?.client_name || ''}
           services={servicesWithJobOrders}
+          proposal_id={currentProposalId}
+          onDocumentGenerated={handleDocumentGenerated}
         />
       </Box>
     );
   };
   
-  if (loading && !isEditMode) {
-    return (
-      <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-        <Box sx={{ width: 240, flexShrink: 0 }}>
-          <Navigation user={user} onLogout={onLogout} />
-        </Box>
-        <Box component="main" sx={{ flexGrow: 1, p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-          <CircularProgress />
-        </Box>
-      </Box>
-    );
-  }
-  
+  // Add email sent handler
+  const handleEmailSent = () => {
+    setSuccess('Email sent successfully');
+    navigate('/proposals');
+  };
+
+  // Update the render logic to include email form
+  const renderStepContent = () => {
+    switch (activeStep) {
+      case 0:
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Box sx={{ width: 240, flexShrink: 0 }}>
-        <Navigation user={user} onLogout={onLogout} />
-      </Box>
-      
-      <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto', height: '100%' }}>
-        <Typography variant="h4" gutterBottom>
-          {isEditMode ? 'Edit Proposal' : 'Create New Proposal'}
-        </Typography>
-        
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-        
-        {activeStep === 0 ? (
           // Step 1: Proposal Form
           <form onSubmit={(e) => { e.preventDefault(); handleNext(); }}>
             <Paper sx={{ p: 3, mb: 3 }}>
@@ -985,15 +989,63 @@ const ProposalForm = ({ user, onLogout }) => {
               </Box>
             </Box>
           </form>
-        ) : (
-          <Box>
-            {renderDocumentPreview()}
+        );
+      case 1:
+        return renderDocumentPreview();
+      case 2:
+        return (
+          <EmailProposalForm
+            proposalData={{
+              ...formData,
+              documentBase64: documentBase64,
+            }}
+            onEmailSent={handleEmailSent}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+  
+  if (loading && !isEditMode) {
+    return (
+      <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+        <Box sx={{ width: 240, flexShrink: 0 }}>
+          <Navigation user={user} onLogout={onLogout} />
+        </Box>
+        <Box component="main" sx={{ flexGrow: 1, p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <CircularProgress />
+        </Box>
+      </Box>
+    );
+  }
+  
+  return (
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <Box sx={{ width: 240, flexShrink: 0 }}>
+        <Navigation user={user} onLogout={onLogout} />
+      </Box>
+      
+      <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto', height: '100%' }}>
+        <Typography variant="h4" gutterBottom>
+          {isEditMode ? 'Edit Proposal' : 'Create New Proposal'}
+        </Typography>
+        
+        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+          {steps.map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+        
+        {renderStepContent()}
             
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
               <Button
                 variant="outlined"
                 onClick={handleBack}
-                disabled={loading}
+            disabled={activeStep === 0 || loading}
               >
                 Back
               </Button>
@@ -1007,18 +1059,18 @@ const ProposalForm = ({ user, onLogout }) => {
                 >
                   Cancel
                 </Button>
+            {activeStep === steps.length - 1 ? null : (
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={handleSubmit}
-                  disabled={loading}
+                onClick={handleNext}
+                disabled={loading || (activeStep === 0 && selectedServices.length === 0)}
                 >
-                  {loading ? <CircularProgress size={24} /> : isEditMode ? 'Update Proposal' : 'Create Proposal'}
+                {loading ? <CircularProgress size={24} /> : 'Next'}
                 </Button>
+            )}
               </Box>
             </Box>
-          </Box>
-        )}
         
         <Snackbar
           open={Boolean(error)}

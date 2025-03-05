@@ -29,6 +29,7 @@ require_once 'controllers/ProjectController.php';
 require_once 'controllers/ProServiceController.php';
 require_once 'controllers/DocumentController.php';
 require_once 'controllers/JobOrderController.php';
+require_once 'controllers/EmailController.php';
 
 // Add new includes
 require_once 'models/CompanyInfo.php';
@@ -55,11 +56,13 @@ $proServiceController = new ProServiceController($db);
 $documentController = new DocumentController($db);
 $jobOrderController = new JobOrderController($db);
 
+
+
 // Test route to check if API is working
 $router->respond('GET', '/test', function() {
     echo json_encode([
         "status" => "success",
-        "message" => "API is working!"
+        "message" => dirname(__DIR__)
     ]);
 });
 
@@ -600,6 +603,13 @@ $router->put('/job-orders/:id', function($id, $request) use ($db) {
 $router->delete('/job-orders/:id', function($id) use ($db) {
     $controller = new JobOrderController($db);
     return $controller->delete($id);
+});
+
+// Email endpoints
+$router->respond('POST', '/email/send', function() use ($db) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $controller = new EmailController($db);
+    echo json_encode($controller->sendEmail($data));
 });
 
 // Dispatch the router

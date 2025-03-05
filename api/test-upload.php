@@ -9,7 +9,48 @@ require_once __DIR__ . '/controllers/DocumentController.php';
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-echo "Test upload script started\n";
+echo "Testing upload directory setup...\n";
+
+// Define upload directory
+$uploadDir = __DIR__ . '/uploads/documents/';
+echo "Upload directory path: $uploadDir\n";
+
+// Check if directory exists
+echo "Directory exists: " . (file_exists($uploadDir) ? 'Yes' : 'No') . "\n";
+
+// Create directory if it doesn't exist
+if (!file_exists($uploadDir)) {
+    echo "Creating directory...\n";
+    if (mkdir($uploadDir, 0777, true)) {
+        echo "Directory created successfully\n";
+    } else {
+        echo "Failed to create directory\n";
+        exit(1);
+    }
+}
+
+// Set directory permissions
+echo "Setting directory permissions...\n";
+if (chmod($uploadDir, 0777)) {
+    echo "Permissions set successfully\n";
+} else {
+    echo "Failed to set permissions\n";
+    exit(1);
+}
+
+// Test file creation
+$testFile = $uploadDir . 'test.txt';
+echo "\nTesting file creation...\n";
+if (file_put_contents($testFile, 'Test content')) {
+    echo "Test file created successfully\n";
+    unlink($testFile);
+    echo "Test file deleted\n";
+} else {
+    echo "Failed to create test file\n";
+    exit(1);
+}
+
+echo "\nUpload directory setup completed successfully\n";
 
 // Create database connection
 $database = new Database();
