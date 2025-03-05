@@ -558,7 +558,7 @@ $router->respond('PUT', '/proposals/[i:id]/status', function($request) use ($db)
     $proposalId = $request->id;
     $data = json_decode(file_get_contents('php://input'), true);
     $controller = new ProposalController($db);
-    echo json_encode($controller->updateStatus($proposalId, $data['status']));
+    echo json_encode($controller->updateStatus($proposalId, $data));
 });
 
 // Get last proposal reference

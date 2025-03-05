@@ -89,15 +89,32 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
         }
       };
 
-      const response = await window.api.email.send(emailData);
+      // Send email
+      const emailResponse = await window.api.email.send(emailData);
 
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to send email');
+      if (!emailResponse.success) {
+        throw new Error(emailResponse.message || 'Failed to send email');
+      }
+
+     
+
+      // Update proposal status to Pending
+      const updateResponse = await window.api.proposal.updateStatus(proposalData.proposal_id, {
+        status: 'Sent',
+        notes: `Email sent to ${recipient}`,
+        response_date: new Date().toISOString()
+      });
+
+      console.log(updateResponse)
+
+      if (!updateResponse.success) {
+        throw new Error('Email sent but failed to update proposal status');
       }
 
       if (onEmailSent) {
         onEmailSent();
       }
+     
     } catch (err) {
       setError(err.message || 'Failed to send email');
     } finally {

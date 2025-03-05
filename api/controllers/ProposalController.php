@@ -238,7 +238,7 @@ class ProposalController {
                           notes = :notes, 
                           total_amount = :total_amount,
                           updated_at = NOW()
-                      WHERE id = :id";
+                      WHERE proposal_id = :id";
             
             // Prepare statement
             $stmt = $this->conn->prepare($query);

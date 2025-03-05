@@ -329,6 +329,7 @@ const ProposalForm = ({ user, onLogout }) => {
           }
           proposalId = response.data.proposal_id;
           console.log('Saved proposal ID:', proposalId);
+
         }
         
         // Update formData with the proposal_id
@@ -419,7 +420,11 @@ const ProposalForm = ({ user, onLogout }) => {
   
   // Submit the form
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    try {
+      e.preventDefault();
+    } catch (err) {
+
+    }
     setLoading(true);
     
     try {
@@ -432,33 +437,25 @@ const ProposalForm = ({ user, onLogout }) => {
         total_amount: calculateSubtotal()
       };
       
-      let proposalId;
       
       // Create or update proposal
       if (isEditMode) {
-        const response = await window.api.proposal.update(id, formattedData);
+        const response = await window.api.proposal.update(currentProposalId, formattedData);
         if (!response.success) {
           throw new Error(response.message || 'Failed to update proposal');
         }
-        proposalId = id;
-      } else {
-        const response = await window.api.proposal.create(formattedData);
-        if (!response.success) {
-          throw new Error(response.message || 'Failed to create proposal');
-        }
-        proposalId = response.data.proposal_id;
-      }
+      } 
       
       // If editing, delete existing services first
       if (isEditMode) {
-        await window.api.proService.deleteByProposal(proposalId);
+        await window.api.proService.deleteByProposal(currentProposalId);
       }
       
       // Add services and their job orders
       for (const service of selectedServices) {
         // Create service
         const serviceData = {
-          proposal_id: proposalId,
+          proposal_id: currentProposalId,
           service_id: service.service_id,
           quantity: service.quantity,
           unit_price: service.unit_price,
@@ -478,19 +475,18 @@ const ProposalForm = ({ user, onLogout }) => {
           const jobOrderData = {
             ...jobOrder,
             service_id: service.service_id,
-            proposal_id: proposalId
+            proposal_id: currentProposalId
           };
-          const jobOrderResponse = await window.api.jobOrders.create(jobOrderData);
-          // if (!jobOrderResponse.success) {
-          //   throw new Error('Failed to add job order: ' + jobOrderResponse.message);
-          // }
+          
+          await window.api.jobOrders.create(jobOrderData);
+         
         }
       }
       
       // Update proposal total
-      const totalResponse = await window.api.proService.calculateProposalTotal(proposalId);
+      const totalResponse = await window.api.proService.calculateProposalTotal(currentProposalId);
       if (totalResponse.success) {
-        await window.api.proposal.update(proposalId, { 
+        await window.api.proposal.update(currentProposalId, { 
           total_amount: totalResponse.data.total 
         });
       }
@@ -645,7 +641,8 @@ const ProposalForm = ({ user, onLogout }) => {
   // Add email sent handler
   const handleEmailSent = () => {
     setSuccess('Email sent successfully');
-    navigate('/proposals');
+    // navigate('/proposals');
+    handleSubmit();
   };
 
   // Update the render logic to include email form
