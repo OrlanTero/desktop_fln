@@ -75,6 +75,8 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
         to: recipient,
         subject: subject,
         message: message,
+        proposalData: proposalData,
+        clientName: proposalData.client_name,
         attachments: [{
           filename: `${proposalData.proposal_reference || 'proposal'}.pdf`,
           content: documentContent,

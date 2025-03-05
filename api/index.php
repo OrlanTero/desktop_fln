@@ -608,8 +608,8 @@ $router->delete('/job-orders/:id', function($id) use ($db) {
 // Email endpoints
 $router->respond('POST', '/email/send', function() use ($db) {
     $data = json_decode(file_get_contents('php://input'), true);
-    $controller = new EmailController($db);
-    echo json_encode($controller->sendEmail($data));
+    $emailController = new EmailController($db);
+    return json_encode($emailController->send($data));
 });
 
 // Dispatch the router

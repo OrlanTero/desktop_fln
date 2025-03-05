@@ -101,6 +101,7 @@ class ProposalController {
                 // Create proposal array
                 $proposal_arr = array(
                     "id" => $id,
+                    "proposal_reference" => $proposal_reference,
                     "proposal_name" => $proposal_name,
                     "client_id" => $client_id,
                     "client_name" => $client_name,
@@ -281,39 +282,47 @@ class ProposalController {
     }
 
     // Update proposal status
-    public function updateStatus($id, $status) {
+    public function updateStatus($id, $data) {
         try {
             // Create query
-            $query = "UPDATE " . $this->table_name . " 
+            $query = "UPDATE proposals 
                       SET status = :status,
+                          notes = :notes,
+                          response_date = :response_date,
                           updated_at = NOW()
-                      WHERE id = :id";
+                      WHERE proposal_id = :id";
             
             // Prepare statement
             $stmt = $this->conn->prepare($query);
             
-            // Sanitize and bind data
-            $status = htmlspecialchars(strip_tags($status));
+            // Sanitize data
+            $status = htmlspecialchars(strip_tags($data['status']));
+            $notes = htmlspecialchars(strip_tags($data['notes']));
+            $responseDate = htmlspecialchars(strip_tags($data['response_date']));
             
+            // Bind data
             $stmt->bindParam(':status', $status);
+            $stmt->bindParam(':notes', $notes);
+            $stmt->bindParam(':response_date', $responseDate);
             $stmt->bindParam(':id', $id);
             
             // Execute query
             if($stmt->execute()) {
                 return array(
-                    "status" => "success",
-                    "message" => "Proposal status updated successfully"
-                );
-            } else {
-                return array(
-                    "status" => "error",
-                    "message" => "Failed to update proposal status"
+                    "success" => true,
+                    "message" => "Proposal status updated successfully."
                 );
             }
+            
+            return array(
+                "success" => false,
+                "message" => "Failed to update proposal status."
+            );
+            
         } catch(PDOException $e) {
             return array(
-                "status" => "error",
-                "message" => "Error updating proposal status: " . $e->getMessage()
+                "success" => false,
+                "message" => "Database error: " . $e->getMessage()
             );
         }
     }
