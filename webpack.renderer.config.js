@@ -11,16 +11,22 @@ module.exports = {
   plugins: [
     ...plugins,
     new webpack.ProvidePlugin({
-      process: 'process/browser',
+      process: require.resolve('process/browser'),
+      Buffer: ['buffer', 'Buffer'],
     }),
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+      'global': 'window',
+      'process.env': JSON.stringify(process.env),
     }),
   ],
   resolve: {
     extensions: ['.js', '.jsx', '.json', '.css'],
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      'process/browser': require.resolve('process/browser'),
+      'canvas': false,
+      'canvg': path.resolve(__dirname, 'node_modules/canvg/lib/index.es.js'),
     },
     fallback: {
       path: require.resolve('path-browserify'),
@@ -34,6 +40,8 @@ module.exports = {
       buffer: require.resolve('buffer/'),
       util: require.resolve('util/'),
       events: require.resolve('events/'),
+      process: require.resolve('process/browser'),
+      zlib: require.resolve('browserify-zlib'),
     },
   },
   devtool: 'source-map',

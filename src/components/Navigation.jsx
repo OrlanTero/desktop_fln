@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Drawer,
@@ -56,6 +56,17 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
     finance: false,
     reports: false,
   });
+
+  // Expand Project Manager section when on Proposals or Projects pages
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/proposals') || path.includes('/projects')) {
+      setExpanded(prev => ({
+        ...prev,
+        projectManager: true
+      }));
+    }
+  }, [location.pathname]);
 
   // Toggle expanded state for a menu item
   const handleExpandClick = (item) => {

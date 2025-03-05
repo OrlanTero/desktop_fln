@@ -12,6 +12,11 @@ import ClientTypes from './pages/ClientTypes';
 import ServiceCategories from './pages/ServiceCategories';
 import Services from './pages/Services';
 import Settings from './pages/Settings';
+import Proposals from './pages/Proposals';
+import ProposalForm from './pages/ProposalForm';
+import Projects from './pages/Projects';
+import ProjectForm from './pages/ProjectForm';
+import ProjectView from './pages/ProjectView';
 
 // Import components
 import SplashScreen from './components/SplashScreen';
@@ -200,6 +205,64 @@ const App = () => {
           element={
             isAuthenticated ? 
               <Services user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        {/* Proposals Routes */}
+        <Route 
+          path="/proposals" 
+          element={
+            isAuthenticated ? 
+              <Proposals user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/proposals/new" 
+          element={
+            isAuthenticated ? 
+              <ProposalForm user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/proposals/edit/:id" 
+          element={
+            isAuthenticated ? 
+              <ProposalForm user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        {/* Projects Routes */}
+        <Route 
+          path="/projects" 
+          element={
+            isAuthenticated ? 
+              <Projects user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/projects/new" 
+          element={
+            isAuthenticated ? 
+              <ProjectForm user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/projects/edit/:id" 
+          element={
+            isAuthenticated ? 
+              <ProjectForm user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/projects/view/:id" 
+          element={
+            isAuthenticated ? 
+              <ProjectView user={currentUser} onLogout={handleLogout} /> : 
               <Navigate to="/login" replace />
           } 
         />

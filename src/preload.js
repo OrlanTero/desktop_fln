@@ -20,11 +20,45 @@ async function makeRequest(url, method = 'GET', body = null) {
       options.body = JSON.stringify(body);
     }
 
+    console.log(`Making ${method} request to: ${url}`);
+    if (body) {
+      console.log('Request body keys:', Object.keys(body));
+      console.log('Request body data types:', {
+        base64: typeof body.base64 === 'string' ? `String (length: ${body.base64?.length})` : typeof body.base64,
+        name: typeof body.name
+      });
+    }
+    
     const response = await fetch(url, options);
-    const data = await response.json();
+    console.log('Response status:', response.status);
+    
+    // Check if response is ok (status in the range 200-299)
+    if (!response.ok) {
+      // Try to get error message from response
+      let errorMessage;
+      try {
+        const errorData = await response.json();
+        console.error('Error response data:', errorData);
+        errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+      } catch (e) {
+        errorMessage = `HTTP error! status: ${response.status}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    // Try to parse JSON response
+    let data;
+    try {
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Error parsing JSON response:', e);
+      throw new Error('Invalid JSON response from server');
+    }
     
     return {
-      success: data.status === 'success',
+      success: data.status === 'success' || data.success === true,
       data: data.data || data.user || data.users || null,
       message: data.message
     };
@@ -230,5 +264,311 @@ contextBridge.exposeInMainWorld('api', {
     deleteRequirement: async (id) => {
       return makeRequest(`${API_BASE_URL}/requirements/${id}`, 'DELETE');
     },
-  }
+  },
+
+  // Proposal API
+  proposal: {
+    // Get all proposals
+    getAll: async () => {
+      return makeRequest(`${API_BASE_URL}/proposals`);
+    },
+    
+    // Get proposal by ID
+    getById: async (id) => {
+      return makeRequest(`${API_BASE_URL}/proposals/${id}`);
+    },
+    
+    // Get proposals by client
+    getByClient: async (clientId) => {
+      return makeRequest(`${API_BASE_URL}/proposals/client/${clientId}`);
+    },
+    
+    // Get last proposal reference
+    getLastReference: async () => {
+      return makeRequest(`${API_BASE_URL}/proposals/last-reference`);
+    },
+    
+    // Create proposal
+    create: async (proposalData) => {
+      return makeRequest(`${API_BASE_URL}/proposals`, 'POST', proposalData);
+    },
+    
+    // Update proposal
+    update: async (id, proposalData) => {
+      return makeRequest(`${API_BASE_URL}/proposals/${id}`, 'PUT', proposalData);
+    },
+    
+    // Delete proposal
+    delete: async (id) => {
+      return makeRequest(`${API_BASE_URL}/proposals/${id}`, 'DELETE');
+    },
+    
+    // Convert proposal to project
+    convertToProject: async (id) => {
+      return makeRequest(`${API_BASE_URL}/proposals/${id}/convert`, 'POST');
+    },
+    
+    // Get proposal status history
+    getStatusHistory: async (id) => {
+      return makeRequest(`${API_BASE_URL}/proposals/${id}/status-history`);
+    },
+    
+    // Update proposal status
+    updateStatus: async (id, statusData) => {
+      return makeRequest(`${API_BASE_URL}/proposals/${id}/status`, 'PUT', statusData);
+    },
+    
+    // Save proposal as draft
+    saveAsDraft: async (proposalData) => {
+      return makeRequest(`${API_BASE_URL}/proposals/draft`, 'POST', proposalData);
+    },
+    
+    // Generate proposal document
+    generateDocument: async (id) => {
+      return makeRequest(`${API_BASE_URL}/proposals/${id}/document`, 'POST');
+    },
+    
+    // Get proposal document
+    getDocument: async (id) => {
+      return makeRequest(`${API_BASE_URL}/proposals/${id}/document`, 'GET');
+    },
+  },
+
+  // Project API
+  project: {
+    // Get all projects
+    getAll: async () => {
+      return makeRequest(`${API_BASE_URL}/projects`);
+    },
+    
+    // Get project by ID
+    getById: async (id) => {
+      return makeRequest(`${API_BASE_URL}/projects/${id}`);
+    },
+    
+    // Get projects by client
+    getByClient: async (clientId) => {
+      return makeRequest(`${API_BASE_URL}/projects/client/${clientId}`);
+    },
+    
+    // Create project
+    create: async (projectData) => {
+      return makeRequest(`${API_BASE_URL}/projects`, 'POST', projectData);
+    },
+    
+    // Update project
+    update: async (id, projectData) => {
+      return makeRequest(`${API_BASE_URL}/projects/${id}`, 'PUT', projectData);
+    },
+    
+    // Delete project
+    delete: async (id) => {
+      return makeRequest(`${API_BASE_URL}/projects/${id}`, 'DELETE');
+    },
+    
+    // Get project status history
+    getStatusHistory: async (id) => {
+      return makeRequest(`${API_BASE_URL}/projects/${id}/status-history`);
+    },
+    
+    // Update project status
+    updateStatus: async (id, statusData) => {
+      return makeRequest(`${API_BASE_URL}/projects/${id}/status`, 'PUT', statusData);
+    },
+    
+    // Get project timeline
+    getTimeline: async (id) => {
+      return makeRequest(`${API_BASE_URL}/projects/${id}/timeline`);
+    },
+    
+    // Update project timeline
+    updateTimeline: async (id, timelineData) => {
+      return makeRequest(`${API_BASE_URL}/projects/${id}/timeline`, 'PUT', timelineData);
+    }
+  },
+
+  // ProService API
+  proService: {
+    // Get all pro services by proposal ID
+    getByProposal: async (proposalId) => {
+      try {
+        const response = await makeRequest(`${API_BASE_URL}/pro-services/proposal/${proposalId}`, 'GET');
+        return response;
+      } catch (error) {
+        console.error('Error getting pro services by proposal:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Get all pro services by project ID
+    getByProject: async (projectId) => {
+      try {
+        const response = await makeRequest(`${API_BASE_URL}/pro-services/project/${projectId}`, 'GET');
+        return response;
+      } catch (error) {
+        console.error('Error getting pro services by project:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Get pro service by ID
+    getById: async (id) => {
+      try {
+        const response = await makeRequest(`${API_BASE_URL}/pro-services/${id}`, 'GET');
+        return response;
+      } catch (error) {
+        console.error('Error getting pro service:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Create pro service
+    create: async (data) => {
+      try {
+        const response = await makeRequest(`${API_BASE_URL}/pro-services`, 'POST', data);
+        return response;
+      } catch (error) {
+        console.error('Error creating pro service:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Update pro service
+    update: async (id, data) => {
+      try {
+        const response = await makeRequest(`${API_BASE_URL}/pro-services/${id}`, 'PUT', data);
+        return response;
+      } catch (error) {
+        console.error('Error updating pro service:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Delete pro service
+    delete: async (id) => {
+      try {
+        const response = await makeRequest(`${API_BASE_URL}/pro-services/${id}`, 'DELETE');
+        return response;
+      } catch (error) {
+        console.error('Error deleting pro service:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Delete all pro services for a proposal
+    deleteByProposal: async (proposalId) => {
+      try {
+        const response = await makeRequest(`${API_BASE_URL}/pro-services/proposal/${proposalId}`, 'DELETE');
+        return response;
+      } catch (error) {
+        console.error('Error deleting pro services by proposal:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Delete all pro services for a project
+    deleteByProject: async (proposalId) => {
+      try {
+        const response = await makeRequest(`${API_BASE_URL}/pro-services/project/${proposalId}`, 'DELETE');
+        return response;
+      } catch (error) {
+        console.error('Error deleting pro services by project:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Calculate total amount for a proposal
+    calculateProposalTotal: async (proposalId) => {
+      try {
+        const response = await makeRequest(`${API_BASE_URL}/pro-services/proposal/${proposalId}/total`, 'GET');
+        return response;
+      } catch (error) {
+        console.error('Error calculating proposal total:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Copy services from proposal to project
+    copyToProject: async (proposalId) => {
+      try {
+        const response = await makeRequest(`${API_BASE_URL}/pro-services/proposal/${proposalId}/copy-to-project`, 'POST');
+        return response;
+      } catch (error) {
+        console.error('Error copying services to project:', error);
+        return { success: false, message: error.message };
+      }
+    }
+  },
+
+  // Company Info API
+  companyInfo: {
+    // Get company info
+    get: async () => {
+      return makeRequest(`${API_BASE_URL}/company-info`);
+    },
+    
+    // Update company info
+    update: async (data) => {
+      return makeRequest(`${API_BASE_URL}/company-info`, 'PUT', data);
+    },
+  },
+
+  // Document endpoints
+  document: {
+    upload: async (proposalId, fileData) => {
+      if (!proposalId) {
+        console.error('No proposal ID provided for document upload');
+        return { success: false, message: 'No proposal ID provided' };
+      }
+      
+      try {
+        console.log(`Uploading document for proposal ID: ${proposalId}`);
+        console.log(`Upload URL: ${API_BASE_URL}/documents/upload/${proposalId}`);
+        
+        // The API expects just the file data without the proposal_id in the body
+        const data = {
+          name: fileData.name,
+          base64: fileData.base64
+        };
+        
+        console.log(`Document name: ${fileData.name}`);
+        console.log(`Base64 data length: ${fileData.base64.length}`);
+        
+        const response = await makeRequest(`${API_BASE_URL}/documents/upload/${proposalId}`, 'POST', data);
+        console.log('Document upload response:', response);
+        return response;
+      } catch (error) {
+        console.error('Error uploading document:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    getByProposal: async (proposalId) => {
+      if (!proposalId) {
+        console.error('No proposal ID provided for document retrieval');
+        return { success: false, message: 'No proposal ID provided' };
+      }
+      
+      try {
+        return makeRequest(`${API_BASE_URL}/documents/proposal/${proposalId}`);
+      } catch (error) {
+        console.error('Error getting documents for proposal:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    delete: async (documentId) => {
+      if (!documentId) {
+        console.error('No document ID provided for deletion');
+        return { success: false, message: 'No document ID provided' };
+      }
+      
+      try {
+        return makeRequest(`${API_BASE_URL}/documents/${documentId}`, 'DELETE');
+      } catch (error) {
+        console.error('Error deleting document:', error);
+        return { success: false, message: error.message };
+      }
+    }
+  },
 });

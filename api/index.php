@@ -4,6 +4,7 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Content-Type: application/json; charset=UTF-8");
+header("Content-Security-Policy: default-src 'self' data: blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' 'wasm-unsafe-eval' blob: data:; worker-src 'self' blob: data:; child-src 'self' blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src 'self' blob:; connect-src 'self' http://localhost:4005 ws: wss: data: blob:; object-src 'none'");
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -23,6 +24,16 @@ require_once 'controllers/ClientController.php';
 require_once 'controllers/ClientTypeController.php';
 require_once 'controllers/ServiceCategoryController.php';
 require_once 'controllers/ServiceController.php';
+require_once 'controllers/ProposalController.php';
+require_once 'controllers/ProjectController.php';
+require_once 'controllers/ProServiceController.php';
+require_once 'controllers/DocumentController.php';
+
+// Add new includes
+require_once 'models/CompanyInfo.php';
+require_once 'controllers/CompanyInfoController.php';
+require_once 'models/Proposal.php';
+require_once 'controllers/ProposalController.php';
 
 // Initialize Klein router
 $router = new \Klein\Klein();
@@ -35,8 +46,12 @@ $db = $database->getConnection();
 $userController = new UserController($db);
 $clientController = new ClientController($db);
 $clientTypeController = new ClientTypeController($db);
-$serviceCategoryController = new ServiceCategoryController($db);
 $serviceController = new ServiceController($db);
+$serviceCategoryController = new ServiceCategoryController($db);
+$proposalController = new ProposalController($db);
+$projectController = new ProjectController($db);
+$proServiceController = new ProServiceController($db);
+$documentController = new DocumentController($db);
 
 // Test route to check if API is working
 $router->respond('GET', '/test', function() {
@@ -389,6 +404,179 @@ $router->respond('PUT', '/requirements/[i:id]', function($request) use ($service
 // Delete requirement
 $router->respond('DELETE', '/requirements/[i:id]', function($request) use ($serviceController) {
     echo json_encode($serviceController->deleteRequirement($request->id));
+});
+
+// Pro Service routes
+$router->respond('GET', '/pro-services/proposal/[i:id]', function ($request) use ($proServiceController) {
+    $proposalId = $request->id;
+    $result = $proServiceController->getByProposal($proposalId);
+    echo json_encode($result);
+});
+
+$router->respond('GET', '/pro-services/project/[i:id]', function ($request) use ($proServiceController) {
+    $projectId = $request->id;
+    $result = $proServiceController->getByProject($projectId);
+    echo json_encode($result);
+});
+
+$router->respond('GET', '/pro-services/[i:id]', function ($request) use ($proServiceController) {
+    $id = $request->id;
+    $result = $proServiceController->getById($id);
+    echo json_encode($result);
+});
+
+$router->respond('POST', '/pro-services', function ($request) use ($proServiceController) {
+    header('Content-Type: application/json');
+    try {
+        $data = json_decode($request->body(), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Invalid JSON data');
+        }
+        $result = $proServiceController->create((object)$data);
+    echo json_encode($result);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+});
+
+$router->respond('PUT', '/pro-services/[i:id]', function ($request) use ($proServiceController) {
+    $id = $request->id;
+    $data = json_decode($request->body());
+    $result = $proServiceController->update($id, $data);
+    echo json_encode($result);
+});
+
+$router->respond('DELETE', '/pro-services/[i:id]', function ($request) use ($proServiceController) {
+    $id = $request->id;
+    $result = $proServiceController->delete($id);
+    echo json_encode($result);
+});
+
+$router->respond('DELETE', '/pro-services/proposal/[i:id]', function ($request) use ($proServiceController) {
+    $proposalId = $request->id;
+    $result = $proServiceController->deleteByProposal($proposalId);
+    echo json_encode($result);
+});
+
+$router->respond('DELETE', '/pro-services/project/[i:id]', function ($request) use ($proServiceController) {
+    $proposalId = $request->id;
+    $result = $proServiceController->deleteByProject($proposalId);
+    echo json_encode($result);
+});
+
+$router->respond('GET', '/pro-services/proposal/[i:id]/total', function ($request) use ($proServiceController) {
+    $proposalId = $request->id;
+    $result = $proServiceController->calculateProposalTotal($proposalId);
+    echo json_encode($result);
+});
+
+$router->respond('POST', '/pro-services/proposal/[i:id]/copy-to-project', function ($request) use ($proServiceController) {
+    $proposalId = $request->id;
+    $result = $proServiceController->copyToProject($proposalId);
+    echo json_encode($result);
+});
+
+// Company Info endpoints
+$router->respond('GET', '/company-info', function() use ($db) {
+    $controller = new CompanyInfoController($db);
+    echo json_encode($controller->get());
+});
+
+$router->respond('PUT', '/company-info', function() use ($db) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $controller = new CompanyInfoController($db);
+    echo json_encode($controller->update($data));
+});
+
+// Proposals endpoints
+$router->respond('GET', '/proposals', function() use ($db) {
+    $controller = new ProposalController($db);
+    echo json_encode($controller->getAll());
+});
+
+$router->respond('GET', '/proposals/client/[i:id]', function($request) use ($db) {
+    $clientId = $request->id;
+    $controller = new ProposalController($db);
+    echo json_encode($controller->getByClient($clientId));
+});
+
+$router->respond('GET', '/proposals/[i:id]', function($request) use ($db) {
+    $proposalId = $request->id;
+    $controller = new ProposalController($db);
+    echo json_encode($controller->getById($proposalId));
+});
+
+$router->respond('POST', '/proposals', function() use ($db) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $controller = new ProposalController($db);
+    echo json_encode($controller->create($data));
+});
+
+$router->respond('PUT', '/proposals/[i:id]', function($request) use ($db) {
+    $proposalId = $request->id;
+    $data = json_decode(file_get_contents('php://input'), true);
+    $controller = new ProposalController($db);
+    echo json_encode($controller->update($proposalId, $data));
+});
+
+$router->respond('DELETE', '/proposals/[i:id]', function($request) use ($db) {
+    $proposalId = $request->id;
+    $controller = new ProposalController($db);
+    echo json_encode($controller->delete($proposalId));
+});
+
+// Additional proposal endpoints
+$router->respond('POST', '/proposals/draft', function() use ($db) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $data['status'] = 'Draft';
+    $controller = new ProposalController($db);
+    echo json_encode($controller->create($data));
+});
+
+$router->respond('POST', '/proposals/[i:id]/document', function($request) use ($db) {
+    $proposalId = $request->id;
+    $controller = new ProposalController($db);
+    echo json_encode($controller->generateDocument($proposalId));
+});
+
+$router->respond('GET', '/proposals/[i:id]/document', function($request) use ($db) {
+    $proposalId = $request->id;
+    $controller = new ProposalController($db);
+    echo json_encode($controller->getDocument($proposalId));
+});
+
+$router->respond('PUT', '/proposals/[i:id]/status', function($request) use ($db) {
+    $proposalId = $request->id;
+    $data = json_decode(file_get_contents('php://input'), true);
+    $controller = new ProposalController($db);
+    echo json_encode($controller->updateStatus($proposalId, $data['status']));
+});
+
+// Get last proposal reference
+$router->respond('GET', '/proposals/last-reference', function() use ($proposalController) {
+    echo json_encode($proposalController->getLastReference());
+});
+
+// Document routes
+$router->respond('POST', '/documents/upload/[:proposal_id]', function ($request) use ($documentController) {
+    header('Content-Type: application/json');
+    $proposalId = $request->proposal_id;
+    $fileData = json_decode($request->body(), true);
+    return json_encode($documentController->upload($fileData, $proposalId));
+});
+
+$router->respond('GET', '/documents/proposal/[:proposal_id]', function ($request) use ($documentController) {
+    header('Content-Type: application/json');
+    return json_encode($documentController->getByProposal($request->proposal_id));
+});
+
+$router->respond('DELETE', '/documents/[:document_id]', function ($request) use ($documentController) {
+    header('Content-Type: application/json');
+    return json_encode($documentController->delete($request->document_id));
 });
 
 // Dispatch the router

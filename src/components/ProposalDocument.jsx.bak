@@ -1,0 +1,293 @@
+import React from 'react';
+import { Box, Button } from '@mui/material';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+import PrintIcon from '@mui/icons-material/Print';
+import DownloadIcon from '@mui/icons-material/Download';
+
+// Initialize pdfMake with fonts
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
+const ProposalDocument = ({ companyInfo, proposalData, clientName, services, onDocumentGenerated }) => {
+  const generatePDF = async (action) => {
+    try {
+      // Define document definition
+      const docDefinition = {
+        content: [
+          // Company Header
+          {
+            text: companyInfo.company_name,
+            style: 'header',
+            alignment: 'center',
+            color: '#1976d2'
+          },
+          {
+            text: [
+              companyInfo.address,
+              `Phone: ${companyInfo.phone}`,
+              `Email: ${companyInfo.email}`
+            ],
+            style: 'subheader',
+            alignment: 'center'
+          },
+          { text: 'PROPOSAL', style: 'title', alignment: 'center', color: '#1976d2' },
+          
+          // Proposal Information
+          {
+            style: 'proposalInfo',
+            table: {
+              widths: ['auto', '*'],
+              body: [
+                ['Reference No:', proposalData.proposal_reference],
+                ['Date:', new Date().toLocaleDateString()],
+                ['Valid Until:', proposalData.valid_until ? new Date(proposalData.valid_until).toLocaleDateString() : 'N/A'],
+                ['Client:', clientName],
+                ['Project:', proposalData.project_name]
+              ]
+            },
+            layout: 'noBorders'
+          },
+          
+          // Services Table
+          {
+            style: 'servicesTable',
+            table: {
+              headerRows: 1,
+              widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+              body: [
+                [
+                  { text: 'Service', style: 'tableHeader' },
+                  { text: 'Quantity', style: 'tableHeader' },
+                  { text: 'Unit Price', style: 'tableHeader' },
+                  { text: 'Discount', style: 'tableHeader' },
+                  { text: 'Total', style: 'tableHeader' }
+                ],
+                ...services.map(service => [
+                  service.service_name,
+                  service.quantity.toString(),
+                  `₱${service.unit_price.toFixed(2)}`,
+                  `${service.discount_percentage}%`,
+                  `₱${service.price.toFixed(2)}`
+                ])
+              ]
+            }
+          },
+          
+          // Totals
+          {
+            style: 'totals',
+            alignment: 'right',
+            columns: [
+              { width: '*', text: '' },
+              {
+                width: 'auto',
+                table: {
+                  widths: ['auto', 'auto'],
+                  body: [
+                    [
+                      { text: 'Subtotal:', style: 'totalLabel' },
+                      { text: `₱${services.reduce((sum, service) => sum + service.price, 0).toFixed(2)}`, style: 'totalAmount' }
+                    ],
+                    ...(proposalData.has_downpayment ? [[
+                      { text: 'Required Downpayment:', style: 'totalLabel' },
+                      { text: `₱${proposalData.downpayment_amount.toFixed(2)}`, style: 'totalAmount' }
+                    ]] : []),
+                    [
+                      { text: 'Total Amount:', style: 'totalLabel' },
+                      { text: `₱${services.reduce((sum, service) => sum + service.price, 0).toFixed(2)}`, style: 'grandTotal' }
+                    ]
+                  ]
+                },
+                layout: 'noBorders'
+              }
+            ]
+          },
+          
+          // Notes
+          ...(proposalData.notes ? [
+            { text: 'Notes:', style: 'sectionHeader', margin: [0, 20, 0, 5] },
+            { text: proposalData.notes, style: 'notes' }
+          ] : []),
+          
+          // Signature
+          {
+            columns: [
+              {
+                width: 200,
+                stack: [
+                  { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 1 }] },
+                  { text: 'Authorized Signature', style: 'signature' }
+                ]
+              }
+            ],
+            margin: [0, 50, 0, 0]
+          }
+        ],
+        styles: {
+          header: {
+            fontSize: 24,
+            bold: true,
+            margin: [0, 0, 0, 5]
+          },
+          subheader: {
+            fontSize: 10,
+            margin: [0, 0, 0, 20]
+          },
+          title: {
+            fontSize: 18,
+            bold: true,
+            margin: [0, 0, 0, 20]
+          },
+          proposalInfo: {
+            margin: [0, 0, 0, 20]
+          },
+          servicesTable: {
+            margin: [0, 20]
+          },
+          tableHeader: {
+            bold: true,
+            fillColor: '#f5f5f5'
+          },
+          totals: {
+            margin: [0, 20]
+          },
+          totalLabel: {
+            bold: true,
+            alignment: 'right'
+          },
+          totalAmount: {
+            alignment: 'right'
+          },
+          grandTotal: {
+            bold: true,
+            fontSize: 12,
+            alignment: 'right'
+          },
+          notes: {
+            fontSize: 10,
+            margin: [0, 0, 0, 20]
+          },
+          signature: {
+            fontSize: 10,
+            margin: [0, 5, 0, 0]
+          }
+        },
+        defaultStyle: {
+          fontSize: 10
+        }
+      };
+
+      // Generate PDF
+      if (action === 'download') {
+        pdfMake.createPdf(docDefinition).download(`${proposalData.proposal_reference}.pdf`);
+      } else if (action === 'print') {
+        pdfMake.createPdf(docDefinition).print();
+      } else if (onDocumentGenerated) {
+        const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+        pdfDocGenerator.getBase64((base64) => {
+          onDocumentGenerated({
+            base64: `data:application/pdf;base64,${base64}`,
+            name: `${proposalData.proposal_reference}.pdf`
+          });
+        });
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
+  };
+
+  return (
+    <Box sx={{ width: '100%', p: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+        <Button
+          variant="contained"
+          startIcon={<PrintIcon />}
+          onClick={() => generatePDF('print')}
+        >
+          Print
+        </Button>
+        <Button
+          variant="contained"
+          startIcon={<DownloadIcon />}
+          onClick={() => generatePDF('download')}
+        >
+          Download PDF
+        </Button>
+      </Box>
+
+      <Box sx={{ 
+        height: 'calc(100vh - 200px)', 
+        border: '1px solid #ddd',
+        p: 3,
+        bgcolor: '#fff',
+        borderRadius: 1,
+        overflow: 'auto'
+      }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <h1 style={{ color: '#1976d2', marginBottom: '5px' }}>{companyInfo.company_name}</h1>
+            <p style={{ margin: '3px 0' }}>{companyInfo.address}</p>
+            <p style={{ margin: '3px 0' }}>Phone: {companyInfo.phone}</p>
+            <p style={{ margin: '3px 0' }}>Email: {companyInfo.email}</p>
+          </div>
+
+          <h2 style={{ color: '#1976d2', textAlign: 'center', marginBottom: '20px' }}>PROPOSAL</h2>
+
+          <div style={{ marginBottom: '20px' }}>
+            <p><strong>Reference No:</strong> {proposalData.proposal_reference}</p>
+            <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+            <p><strong>Valid Until:</strong> {proposalData.valid_until ? new Date(proposalData.valid_until).toLocaleDateString() : 'N/A'}</p>
+            <p><strong>Client:</strong> {clientName}</p>
+            <p><strong>Project:</strong> {proposalData.project_name}</p>
+          </div>
+
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f5f5f5' }}>
+                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Service</th>
+                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Quantity</th>
+                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Unit Price</th>
+                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Discount</th>
+                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {services.map((service, index) => (
+                <tr key={index}>
+                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{service.service_name}</td>
+                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{service.quantity}</td>
+                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>₱{service.unit_price.toFixed(2)}</td>
+                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{service.discount_percentage}%</td>
+                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>₱{service.price.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+            <p><strong>Subtotal:</strong> ₱{services.reduce((sum, service) => sum + service.price, 0).toFixed(2)}</p>
+            {proposalData.has_downpayment && (
+              <p><strong>Required Downpayment:</strong> ₱{proposalData.downpayment_amount.toFixed(2)}</p>
+            )}
+            <p style={{ fontSize: '1.2em' }}><strong>Total Amount:</strong> ₱{services.reduce((sum, service) => sum + service.price, 0).toFixed(2)}</p>
+          </div>
+
+          {proposalData.notes && (
+            <div style={{ marginBottom: '20px' }}>
+              <h3>Notes:</h3>
+              <p>{proposalData.notes}</p>
+            </div>
+          )}
+
+          <div style={{ marginTop: '50px' }}>
+            <div style={{ width: '200px', borderTop: '1px solid #000', paddingTop: '5px' }}>
+              <p>Authorized Signature</p>
+            </div>
+          </div>
+        </div>
+      </Box>
+    </Box>
+  );
+};
+
+export default ProposalDocument; 

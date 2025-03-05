@@ -14,6 +14,9 @@ module.exports = {
   },
   plugins: [
     ...plugins,
+    new webpack.ProvidePlugin({
+      process: require.resolve('process/browser'),
+    }),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
     }),
@@ -22,6 +25,10 @@ module.exports = {
     extensions: ['.js', '.jsx', '.json'],
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      'process/browser': require.resolve('process/browser'),
+    },
+    fallback: {
+      process: require.resolve('process/browser'),
     },
   },
   output: {
