@@ -20,7 +20,6 @@ async function makeRequest(url, method = 'GET', body = null) {
       options.body = JSON.stringify(body);
     }
 
-    
     const response = await fetch(url, options);
     
     // Check if response is ok (status in the range 200-299)
@@ -597,4 +596,14 @@ contextBridge.exposeInMainWorld('api', {
       }
     }
   },
+
+  sendEmail: async (emailData) => {
+    try {
+      const result = await ipcRenderer.invoke('send-email', emailData);
+      return result;
+    } catch (error) {
+      console.error('Error in sendEmail:', error);
+      return { success: false, error: error.message };
+    }
+  }
 });

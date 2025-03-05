@@ -7,10 +7,16 @@ module.exports = {
    * This is the main entry point for your application, it's the first file
    * that runs in the main process.
    */
-  entry: './src/index.js',
+  entry: './src/main.js',
   // Put your normal webpack config below here
   module: {
     rules: require('./webpack.rules'),
+  },
+  externals: {
+    'nodemailer': 'commonjs nodemailer',
+    'net': 'commonjs net',
+    'tls': 'commonjs tls',
+    'dns': 'commonjs dns'
   },
   plugins: [
     ...plugins,
@@ -22,7 +28,7 @@ module.exports = {
     }),
   ],
   resolve: {
-    extensions: ['.js', '.jsx', '.json'],
+    extensions: ['.js', '.ts', '.jsx', '.tsx', '.json'],
     alias: {
       '@': path.resolve(__dirname, 'src'),
       'process/browser': require.resolve('process/browser'),
@@ -35,4 +41,7 @@ module.exports = {
     path: path.join(__dirname, '.webpack/main'),
     filename: 'index.js',
   },
+  experiments: {
+    topLevelAwait: true
+  }
 }; 

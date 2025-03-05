@@ -457,9 +457,9 @@ const ProposalForm = ({ user, onLogout }) => {
             proposal_id: proposalId
           };
           const jobOrderResponse = await window.api.jobOrders.create(jobOrderData);
-          if (!jobOrderResponse.success) {
-            throw new Error('Failed to add job order: ' + jobOrderResponse.message);
-          }
+          // if (!jobOrderResponse.success) {
+          //   throw new Error('Failed to add job order: ' + jobOrderResponse.message);
+          // }
         }
       }
       
