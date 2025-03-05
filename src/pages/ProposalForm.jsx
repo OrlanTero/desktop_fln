@@ -596,6 +596,26 @@ const ProposalForm = ({ user, onLogout }) => {
     );
   };
   
+  // Render the document preview step
+  const renderDocumentPreview = () => {
+    // Add job orders to services data
+    const servicesWithJobOrders = selectedServices.map(service => ({
+      ...service,
+      jobOrders: localJobOrders[service.service_id] || []
+    }));
+
+    return (
+      <Box sx={{ mt: 3 }}>
+        <ProposalDocumentNew
+          companyInfo={companyInfo}
+          proposalData={formData}
+          clientName={clients.find(c => c.client_id === formData.client_id)?.client_name || ''}
+          services={servicesWithJobOrders}
+        />
+      </Box>
+    );
+  };
+  
   if (loading && !isEditMode) {
     return (
       <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -967,49 +987,7 @@ const ProposalForm = ({ user, onLogout }) => {
           </form>
         ) : (
           <Box>
-            <ProposalDocumentNew
-              companyInfo={companyInfo}
-              proposalData={formData}
-              clientName={clients.find(c => c.client_id === formData.client_id)?.client_name}
-              services={selectedServices}
-              onDocumentGenerated={async (documentData) => {
-                // Skip if document has already been uploaded
-                if (documentUploaded) {
-                  console.log('Document already uploaded, skipping duplicate upload');
-                  return;
-                }
-                
-                try {
-                  // Make sure we have a valid proposal ID
-                  if (!formData.proposal_id) {
-                    console.error('No proposal ID available for document upload');
-                    setError('Error: No proposal ID available for document upload. Please save the proposal first.');
-                    return;
-                  }
-                  
-                  console.log('Uploading document for proposal ID:', formData.proposal_id);
-                  console.log('Document data size:', documentData.base64.length);
-                  
-                  // Upload document to server
-                  const response = await window.api.document.upload(formData.proposal_id, documentData);
-                  console.log('Document upload response:', response);
-                  
-                  if (!response.success) {
-                    throw new Error(response.message || 'Failed to save document');
-                  }
-                  
-                  // Store the document preview data
-                  setDocumentPreview(documentData.base64);
-                  console.log('Document preview data set, length:', documentData.base64.length);
-                  
-                  setSuccess('Document generated and saved successfully');
-                  setDocumentUploaded(true); // Mark as uploaded to prevent duplicate uploads
-                } catch (err) {
-                  console.error('Document upload error:', err);
-                  setError('Error saving document: ' + err.message);
-                }
-              }}
-            />
+            {renderDocumentPreview()}
             
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
               <Button

@@ -71,41 +71,38 @@ const styles = StyleSheet.create({
     borderBottomColor: '#1976d2',
     borderBottomStyle: 'solid',
     backgroundColor: '#f5f5f5',
-    paddingTop: 5,
-    paddingBottom: 5,
+    paddingVertical: 8,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
     borderBottomStyle: 'solid',
-    paddingTop: 5,
-    paddingBottom: 5,
+    paddingVertical: 6,
   },
-  tableCol1: {
-    width: '40%',
+  jobOrderRow: {
+    flexDirection: 'row',
+    paddingVertical: 4,
+    paddingLeft: 20,
+    backgroundColor: '#fafafa',
+  },
+  colNo: {
+    width: '8%',
     fontSize: 9,
     paddingLeft: 5,
   },
-  tableCol2: {
-    width: '10%',
+  colParticulars: {
+    width: '52%',
+    fontSize: 9,
+    paddingLeft: 5,
+  },
+  colEstimatedFees: {
+    width: '20%',
     fontSize: 9,
     textAlign: 'right',
     paddingRight: 5,
   },
-  tableCol3: {
-    width: '15%',
-    fontSize: 9,
-    textAlign: 'right',
-    paddingRight: 5,
-  },
-  tableCol4: {
-    width: '15%',
-    fontSize: 9,
-    textAlign: 'right',
-    paddingRight: 5,
-  },
-  tableCol5: {
+  colServiceFee: {
     width: '20%',
     fontSize: 9,
     textAlign: 'right',
@@ -122,6 +119,7 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: 'row',
     marginBottom: 5,
+    paddingTop: 5,
   },
   totalLabel: {
     fontSize: 10,
@@ -130,48 +128,76 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     fontSize: 10,
-    width: 80,
+    width: 100,
     textAlign: 'right',
   },
   grandTotal: {
     fontSize: 12,
     fontWeight: 'bold',
   },
-  notes: {
+  bankDetails: {
     marginTop: 30,
     fontSize: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
   },
-  notesTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  notesText: {
-    fontSize: 10,
+  signatures: {
+    marginTop: 50,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   signature: {
-    marginTop: 50,
+    width: 200,
+  },
+  signatureLine: {
     borderTopWidth: 1,
     borderTopColor: '#000000',
-    borderTopStyle: 'solid',
-    width: 200,
-    paddingTop: 5,
+    marginTop: 40,
+    marginBottom: 5,
   },
   signatureText: {
     fontSize: 10,
+    textAlign: 'center',
   }
 });
 
-// Create PDF Document component
 const ProposalPDF = ({ companyInfo, proposalData, clientName, services }) => {
   // Calculate totals
-  const calculateSubtotal = () => {
-    return services.reduce((sum, service) => sum + service.price, 0);
+  const calculateTotals = () => {
+    let totalEstimatedFees = 0;
+    let totalServiceFees = 0;
+
+    services.forEach(service => {
+      totalServiceFees += parseFloat(service.price || 0);
+      if (service.jobOrders) {
+        totalEstimatedFees += service.jobOrders.reduce((sum, job) => 
+          sum + parseFloat(job.estimated_fee || 0), 0);
+      }
+    });
+
+    const netServiceFee = totalServiceFees;
+    const vat = netServiceFee * 0.12;
+    const totalVatInvoice = netServiceFee + vat;
+    const downpayment = proposalData.has_downpayment ? (netServiceFee * 0.5) : 0;
+    const grandTotal = totalVatInvoice + totalEstimatedFees;
+
+    return {
+      totalEstimatedFees,
+      totalServiceFees,
+      netServiceFee,
+      vat,
+      totalVatInvoice,
+      downpayment,
+      grandTotal
+    };
   };
 
   const formatCurrency = (value) => {
     return `₱${parseFloat(value).toFixed(2)}`;
   };
+
+  const totals = calculateTotals();
 
   return (
     <Document>
@@ -198,79 +224,103 @@ const ProposalPDF = ({ companyInfo, proposalData, clientName, services }) => {
             <Text style={styles.infoValue}>{new Date().toLocaleDateString()}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Valid Until:</Text>
-            <Text style={styles.infoValue}>
-              {proposalData.valid_until ? new Date(proposalData.valid_until).toLocaleDateString() : 'N/A'}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Client:</Text>
             <Text style={styles.infoValue}>{clientName}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Project:</Text>
-            <Text style={styles.infoValue}>{proposalData.project_name}</Text>
-          </View>
         </View>
 
-        {/* Services Table */}
+        {/* Services and Job Orders Table */}
         <View>
           {/* Table Header */}
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableCol1, styles.tableHeaderText]}>Service</Text>
-            <Text style={[styles.tableCol2, styles.tableHeaderText]}>Qty</Text>
-            <Text style={[styles.tableCol3, styles.tableHeaderText]}>Unit Price</Text>
-            <Text style={[styles.tableCol4, styles.tableHeaderText]}>Discount</Text>
-            <Text style={[styles.tableCol5, styles.tableHeaderText]}>Total</Text>
+            <Text style={[styles.colNo, styles.tableHeaderText]}>No</Text>
+            <Text style={[styles.colParticulars, styles.tableHeaderText]}>Particulars</Text>
+            <Text style={[styles.colEstimatedFees, styles.tableHeaderText]}>Estimated Fees</Text>
+            <Text style={[styles.colServiceFee, styles.tableHeaderText]}>Service Fee</Text>
           </View>
 
           {/* Table Rows */}
           {services.map((service, index) => (
-            <View key={index} style={styles.tableRow}>
-              <Text style={styles.tableCol1}>{service.service_name}</Text>
-              <Text style={styles.tableCol2}>{service.quantity}</Text>
-              <Text style={styles.tableCol3}>{formatCurrency(service.unit_price)}</Text>
-              <Text style={styles.tableCol4}>{service.discount_percentage}%</Text>
-              <Text style={styles.tableCol5}>{formatCurrency(service.price)}</Text>
-            </View>
+            <React.Fragment key={index}>
+              {/* Service Row */}
+              <View style={styles.tableRow}>
+                <Text style={styles.colNo}>{index + 1}</Text>
+                <Text style={styles.colParticulars}>{service.service_name}</Text>
+                <Text style={styles.colEstimatedFees}></Text>
+                <Text style={styles.colServiceFee}>{formatCurrency(service.price)}</Text>
+              </View>
+              
+              {/* Job Order Rows */}
+              {service.jobOrders && service.jobOrders.map((job, jobIndex) => (
+                <View key={`job-${jobIndex}`} style={styles.jobOrderRow}>
+                  <Text style={styles.colNo}></Text>
+                  <Text style={styles.colParticulars}>- {job.description}</Text>
+                  <Text style={styles.colEstimatedFees}>{formatCurrency(job.estimated_fee)}</Text>
+                  <Text style={styles.colServiceFee}></Text>
+                </View>
+              ))}
+            </React.Fragment>
           ))}
-        </View>
 
-        {/* Totals */}
-        <View style={styles.totals}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Subtotal:</Text>
-            <Text style={styles.totalValue}>{formatCurrency(calculateSubtotal())}</Text>
-          </View>
-          
-          {proposalData.has_downpayment && (
+          {/* Totals Section */}
+          <View style={styles.totals}>
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Required Downpayment:</Text>
-              <Text style={styles.totalValue}>
-                {formatCurrency(proposalData.downpayment_amount)}
+              <Text style={styles.totalLabel}>Total Estimated Fees:</Text>
+              <Text style={styles.totalValue}>{formatCurrency(totals.totalEstimatedFees)}</Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total Service Fees:</Text>
+              <Text style={styles.totalValue}>{formatCurrency(totals.totalServiceFees)}</Text>
+            </View>
+            <View style={[styles.totalRow, { marginTop: 10 }]}>
+              <Text style={styles.totalLabel}>NET SERVICE FEE:</Text>
+              <Text style={styles.totalValue}>{formatCurrency(totals.netServiceFee)}</Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>VAT 12%:</Text>
+              <Text style={styles.totalValue}>{formatCurrency(totals.vat)}</Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalLabel, styles.grandTotal]}>TOTAL VAT INVOICE:</Text>
+              <Text style={[styles.totalValue, styles.grandTotal]}>{formatCurrency(totals.totalVatInvoice)}</Text>
+            </View>
+          </View>
+
+          {/* Payment Details */}
+          {proposalData.has_downpayment && (
+            <View style={{ marginTop: 20 }}>
+              <Text style={{ fontSize: 10, marginBottom: 5 }}>Upon Confirmation please pay:</Text>
+              <Text style={{ fontSize: 10, marginLeft: 20 }}>
+                50% on Service Fee: {formatCurrency(totals.downpayment)}
+              </Text>
+              <Text style={{ fontSize: 10, marginLeft: 20 }}>
+                Estimated Fees (subject for liquidation): {formatCurrency(totals.totalEstimatedFees)}
+              </Text>
+              <Text style={{ fontSize: 10, fontWeight: 'bold', marginTop: 5 }}>
+                GRAND TOTAL: {formatCurrency(totals.grandTotal)}
               </Text>
             </View>
           )}
-          
-          <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, styles.grandTotal]}>Total Amount:</Text>
-            <Text style={[styles.totalValue, styles.grandTotal]}>
-              {formatCurrency(calculateSubtotal())}
-            </Text>
-          </View>
-        </View>
 
-        {/* Notes */}
-        {proposalData.notes && (
-          <View style={styles.notes}>
-            <Text style={styles.notesTitle}>Notes:</Text>
-            <Text style={styles.notesText}>{proposalData.notes}</Text>
+          {/* Bank Details */}
+          <View style={styles.bankDetails}>
+            <Text style={{ fontSize: 10, marginBottom: 5 }}>Please deposit payment to:</Text>
+            <Text style={{ fontSize: 10 }}>China Bank</Text>
+            <Text style={{ fontSize: 10 }}>FLN SERVICES CORPORATION</Text>
+            <Text style={{ fontSize: 10 }}>10580009592</Text>
           </View>
-        )}
 
-        {/* Signature */}
-        <View style={styles.signature}>
-          <Text style={styles.signatureText}>Authorized Signature</Text>
+          {/* Signatures */}
+          <View style={styles.signatures}>
+            <View style={styles.signature}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureText}>Prepared By</Text>
+            </View>
+            <View style={styles.signature}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureText}>Approved By</Text>
+            </View>
+          </View>
         </View>
       </Page>
     </Document>
