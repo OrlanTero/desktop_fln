@@ -558,4 +558,43 @@ contextBridge.exposeInMainWorld('api', {
       }
     }
   },
+
+  // Job Orders API
+  jobOrders: {
+    create: async (data) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders`, 'POST', data);
+      } catch (error) {
+        console.error('Error creating job order:', error);
+        return { success: false, message: error.message };
+      }
+    },
+
+    getByService: async (serviceId, proposalId) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders/service/${serviceId}/proposal/${proposalId}`);
+      } catch (error) {
+        console.error('Error fetching job orders:', error);
+        return { success: false, message: error.message };
+      }
+    },
+
+    update: async (id, data) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders/${id}`, 'PUT', data);
+      } catch (error) {
+        console.error('Error updating job order:', error);
+        return { success: false, message: error.message };
+      }
+    },
+
+    delete: async (id) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders/${id}`, 'DELETE');
+      } catch (error) {
+        console.error('Error deleting job order:', error);
+        return { success: false, message: error.message };
+      }
+    }
+  },
 });

@@ -28,6 +28,7 @@ require_once 'controllers/ProposalController.php';
 require_once 'controllers/ProjectController.php';
 require_once 'controllers/ProServiceController.php';
 require_once 'controllers/DocumentController.php';
+require_once 'controllers/JobOrderController.php';
 
 // Add new includes
 require_once 'models/CompanyInfo.php';
@@ -52,6 +53,7 @@ $proposalController = new ProposalController($db);
 $projectController = new ProjectController($db);
 $proServiceController = new ProServiceController($db);
 $documentController = new DocumentController($db);
+$jobOrderController = new JobOrderController($db);
 
 // Test route to check if API is working
 $router->respond('GET', '/test', function() {
@@ -577,6 +579,27 @@ $router->respond('GET', '/documents/proposal/[:proposal_id]', function ($request
 $router->respond('DELETE', '/documents/[:document_id]', function ($request) use ($documentController) {
     header('Content-Type: application/json');
     return json_encode($documentController->delete($request->document_id));
+});
+
+// Job Orders Routes
+$router->post('/job-orders', function($request) use ($db) {
+    $controller = new JobOrderController($db);
+    return $controller->create($request);
+});
+
+$router->get('/job-orders/service/:serviceId/proposal/:proposalId', function($serviceId, $proposalId) use ($db) {
+    $controller = new JobOrderController($db);
+    return $controller->getByService($serviceId, $proposalId);
+});
+
+$router->put('/job-orders/:id', function($id, $request) use ($db) {
+    $controller = new JobOrderController($db);
+    return $controller->update($id, $request);
+});
+
+$router->delete('/job-orders/:id', function($id) use ($db) {
+    $controller = new JobOrderController($db);
+    return $controller->delete($id);
 });
 
 // Dispatch the router

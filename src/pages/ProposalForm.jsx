@@ -36,6 +36,7 @@ import StepLabel from '@mui/material/StepLabel';
 import SaveIcon from '@mui/icons-material/Save';
 import PreviewIcon from '@mui/icons-material/Preview';
 import ProposalDocumentNew from '../components/ProposalDocumentNew';
+import JobOrderList from '../components/JobOrderList';
 
 const ProposalForm = ({ user, onLogout }) => {
   const { id } = useParams();
@@ -91,6 +92,13 @@ const ProposalForm = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  
+  // Inside the ProposalForm component, add new state for selected service details
+  const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
+  const [jobOrderError, setJobOrderError] = useState(null);
+  
+  // Add local job orders state
+  const [localJobOrders, setLocalJobOrders] = useState({});
   
   // Calculate totals
   const calculateSubtotal = () => {
@@ -262,8 +270,18 @@ const ProposalForm = ({ user, onLogout }) => {
   // Remove service from the list
   const handleRemoveService = (index) => {
     const updatedServices = [...selectedServices];
+    const removedService = updatedServices[index];
     updatedServices.splice(index, 1);
     setSelectedServices(updatedServices);
+
+    // Also remove any associated job orders
+    if (removedService) {
+      setLocalJobOrders(prev => {
+        const updated = { ...prev };
+        delete updated[removedService.service_id];
+        return updated;
+      });
+    }
   };
   
   // Handle next step
@@ -389,8 +407,6 @@ const ProposalForm = ({ user, onLogout }) => {
         valid_until: formData.valid_until ? format(formData.valid_until, 'yyyy-MM-dd') : null,
         total_amount: calculateSubtotal()
       };
-
-      console.log(formattedData);
       
       let proposalId;
       
@@ -403,13 +419,10 @@ const ProposalForm = ({ user, onLogout }) => {
         proposalId = id;
       } else {
         const response = await window.api.proposal.create(formattedData);
-        console.log('Create proposal response:', response);
-        
         if (!response.success) {
           throw new Error(response.message || 'Failed to create proposal');
         }
         proposalId = response.data.proposal_id;
-        console.log('Extracted proposal ID:', proposalId);
       }
       
       // If editing, delete existing services first
@@ -417,9 +430,9 @@ const ProposalForm = ({ user, onLogout }) => {
         await window.api.proService.deleteByProposal(proposalId);
       }
       
-      // Add services
-      console.log('Selected services to add:', selectedServices);
+      // Add services and their job orders
       for (const service of selectedServices) {
+        // Create service
         const serviceData = {
           proposal_id: proposalId,
           service_id: service.service_id,
@@ -429,13 +442,24 @@ const ProposalForm = ({ user, onLogout }) => {
           discount_percentage: service.discount_percentage || 0,
           pro_type: 'Proposal'
         };
-        console.log('Adding service:', serviceData);
         
         const serviceResponse = await window.api.proService.create(serviceData);
-        console.log('Service creation response:', serviceResponse);
-        
         if (!serviceResponse.success) {
-          console.error('Failed to add service:', serviceResponse.message);
+          throw new Error('Failed to add service: ' + serviceResponse.message);
+        }
+
+        // Add job orders for this service
+        const jobOrders = localJobOrders[service.service_id] || [];
+        for (const jobOrder of jobOrders) {
+          const jobOrderData = {
+            ...jobOrder,
+            service_id: service.service_id,
+            proposal_id: proposalId
+          };
+          const jobOrderResponse = await window.api.jobOrders.create(jobOrderData);
+          if (!jobOrderResponse.success) {
+            throw new Error('Failed to add job order: ' + jobOrderResponse.message);
+          }
         }
       }
       
@@ -464,6 +488,112 @@ const ProposalForm = ({ user, onLogout }) => {
   // Handle cancel
   const handleCancel = () => {
     navigate('/proposals');
+  };
+  
+  // Add this function to handle job order management
+  const handleManageJobOrders = (service) => {
+    // Set the selected service for job orders management
+    setSelectedServiceDetails(service);
+    
+    // Initialize local job orders for this service if not exists
+    if (!localJobOrders[service.service_id]) {
+      setLocalJobOrders(prev => ({
+        ...prev,
+        [service.service_id]: []
+      }));
+    }
+  };
+  
+  // Add handlers for job order operations
+  const handleJobOrderUpdate = (serviceId, updatedJobOrders) => {
+    setLocalJobOrders(prev => ({
+      ...prev,
+      [serviceId]: updatedJobOrders
+    }));
+  };
+  
+  // Modify the services table to include a button to manage job orders
+  const renderServicesTable = () => (
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Service</TableCell>
+            <TableCell align="right">Quantity</TableCell>
+            <TableCell align="right">Unit Price</TableCell>
+            <TableCell align="right">Discount (%)</TableCell>
+            <TableCell align="right">Total</TableCell>
+            <TableCell align="center">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {selectedServices.map((service, index) => (
+            <React.Fragment key={index}>
+              <TableRow>
+                <TableCell>{service.service_name}</TableCell>
+                <TableCell align="right">{service.quantity}</TableCell>
+                <TableCell align="right">${service.unit_price}</TableCell>
+                <TableCell align="right">{service.discount_percentage}%</TableCell>
+                <TableCell align="right">${service.price}</TableCell>
+                <TableCell align="center">
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                    <IconButton 
+                      onClick={() => handleRemoveService(index)}
+                      color="error"
+                      size="small"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => handleManageJobOrders(service)}
+                      disabled={loading}
+                    >
+                      Manage Job Orders
+                    </Button>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            </React.Fragment>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
+  // Update the renderJobOrders function
+  const renderJobOrders = () => {
+    if (!selectedServiceDetails) {
+      return null;
+    }
+
+    return (
+      <Box mt={3}>
+        {jobOrderError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setJobOrderError(null)}>
+            {jobOrderError}
+          </Alert>
+        )}
+        <Paper sx={{ p: 2 }}>
+          <JobOrderList
+            serviceId={selectedServiceDetails.service_id}
+            proposalId={formData.proposal_id || 'temp'}
+            serviceName={selectedServiceDetails.service_name}
+            jobOrders={localJobOrders[selectedServiceDetails.service_id] || []}
+            onUpdate={(updatedJobOrders) => handleJobOrderUpdate(selectedServiceDetails.service_id, updatedJobOrders)}
+          />
+          <Box mt={2}>
+            <Button
+              variant="outlined"
+              onClick={() => setSelectedServiceDetails(null)}
+            >
+              Close Job Orders
+            </Button>
+          </Box>
+        </Paper>
+      </Box>
+    );
   };
   
   if (loading && !isEditMode) {
@@ -780,49 +910,8 @@ const ProposalForm = ({ user, onLogout }) => {
                 </Grid>
               </Grid>
               
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Category</TableCell>
-                      <TableCell>Service</TableCell>
-                      <TableCell align="right">Quantity</TableCell>
-                      <TableCell align="right">Unit Price</TableCell>
-                      <TableCell align="right">Discount</TableCell>
-                      <TableCell align="right">Total</TableCell>
-                      <TableCell align="center">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {selectedServices.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} align="center">
-                          No services added yet
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      selectedServices.map((service, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{service.service_category_name}</TableCell>
-                          <TableCell>{service.service_name}</TableCell>
-                          <TableCell align="right">{service.quantity}</TableCell>
-                          <TableCell align="right">₱{service.unit_price.toFixed(2)}</TableCell>
-                          <TableCell align="right">{service.discount_percentage}%</TableCell>
-                          <TableCell align="right">₱{service.price.toFixed(2)}</TableCell>
-                          <TableCell align="center">
-                            <IconButton
-                              color="error"
-                              onClick={() => handleRemoveService(index)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              {selectedServices.length > 0 && renderServicesTable()}
+              {selectedServiceDetails && renderJobOrders()}
               
               <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
                 <Grid container spacing={2}>
