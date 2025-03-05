@@ -99,11 +99,7 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
      
 
       // Update proposal status to Pending
-      const updateResponse = await window.api.proposal.updateStatus(proposalData.proposal_id, {
-        status: 'Sent',
-        notes: `Email sent to ${recipient}`,
-        response_date: new Date().toISOString()
-      });
+      const updateResponse = await window.api.proposal.updateOnlyStatus(proposalData.proposal_id, 'Sent');
 
       console.log(updateResponse)
 

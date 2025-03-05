@@ -14,6 +14,7 @@ import Services from './pages/Services';
 import Settings from './pages/Settings';
 import Proposals from './pages/Proposals';
 import ProposalForm from './pages/ProposalForm';
+import ProposalConversion from './pages/ProposalConversion';
 import Projects from './pages/Projects';
 import ProjectForm from './pages/ProjectForm';
 import ProjectView from './pages/ProjectView';
@@ -230,6 +231,14 @@ const App = () => {
           element={
             isAuthenticated ? 
               <ProposalForm user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+        <Route 
+          path="/proposal-conversion" 
+          element={
+            isAuthenticated ? 
+              <ProposalConversion user={currentUser} onLogout={handleLogout} /> : 
               <Navigate to="/login" replace />
           } 
         />

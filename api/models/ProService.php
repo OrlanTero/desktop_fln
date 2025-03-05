@@ -7,6 +7,8 @@ class ProService {
     // Object properties
     public $pro_service_id;
     public $proposal_id;
+
+    public $project_id;
     public $service_id;
     public $pro_type;
     public $quantity;
@@ -114,6 +116,7 @@ class ProService {
         $query = "INSERT INTO " . $this->table_name . " 
                   SET 
                     proposal_id = :proposal_id,
+                    project_id = :project_id,
                     service_id = :service_id,
                     pro_type = :pro_type,
                     quantity = :quantity,
@@ -126,6 +129,7 @@ class ProService {
         $stmt = $this->conn->prepare($query);
         
         // Sanitize inputs
+        $this->project_id = htmlspecialchars(strip_tags($this->project_id));
         $this->proposal_id = htmlspecialchars(strip_tags($this->proposal_id));
         $this->service_id = htmlspecialchars(strip_tags($this->service_id));
         $this->pro_type = htmlspecialchars(strip_tags($this->pro_type));
@@ -136,6 +140,7 @@ class ProService {
         
         // Bind parameters
         $stmt->bindParam(":proposal_id", $this->proposal_id);
+        $stmt->bindParam(":project_id", $this->project_id);
         $stmt->bindParam(":service_id", $this->service_id);
         $stmt->bindParam(":pro_type", $this->pro_type);
         $stmt->bindParam(":quantity", $this->quantity);

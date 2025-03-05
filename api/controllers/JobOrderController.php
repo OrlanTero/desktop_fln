@@ -15,15 +15,17 @@ class JobOrderController {
         // Get posted data
         $data = json_decode($request->body(), true);
         
+    
         if (!$data) {
             return [
                 'success' => false,
-                'message' => 'Invalid JSON data'
+                'message' => 'Invalid JSON data',
+               
             ];
         }
 
         // Validate required fields
-        if (empty($data['service_id']) || empty($data['proposal_id']) || 
+        if (empty($data['service_id']) || 
             empty($data['description']) || !isset($data['estimated_fee'])) {
             return [
                 'success' => false,
@@ -34,10 +36,11 @@ class JobOrderController {
         // Set job order properties
         $this->jobOrder->service_id = $data['service_id'];
         $this->jobOrder->proposal_id = $data['proposal_id'];
+        $this->jobOrder->project_id = $data['project_id'];
         $this->jobOrder->description = $data['description'];
         $this->jobOrder->estimated_fee = $data['estimated_fee'];
         $this->jobOrder->status = $data['status'] ?? 'Pending';
-
+        
         // Create job order
         if ($this->jobOrder->create()) {
             return [

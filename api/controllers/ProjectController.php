@@ -15,7 +15,7 @@ class ProjectController {
             // Create query
             $query = "SELECT p.*, c.client_name 
                       FROM " . $this->table_name . " p
-                      LEFT JOIN clients c ON p.client_id = c.id
+                      LEFT JOIN clients c ON p.client_id = c.client_id
                       ORDER BY p.created_at DESC";
             
             // Prepare statement
@@ -31,25 +31,24 @@ class ProjectController {
                 
                 // Fetch records
                 while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    extract($row);
-                    
+
                     $project_item = array(
-                        "id" => $id,
-                        "project_name" => $project_name,
-                        "client_id" => $client_id,
-                        "client_name" => $client_name,
-                        "proposal_id" => $proposal_id,
-                        "attention_to" => $attention_to,
-                        "status" => $status,
-                        "priority" => $priority,
-                        "start_date" => $start_date,
-                        "end_date" => $end_date,
-                        "description" => $description,
-                        "notes" => $notes,
-                        "total_amount" => $total_amount,
-                        "paid_amount" => $paid_amount,
-                        "created_at" => $created_at,
-                        "updated_at" => $updated_at
+                        "id" => $row['project_id'],
+                        "project_name" => $row['project_name'],
+                        "client_id" => $row['client_id'],
+                        "client_name" => $row['client_name'],
+                        "proposal_id" => $row['proposal_id'],
+                        "attn_to" => $row['attn_to'],
+                        "status" => $row['status'],
+                        "priority" => $row['priority'],
+                        "start_date" => $row['start_date'],
+                        "end_date" => $row['end_date'],
+                        "description" => $row['description'],
+                        "notes" => $row['notes'],
+                        "total_amount" => $row['total_amount'],
+                        "paid_amount" => $row['paid_amount'],
+                        "created_at" => $row['created_at'],
+                        "updated_at" => $row['updated_at']
                     );
                     
                     array_push($projects_arr, $project_item);
@@ -79,7 +78,7 @@ class ProjectController {
             // Create query
             $query = "SELECT p.*, c.client_name 
                       FROM " . $this->table_name . " p
-                      LEFT JOIN clients c ON p.client_id = c.id
+                      LEFT JOIN clients c ON p.client_id = c.client_id
                       WHERE p.id = ?";
             
             // Prepare statement
@@ -106,7 +105,7 @@ class ProjectController {
                     "client_id" => $client_id,
                     "client_name" => $client_name,
                     "proposal_id" => $proposal_id,
-                    "attention_to" => $attention_to,
+                    "attn_to" => $attn_to,
                     "status" => $status,
                     "priority" => $priority,
                     "start_date" => $start_date,
@@ -145,7 +144,7 @@ class ProjectController {
                       SET project_name = :project_name, 
                           client_id = :client_id, 
                           proposal_id = :proposal_id,
-                          attention_to = :attention_to, 
+                          attn_to = :attn_to, 
                           status = :status,
                           priority = :priority,
                           start_date = :start_date,
@@ -162,7 +161,7 @@ class ProjectController {
             $project_name = htmlspecialchars(strip_tags($data['project_name']));
             $client_id = htmlspecialchars(strip_tags($data['client_id']));
             $proposal_id = isset($data['proposal_id']) ? htmlspecialchars(strip_tags($data['proposal_id'])) : null;
-            $attention_to = isset($data['attention_to']) ? htmlspecialchars(strip_tags($data['attention_to'])) : null;
+            $attn_to = isset($data['attn_to']) ? htmlspecialchars(strip_tags($data['attn_to'])) : null;
             $status = isset($data['status']) ? htmlspecialchars(strip_tags($data['status'])) : 'pending';
             $priority = isset($data['priority']) ? htmlspecialchars(strip_tags($data['priority'])) : 'medium';
             $start_date = isset($data['start_date']) ? htmlspecialchars(strip_tags($data['start_date'])) : null;
@@ -175,7 +174,7 @@ class ProjectController {
             $stmt->bindParam(':project_name', $project_name);
             $stmt->bindParam(':client_id', $client_id);
             $stmt->bindParam(':proposal_id', $proposal_id);
-            $stmt->bindParam(':attention_to', $attention_to);
+            $stmt->bindParam(':attn_to', $attn_to);
             $stmt->bindParam(':status', $status);
             $stmt->bindParam(':priority', $priority);
             $stmt->bindParam(':start_date', $start_date);
@@ -192,7 +191,7 @@ class ProjectController {
                 return array(
                     "status" => "success",
                     "message" => "Project created successfully",
-                    "id" => $last_id
+                    "data" => $last_id
                 );
             } else {
                 return array(
@@ -216,7 +215,7 @@ class ProjectController {
                       SET project_name = :project_name, 
                           client_id = :client_id, 
                           proposal_id = :proposal_id,
-                          attention_to = :attention_to, 
+                          attn_to = :attn_to, 
                           status = :status,
                           priority = :priority,
                           start_date = :start_date,
@@ -235,7 +234,7 @@ class ProjectController {
             $project_name = htmlspecialchars(strip_tags($data['project_name']));
             $client_id = htmlspecialchars(strip_tags($data['client_id']));
             $proposal_id = isset($data['proposal_id']) ? htmlspecialchars(strip_tags($data['proposal_id'])) : null;
-            $attention_to = isset($data['attention_to']) ? htmlspecialchars(strip_tags($data['attention_to'])) : null;
+            $attn_to = isset($data['attn_to']) ? htmlspecialchars(strip_tags($data['attn_to'])) : null;
             $status = isset($data['status']) ? htmlspecialchars(strip_tags($data['status'])) : 'pending';
             $priority = isset($data['priority']) ? htmlspecialchars(strip_tags($data['priority'])) : 'medium';
             $start_date = isset($data['start_date']) ? htmlspecialchars(strip_tags($data['start_date'])) : null;
@@ -248,7 +247,7 @@ class ProjectController {
             $stmt->bindParam(':project_name', $project_name);
             $stmt->bindParam(':client_id', $client_id);
             $stmt->bindParam(':proposal_id', $proposal_id);
-            $stmt->bindParam(':attention_to', $attention_to);
+            $stmt->bindParam(':attn_to', $attn_to);
             $stmt->bindParam(':status', $status);
             $stmt->bindParam(':priority', $priority);
             $stmt->bindParam(':start_date', $start_date);
@@ -421,7 +420,7 @@ class ProjectController {
                     "project_name" => isset($data['project_name']) ? $data['project_name'] : $proposal['proposal_name'],
                     "client_id" => $proposal['client_id'],
                     "proposal_id" => $proposal_id,
-                    "attention_to" => $proposal['attention_to'],
+                    "attn_to" => $proposal['attn_to'],
                     "status" => isset($data['status']) ? $data['status'] : 'pending',
                     "priority" => isset($data['priority']) ? $data['priority'] : 'medium',
                     "start_date" => isset($data['start_date']) ? $data['start_date'] : null,
@@ -437,7 +436,7 @@ class ProjectController {
                                 SET project_name = :project_name, 
                                     client_id = :client_id, 
                                     proposal_id = :proposal_id,
-                                    attention_to = :attention_to, 
+                                    attn_to = :attn_to, 
                                     status = :status,
                                     priority = :priority,
                                     start_date = :start_date,
@@ -452,7 +451,7 @@ class ProjectController {
                 $create_stmt->bindParam(':project_name', $project_data['project_name']);
                 $create_stmt->bindParam(':client_id', $project_data['client_id']);
                 $create_stmt->bindParam(':proposal_id', $project_data['proposal_id']);
-                $create_stmt->bindParam(':attention_to', $project_data['attention_to']);
+                $create_stmt->bindParam(':attn_to', $project_data['attn_to']);
                 $create_stmt->bindParam(':status', $project_data['status']);
                 $create_stmt->bindParam(':priority', $project_data['priority']);
                 $create_stmt->bindParam(':start_date', $project_data['start_date']);

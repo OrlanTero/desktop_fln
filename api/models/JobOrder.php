@@ -8,6 +8,7 @@ class JobOrder {
     public $job_order_id;
     public $service_id;
     public $proposal_id;
+    public $project_id;
     public $description;
     public $estimated_fee;
     public $status;
@@ -21,21 +22,23 @@ class JobOrder {
     // Create job order
     public function create() {
         $query = "INSERT INTO " . $this->table . "
-                (service_id, proposal_id, description, estimated_fee, status)
+                (service_id, proposal_id, project_id, description, estimated_fee, status)
                 VALUES
-                (:service_id, :proposal_id, :description, :estimated_fee, :status)";
+                (:service_id, :proposal_id, :project_id, :description, :estimated_fee, :status)";
 
         $stmt = $this->conn->prepare($query);
 
         // Clean and bind data
         $this->service_id = htmlspecialchars(strip_tags($this->service_id));
         $this->proposal_id = htmlspecialchars(strip_tags($this->proposal_id));
+        $this->project_id = htmlspecialchars(strip_tags($this->project_id));
         $this->description = htmlspecialchars(strip_tags($this->description));
         $this->estimated_fee = htmlspecialchars(strip_tags($this->estimated_fee));
         $this->status = htmlspecialchars(strip_tags($this->status));
 
         $stmt->bindParam(':service_id', $this->service_id);
         $stmt->bindParam(':proposal_id', $this->proposal_id);
+        $stmt->bindParam(':project_id', $this->project_id);
         $stmt->bindParam(':description', $this->description);
         $stmt->bindParam(':estimated_fee', $this->estimated_fee);
         $stmt->bindParam(':status', $this->status);

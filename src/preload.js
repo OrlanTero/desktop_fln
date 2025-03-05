@@ -304,6 +304,10 @@ contextBridge.exposeInMainWorld('api', {
     updateStatus: async (id, statusData) => {
       return makeRequest(`${API_BASE_URL}/proposals/${id}/status`, 'PUT', statusData);
     },
+
+    updateOnlyStatus: async (id, status) => {
+      return makeRequest(`${API_BASE_URL}/proposals/${id}/${status}`, 'PUT');
+    },
     
     // Save proposal as draft
     saveAsDraft: async (proposalData) => {

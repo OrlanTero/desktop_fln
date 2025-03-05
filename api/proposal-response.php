@@ -71,6 +71,23 @@ if (!isset($error)) {
                 throw new Exception('Failed to update proposal status. Please try again.');
             }
             
+            // If accepted, also update the notes and response date
+            if ($status === 'Accepted') {
+                $query = "UPDATE proposals 
+                          SET notes = :notes,
+                              response_date = :response_date
+                          WHERE proposal_id = :id";
+                
+                $stmt = $db->prepare($query);
+                $stmt->bindParam(':notes', $notes);
+                $stmt->bindParam(':response_date', date('Y-m-d H:i:s'));
+                $stmt->bindParam(':id', $proposalId);
+                
+                if (!$stmt->execute()) {
+                    throw new Exception('Failed to update proposal notes. Please try again.');
+                }
+            }
+            
             $response['success'] = true;
             $response['message'] = 'Thank you for your response. The proposal has been ' . strtolower($status) . '.';
         }

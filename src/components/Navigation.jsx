@@ -40,6 +40,7 @@ import {
   Settings as SettingsIcon,
   ExpandLess,
   ExpandMore,
+  Transform as TransformIcon,
 } from '@mui/icons-material';
 
 const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
@@ -141,6 +142,11 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
           text: 'Proposals',
           icon: <ProposalsIcon />,
           path: '/proposals',
+        },
+        {
+          text: 'Proposal Conversion',
+          icon: <TransformIcon />,
+          path: '/proposal-conversion',
         },
         {
           text: 'Projects',

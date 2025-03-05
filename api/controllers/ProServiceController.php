@@ -154,9 +154,8 @@ class ProServiceController {
     // Create pro service
     public function create($data) {
         // Validate data
-        if(empty($data->proposal_id) || empty($data->service_id) || empty($data->pro_type)) {
+        if( empty($data->service_id) || empty($data->pro_type)) {
             error_log("Missing required fields: " . json_encode([
-                'proposal_id' => $data->proposal_id ?? null,
                 'service_id' => $data->service_id ?? null,
                 'pro_type' => $data->pro_type ?? null
             ]));
@@ -178,7 +177,8 @@ class ProServiceController {
         
         try {
             // Set pro service properties
-            $this->proService->proposal_id = $data->proposal_id;
+            $this->proService->project_id = isset($data->project_id) ? $data->project_id : null;
+            $this->proService->proposal_id = isset($data->proposal_id) ? $data->proposal_id : null;
             $this->proService->service_id = $data->service_id;
             $this->proService->pro_type = $data->pro_type;
             $this->proService->quantity = $data->quantity ?? 1;
@@ -194,15 +194,7 @@ class ProServiceController {
                 $this->proService->price = $this->proService->price - $discount;
             }
             
-            error_log("Attempting to create pro service with data: " . json_encode([
-                'proposal_id' => $this->proService->proposal_id,
-                'service_id' => $this->proService->service_id,
-                'pro_type' => $this->proService->pro_type,
-                'quantity' => $this->proService->quantity,
-                'unit_price' => $this->proService->unit_price,
-                'price' => $this->proService->price,
-                'discount_percentage' => $this->proService->discount_percentage
-            ]));
+          
             
             // Create pro service
             if($this->proService->create()) {
@@ -211,6 +203,7 @@ class ProServiceController {
                     'message' => 'Pro Service created successfully',
                     'data' => [
                         'pro_service_id' => $this->proService->pro_service_id,
+                        'project_id' => $this->proService->project_id,
                         'proposal_id' => $this->proService->proposal_id,
                         'service_id' => $this->proService->service_id,
                         'pro_type' => $this->proService->pro_type,

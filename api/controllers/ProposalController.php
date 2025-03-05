@@ -281,6 +281,26 @@ class ProposalController {
         }
     }
 
+
+    public function updateOnlyStatus($id, $status) {
+        try {
+            $query = "UPDATE proposals SET status = :status, updated_at = NOW() WHERE proposal_id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':status', $status);
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+            return array(
+                "status" => "success",
+                "message" => "Proposal status updated successfully"
+            );
+        } catch(PDOException $e) {
+            return array(
+                "status" => "error",
+                "message" => "Error updating proposal status: " . $e->getMessage()
+            );
+        }
+    }
+
     // Update proposal status
     public function updateStatus($id, $data) {
         try {

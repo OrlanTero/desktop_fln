@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -27,12 +27,16 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { format, parse } from 'date-fns';
-import Navigation from '../components/Navigation';
+import Layout from '../components/Layout';
+import JobOrderList from '../components/JobOrderList';
 
 const ProjectForm = ({ user, onLogout }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const isEditMode = Boolean(id);
+  const isConversion = location.state?.isConversion;
+  const proposalData = location.state?.proposalData;
   
   // State for project data
   const [formData, setFormData] = useState({
@@ -67,6 +71,11 @@ const ProjectForm = ({ user, onLogout }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   
+  // Add job order related state
+  const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
+  const [jobOrderError, setJobOrderError] = useState(null);
+  const [localJobOrders, setLocalJobOrders] = useState({});
+  
   // Calculate totals
   const calculateSubtotal = () => {
     return selectedServices.reduce((total, service) => total + service.price, 0);
@@ -88,7 +97,7 @@ const ProjectForm = ({ user, onLogout }) => {
         if (proposalsResponse.success) {
           // Filter only accepted proposals
           const acceptedProposals = proposalsResponse.data.filter(
-            proposal => proposal.status === 'Accepted'
+            proposal => proposal.status.toLowerCase() === 'accepted'
           );
           setProposals(acceptedProposals || []);
         }
@@ -99,8 +108,46 @@ const ProjectForm = ({ user, onLogout }) => {
           setServiceCategories(categoriesResponse.data || []);
         }
         
-        // If in edit mode, fetch project data
-        if (isEditMode) {
+        // If converting from proposal
+        if (isConversion && proposalData) {
+          setFormData({
+            project_name: proposalData.project_name || '',
+            client_id: proposalData.client_id || '',
+            proposal_id: proposalData.proposal_id || '',
+            attn_to: proposalData.attn_to || '',
+            start_date: proposalData.project_start ? new Date(proposalData.project_start) : null,
+            end_date: proposalData.project_end ? new Date(proposalData.project_end) : null,
+            description: proposalData.description || '',
+            priority: 'Medium',
+            status: 'Not Started',
+            total_amount: proposalData.total_amount || 0,
+            paid_amount: 0,
+            notes: proposalData.notes || ''
+          });
+
+          // Fetch services from proposal
+          const servicesResponse = await window.api.proService.getByProposal(proposalData.id);
+          if (servicesResponse.success) {
+            const services = servicesResponse.data.map(service => ({
+              ...service,
+              price: service.quantity * service.unit_price * (1 - service.discount_percentage / 100)
+            }));
+            setSelectedServices(services);
+
+            // Fetch job orders for each service
+            const jobOrdersMap = {};
+            for (const service of services) {
+              const jobOrdersResponse = await window.api.jobOrders.getByService(service.service_id, proposalData.id);
+              console.log(jobOrdersResponse)
+              if (jobOrdersResponse.success) {
+                jobOrdersMap[service.service_id] = jobOrdersResponse.data || [];
+              }
+            }
+            setLocalJobOrders(jobOrdersMap);
+          }
+        }
+        // If in edit mode
+        else if (isEditMode) {
           const projectResponse = await window.api.project.getById(id);
           if (projectResponse.success && projectResponse.data) {
             const project = projectResponse.data;
@@ -115,8 +162,6 @@ const ProjectForm = ({ user, onLogout }) => {
             if (servicesResponse.success) {
               setSelectedServices(servicesResponse.data || []);
             }
-          } else {
-            setError('Failed to load project data');
           }
         }
       } catch (err) {
@@ -127,7 +172,7 @@ const ProjectForm = ({ user, onLogout }) => {
     };
     
     fetchData();
-  }, [id, isEditMode]);
+  }, [id, isEditMode, isConversion, proposalData]);
   
   // Load services when category changes
   useEffect(() => {
@@ -253,65 +298,114 @@ const ProjectForm = ({ user, onLogout }) => {
     setSelectedServices(updatedServices);
   };
   
-  // Submit the form
+  // Add job order management functions
+  const handleManageJobOrders = (service) => {
+    setSelectedServiceDetails(service);
+    
+    if (!localJobOrders[service.service_id]) {
+      setLocalJobOrders(prev => ({
+        ...prev,
+        [service.service_id]: []
+      }));
+    }
+  };
+  
+  const handleJobOrderUpdate = (serviceId, updatedJobOrders) => {
+    setLocalJobOrders(prev => ({
+      ...prev,
+      [serviceId]: updatedJobOrders
+    }));
+  };
+  
+  // Update handleSubmit to include job orders
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     
     try {
-      // Format dates for API
-      const formattedData = {
+      // Create project first
+      const projectData = {
         ...formData,
         start_date: formData.start_date ? format(formData.start_date, 'yyyy-MM-dd') : null,
         end_date: formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : null,
         total_amount: calculateSubtotal(),
-        created_by: localStorage.getItem('userId')
+        status: 'Pending'
       };
+
+      if (proposalData) {
+        projectData.proposal_id = proposalData.id
+      }
       
+      console.log(projectData, proposalData);
       let projectId;
-      
-      // Create or update project
       if (isEditMode) {
-        const response = await window.api.project.update(id, formattedData);
+        const response = await window.api.project.update(id, projectData);
         if (!response.success) {
-          throw new Error(response.message || 'Failed to update project');
+          throw new Error('Failed to update project: ' + response.message);
         }
         projectId = id;
       } else {
-        const response = await window.api.project.create(formattedData);
+        const response = await window.api.project.create(projectData);
+
+        console.log(response)
+
         if (!response.success) {
-          throw new Error(response.message || 'Failed to create project');
+          throw new Error('Failed to create project: ' + response.message);
         }
-        projectId = response.data.project_id;
+        projectId = response.data; // Make sure this matches the API response structure
       }
-      
-      // If editing, delete existing services first
-      if (isEditMode) {
-        await window.api.proService.deleteByProject(projectId);
-      }
-      
-      // Add services
+
+      // Add services with the new project_id
       for (const service of selectedServices) {
         const serviceData = {
           project_id: projectId,
           service_id: service.service_id,
-          pro_type: 'Project',
           quantity: service.quantity,
           unit_price: service.unit_price,
-          discount_percentage: service.discount_percentage
+          price: service.price,
+          discount_percentage: service.discount_percentage || 0,
+          pro_type: 'Project'
         };
+
         
-        await window.api.proService.create(serviceData);
+        const serviceResponse = await window.api.proService.create(serviceData);
+        if (!serviceResponse.success) {
+          throw new Error('Failed to add service: ' + serviceResponse.message);
+        }
+
+        // Get the created service ID from the response
+        const createdServiceId = serviceResponse.data.pro_service_id;
+        
+        // Add job orders for this service using the new service ID
+        const jobOrders = localJobOrders[service.service_id] || [];
+        for (const jobOrder of jobOrders) {
+          const jobOrderData = {
+            description: jobOrder.description,
+            estimated_fee: jobOrder.estimated_fee,
+            service_id: createdServiceId,
+            project_id: projectId,
+            proposal_id: proposalData ? proposalData.id : null,
+            status: 'Pending'
+          };
+
+          console.log(jobOrderData)
+          
+          const jobOrderResponse = await window.api.jobOrders.create(jobOrderData);
+          console.log(jobOrderResponse)
+          if (!jobOrderResponse.success) {
+            throw new Error('Failed to create job order: ' + jobOrderResponse.message);
+          }
+        }
       }
       
-      // Update project total
-      await window.api.project.update(projectId, { 
-        total_amount: calculateSubtotal() 
-      });
+      // If this is a conversion, update the proposal status
+      if (isConversion && proposalData) {
+        const updateResponse =await window.api.proposal.updateOnlyStatus(proposalData.id, 'Converted' );
+        console.log(updateResponse)
+      }
       
       setSuccess('Project saved successfully');
-      
-      // Navigate back to projects list after a short delay
       setTimeout(() => {
         navigate('/projects');
       }, 2000);
@@ -323,69 +417,98 @@ const ProjectForm = ({ user, onLogout }) => {
     }
   };
   
-  // Handle cancel
-  const handleCancel = () => {
-    navigate('/projects');
-  };
-  
-  if (loading && !isEditMode) {
+  // Add job orders UI component
+  const renderJobOrders = () => {
+    if (!selectedServiceDetails) {
+      return null;
+    }
+
     return (
-      <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-        <Box sx={{ width: 240, flexShrink: 0 }}>
-          <Navigation user={user} onLogout={onLogout} />
+      <Box mt={3}>
+        {jobOrderError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setJobOrderError(null)}>
+            {jobOrderError}
+          </Alert>
+        )}
+        <Paper sx={{ p: 2 }}>
+          <JobOrderList
+            serviceId={selectedServiceDetails.service_id}
+            projectId={id || 'temp'}
+            serviceName={selectedServiceDetails.service_name}
+            jobOrders={localJobOrders[selectedServiceDetails.service_id] || []}
+            onUpdate={(updatedJobOrders) => handleJobOrderUpdate(selectedServiceDetails.service_id, updatedJobOrders)}
+          />
+          <Box mt={2}>
+            <Button
+              variant="outlined"
+              onClick={() => setSelectedServiceDetails(null)}
+            >
+              Close Job Orders
+            </Button>
         </Box>
-        <Box component="main" sx={{ flexGrow: 1, p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-          <CircularProgress />
-        </Box>
+        </Paper>
       </Box>
     );
-  }
+  };
+  
+  // Update the services table to include job order management
+  const renderServicesTable = () => (
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Service</TableCell>
+            <TableCell align="right">Quantity</TableCell>
+            <TableCell align="right">Unit Price</TableCell>
+            <TableCell align="right">Discount (%)</TableCell>
+            <TableCell align="right">Total</TableCell>
+            <TableCell align="center">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {selectedServices.map((service, index) => (
+            <TableRow key={index}>
+              <TableCell>{service.service_name}</TableCell>
+              <TableCell align="right">{service.quantity}</TableCell>
+              <TableCell align="right">{service.unit_price}</TableCell>
+              <TableCell align="right">{service.discount_percentage || 0}</TableCell>
+              <TableCell align="right">{service.price}</TableCell>
+              <TableCell align="center">
+                <IconButton
+                  color="primary"
+                  onClick={() => handleManageJobOrders(service)}
+                >
+                  <AddIcon />
+                </IconButton>
+                <IconButton
+                  color="error"
+                  onClick={() => handleRemoveService(index)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
   
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Box sx={{ width: 240, flexShrink: 0 }}>
-        <Navigation user={user} onLogout={onLogout} />
-      </Box>
-      
-      <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto', height: '100%' }}>
+    <Layout user={user} onLogout={onLogout}>
+      <Box sx={{ p: 3 }}>
         <Typography variant="h4" gutterBottom>
-          {isEditMode ? 'Edit Project' : 'Create New Project'}
+          {isEditMode ? 'Edit Project' : isConversion ? 'Convert Proposal to Project' : 'Create New Project'}
         </Typography>
         
         <form onSubmit={handleSubmit}>
-          {!isEditMode && (
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Create From Proposal (Optional)
-              </Typography>
-              
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Select Accepted Proposal</InputLabel>
-                <Select
-                  name="proposal_id"
-                  value={formData.proposal_id}
-                  onChange={handleProposalChange}
-                >
-                  <MenuItem value="">
-                    <em>None (Create from scratch)</em>
-                  </MenuItem>
-                  {proposals.map((proposal) => (
-                    <MenuItem key={proposal.proposal_id} value={proposal.proposal_id}>
-                      {proposal.proposal_name} - {proposal.client_name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Paper>
-          )}
-          
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Project Information
+              Project Details
             </Typography>
             
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Project Name"
@@ -393,18 +516,17 @@ const ProjectForm = ({ user, onLogout }) => {
                   value={formData.project_name}
                   onChange={handleChange}
                   required
-                  margin="normal"
                 />
               </Grid>
               
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth margin="normal">
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth required>
                   <InputLabel>Client</InputLabel>
                   <Select
                     name="client_id"
                     value={formData.client_id}
                     onChange={handleChange}
-                    required
+                    disabled={isConversion}
                   >
                     {clients.map((client) => (
                       <MenuItem key={client.client_id} value={client.client_id}>
@@ -415,74 +537,51 @@ const ProjectForm = ({ user, onLogout }) => {
                 </FormControl>
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Attention To"
                   name="attn_to"
                   value={formData.attn_to}
                   onChange={handleChange}
-                  margin="normal"
                 />
               </Grid>
               
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth margin="normal">
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth required>
                   <InputLabel>Priority</InputLabel>
                   <Select
                     name="priority"
                     value={formData.priority}
                     onChange={handleChange}
-                    required
                   >
                     <MenuItem value="Low">Low</MenuItem>
                     <MenuItem value="Medium">Medium</MenuItem>
                     <MenuItem value="High">High</MenuItem>
-                    <MenuItem value="Urgent">Urgent</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
               
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    required
-                  >
-                    <MenuItem value="Not Started">Not Started</MenuItem>
-                    <MenuItem value="In Progress">In Progress</MenuItem>
-                    <MenuItem value="On Hold">On Hold</MenuItem>
-                    <MenuItem value="Completed">Completed</MenuItem>
-                    <MenuItem value="Cancelled">Cancelled</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Start Date"
                   type="date"
+                  label="Start Date"
                   name="start_date"
                   value={formData.start_date ? format(formData.start_date, 'yyyy-MM-dd') : ''}
                   onChange={(e) => handleDateChange('start_date', e)}
-                  margin="normal"
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="End Date"
                   type="date"
+                  label="End Date"
                   name="end_date"
                   value={formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : ''}
                   onChange={(e) => handleDateChange('end_date', e)}
-                  margin="normal"
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
@@ -490,62 +589,14 @@ const ProjectForm = ({ user, onLogout }) => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
+                  multiline
+                  rows={4}
                   label="Description"
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  multiline
-                  rows={3}
-                  margin="normal"
                 />
               </Grid>
-              
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
-                  multiline
-                  rows={3}
-                  margin="normal"
-                />
-              </Grid>
-              
-              {isEditMode && (
-                <>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Total Amount"
-                      name="total_amount"
-                      type="number"
-                      value={formData.total_amount}
-                      InputProps={{
-                        readOnly: true,
-                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                      }}
-                      margin="normal"
-                    />
-                  </Grid>
-                  
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Paid Amount"
-                      name="paid_amount"
-                      type="number"
-                      value={formData.paid_amount}
-                      InputProps={{
-                        readOnly: true,
-                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                      }}
-                      margin="normal"
-                    />
-                  </Grid>
-                </>
-              )}
             </Grid>
           </Paper>
           
@@ -555,8 +606,8 @@ const ProjectForm = ({ user, onLogout }) => {
             </Typography>
             
             <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth margin="normal">
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
                   <InputLabel>Service Category</InputLabel>
                   <Select
                     value={selectedCategory}
@@ -571,13 +622,12 @@ const ProjectForm = ({ user, onLogout }) => {
                 </FormControl>
               </Grid>
               
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth margin="normal">
+              <Grid item xs={12} sm={6} md={3}>
+                <FormControl fullWidth>
                   <InputLabel>Service</InputLabel>
                   <Select
                     value={selectedService}
                     onChange={(e) => setSelectedService(e.target.value)}
-                    disabled={!selectedCategory}
                   >
                     {services.map((service) => (
                       <MenuItem key={service.service_id} value={service.service_id}>
@@ -588,41 +638,38 @@ const ProjectForm = ({ user, onLogout }) => {
                 </FormControl>
               </Grid>
               
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} sm={6} md={2}>
                 <TextField
                   fullWidth
-                  label="Quantity"
                   type="number"
+                  label="Quantity"
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
-                  margin="normal"
                   InputProps={{ inputProps: { min: 1 } }}
                 />
               </Grid>
               
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} sm={6} md={2}>
                 <TextField
                   fullWidth
-                  label="Unit Price"
                   type="number"
+                  label="Unit Price (₱)"
                   value={unitPrice}
                   onChange={(e) => setUnitPrice(Number(e.target.value))}
-                  margin="normal"
                   InputProps={{
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                    startAdornment: <InputAdornment position="start">₱</InputAdornment>,
                     inputProps: { min: 0 }
                   }}
                 />
               </Grid>
               
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} sm={6} md={2}>
                 <TextField
                   fullWidth
-                  label="Discount %"
                   type="number"
+                  label="Discount (%)"
                   value={discount}
                   onChange={(e) => setDiscount(Number(e.target.value))}
-                  margin="normal"
                   InputProps={{
                     endAdornment: <InputAdornment position="end">%</InputAdornment>,
                     inputProps: { min: 0, max: 100 }
@@ -630,84 +677,26 @@ const ProjectForm = ({ user, onLogout }) => {
                 />
               </Grid>
               
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6} md={2}>
                 <Button
+                  fullWidth
                   variant="contained"
-                  color="primary"
-                  startIcon={<AddIcon />}
                   onClick={handleAddService}
-                  disabled={!selectedService}
+                  startIcon={<AddIcon />}
+                  sx={{ height: '100%' }}
                 >
-                  Add Service
+                  Add
                 </Button>
               </Grid>
             </Grid>
             
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Service</TableCell>
-                    <TableCell align="right">Quantity</TableCell>
-                    <TableCell align="right">Unit Price</TableCell>
-                    <TableCell align="right">Discount</TableCell>
-                    <TableCell align="right">Total</TableCell>
-                    <TableCell align="center">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {selectedServices.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center">
-                        No services added yet
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    selectedServices.map((service, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{service.service_category_name}</TableCell>
-                        <TableCell>{service.service_name}</TableCell>
-                        <TableCell align="right">{service.quantity}</TableCell>
-                        <TableCell align="right">${service.unit_price.toFixed(2)}</TableCell>
-                        <TableCell align="right">{service.discount_percentage}%</TableCell>
-                        <TableCell align="right">${service.price.toFixed(2)}</TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            color="error"
-                            onClick={() => handleRemoveService(index)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            
-            <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1">
-                    Total Services: {selectedServices.length}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6} sx={{ textAlign: 'right' }}>
-                  <Typography variant="h6">
-                    Total: ${calculateSubtotal().toFixed(2)}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </Box>
+            {renderServicesTable()}
           </Paper>
           
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+          <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
             <Button
               variant="outlined"
-              color="secondary"
-              onClick={handleCancel}
+              onClick={() => navigate('/projects')}
               disabled={loading}
             >
               Cancel
@@ -715,13 +704,15 @@ const ProjectForm = ({ user, onLogout }) => {
             <Button
               type="submit"
               variant="contained"
-              color="primary"
               disabled={loading}
+              startIcon={loading && <CircularProgress size={20} />}
             >
-              {loading ? <CircularProgress size={24} /> : isEditMode ? 'Update Project' : 'Create Project'}
+              {loading ? 'Saving...' : 'Save Project'}
             </Button>
           </Box>
         </form>
+        
+        {renderJobOrders()}
         
         <Snackbar
           open={Boolean(error)}
@@ -743,7 +734,7 @@ const ProjectForm = ({ user, onLogout }) => {
           </Alert>
         </Snackbar>
       </Box>
-    </Box>
+    </Layout>
   );
 };
 

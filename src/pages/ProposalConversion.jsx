@@ -30,7 +30,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import SearchIcon from '@mui/icons-material/Search';
-import Layout from '../components/Layout';
+import Navigation from '../components/Navigation';
 import { format } from 'date-fns';
 
 const Proposals = ({ user, onLogout }) => {
@@ -46,6 +46,7 @@ const Proposals = ({ user, onLogout }) => {
   
   // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
   
   // Fetch proposals on component mount
@@ -81,8 +82,10 @@ const Proposals = ({ user, onLogout }) => {
       
       const response = await window.api.proposal.getAll();
       if (response && response.success) {
-        setProposals(response.data || []);
-        setFilteredProposals(response.data || []);
+
+        const dataa =(response.data || []).filter(proposal => proposal.status.toLowerCase() === 'accepted');
+        setProposals(dataa)
+        setFilteredProposals(dataa);
       } else {
         setError('Failed to load proposals: ' + (response?.message || 'Unknown error'));
       }
@@ -99,46 +102,12 @@ const Proposals = ({ user, onLogout }) => {
     navigate('/proposals/new');
   };
   
-  // Handle edit proposal
-  const handleEditProposal = (id) => {
-    navigate(`/proposals/edit/${id}`);
-  };
-  
   // Handle view proposal
   const handleViewProposal = (id) => {
     navigate(`/proposals/view/${id}`);
   };
   
-  // Handle delete proposal
-  const handleDeleteClick = (proposal) => {
-    setSelectedProposal(proposal);
-    setDeleteDialogOpen(true);
-  };
-  
-  const handleDeleteConfirm = async () => {
-    if (!selectedProposal) return;
-    
-    setLoading(true);
-    try {
-      // First delete all services associated with this proposal
-      await window.api.proService.deleteByProposal(selectedProposal.proposal_id);
-      
-      // Then delete the proposal
-      const response = await window.api.proposal.delete(selectedProposal.proposal_id);
-      if (response.success) {
-        setSuccess('Proposal deleted successfully');
-        fetchProposals();
-      } else {
-        setError('Failed to delete proposal: ' + response.message);
-      }
-    } catch (err) {
-      setError('Error deleting proposal: ' + err.message);
-    } finally {
-      setLoading(false);
-      setDeleteDialogOpen(false);
-      setSelectedProposal(null);
-    }
-  };
+
   
   // Handle convert to project
   const handleConvertClick = (proposal) => {
@@ -147,13 +116,50 @@ const Proposals = ({ user, onLogout }) => {
       return;
     }
     
-    // Navigate to project form with proposal data
-    navigate('/projects/new', { 
-      state: { 
-        proposalData: proposal,
-        isConversion: true
+    setSelectedProposal(proposal);
+    setConvertDialogOpen(true);
+  };
+  
+  const handleConvertConfirm = async () => {
+    if (!selectedProposal) return;
+    
+    setLoading(true);
+    try {
+      // Create project from proposal data
+      const projectData = {
+        project_name: selectedProposal.project_name || selectedProposal.proposal_name,
+        client_id: selectedProposal.client_id,
+        proposal_id: selectedProposal.proposal_id,
+        attn_to: selectedProposal.attn_to,
+        description: selectedProposal.description,
+        notes: selectedProposal.notes,
+        total_amount: selectedProposal.total_amount,
+        status: 'pending',
+        priority: 'medium'
+      };
+
+      const response = await window.api.project.create(projectData);
+      
+      if (response.status === 'success') {
+        // Copy services from proposal to project
+        await window.api.proService.copyToProject(selectedProposal.proposal_id);
+        
+        // Update proposal status to converted
+        await window.api.proposal.updateStatus(selectedProposal.proposal_id, { status: 'Converted' });
+        
+        setSuccess('Proposal converted to project successfully');
+        fetchProposals();
+      } else {
+        setError('Failed to convert proposal to project: ' + response.message);
       }
-    });
+    } catch (err) {
+      console.error('Error converting proposal to project:', err);
+      setError('Error converting proposal to project: ' + (err?.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+      setConvertDialogOpen(false);
+      setSelectedProposal(null);
+    }
   };
   
   // Get status chip color
@@ -191,22 +197,17 @@ const Proposals = ({ user, onLogout }) => {
   }
   
   return (
-    <Layout user={user} onLogout={onLogout}>
-      <Box sx={{ p: 3 }}>
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <Box sx={{ width: 240, flexShrink: 0 }}>
+        <Navigation user={user} onLogout={onLogout} />
+      </Box>
+      
+      <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto', height: '100%' }}>
         <Typography variant="h4" gutterBottom>
-          Proposals
+          Proposal Conversion
         </Typography>
         
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={handleCreateProposal}
-          >
-            Create New Proposal
-          </Button>
-        </Box>
+       
         
         <Box sx={{ mb: 3 }}>
           <TextField
@@ -271,13 +272,6 @@ const Proposals = ({ user, onLogout }) => {
                         <VisibilityIcon />
                       </IconButton>
                       <IconButton
-                        color="secondary"
-                        onClick={() => handleEditProposal(proposal.proposal_id)}
-                        title="Edit Proposal"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
                         color="success"
                         onClick={() => handleConvertClick(proposal)}
                         title="Convert to Project"
@@ -285,13 +279,7 @@ const Proposals = ({ user, onLogout }) => {
                       >
                         <EngineeringIcon />
                       </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDeleteClick(proposal)}
-                        title="Delete Proposal"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                    
                     </TableCell>
                   </TableRow>
                 ))
@@ -300,23 +288,25 @@ const Proposals = ({ user, onLogout }) => {
           </Table>
         </TableContainer>
         
-        {/* Delete Confirmation Dialog */}
+      
+        
+        {/* Convert to Project Dialog */}
         <Dialog
-          open={deleteDialogOpen}
-          onClose={() => setDeleteDialogOpen(false)}
+          open={convertDialogOpen}
+          onClose={() => setConvertDialogOpen(false)}
         >
-          <DialogTitle>Delete Proposal</DialogTitle>
+          <DialogTitle>Convert to Project</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete the proposal "{selectedProposal?.proposal_name}"? This action cannot be undone.
+              Are you sure you want to convert the proposal "{selectedProposal?.proposal_name}" to a project? This will create a new project with all the services from this proposal.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+            <Button onClick={() => setConvertDialogOpen(false)} color="primary">
               Cancel
             </Button>
-            <Button onClick={handleDeleteConfirm} color="error" disabled={loading}>
-              {loading ? <CircularProgress size={24} /> : 'Delete'}
+            <Button onClick={handleConvertConfirm} color="primary" disabled={loading}>
+              {loading ? <CircularProgress size={24} /> : 'Convert'}
             </Button>
           </DialogActions>
         </Dialog>
@@ -342,7 +332,7 @@ const Proposals = ({ user, onLogout }) => {
           </Alert>
         </Snackbar>
       </Box>
-    </Layout>
+    </Box>
   );
 };
 
