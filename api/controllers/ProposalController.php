@@ -35,6 +35,7 @@ class ProposalController {
                     
                     $proposal_item = array(
                         "id" => $row['proposal_id'],
+                        "proposal_reference" => $row['proposal_reference'],
                         "proposal_name" => $row['proposal_name'],
                         "client_id" => $row['client_id'],
                         "client_name" => $row['client_name'],
