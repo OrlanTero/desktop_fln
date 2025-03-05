@@ -68,10 +68,11 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#1976d2',
+    borderBottomColor: '#000000',
     borderBottomStyle: 'solid',
     backgroundColor: '#f5f5f5',
     paddingVertical: 8,
+    marginBottom: 5,
   },
   tableRow: {
     flexDirection: 'row',
@@ -159,6 +160,10 @@ const styles = StyleSheet.create({
   signatureText: {
     fontSize: 10,
     textAlign: 'center',
+  },
+  paymentInstructions: {
+    marginTop: 20,
+    fontSize: 10,
   }
 });
 
@@ -227,6 +232,12 @@ const ProposalPDF = ({ companyInfo, proposalData, clientName, services }) => {
             <Text style={styles.infoLabel}>Client:</Text>
             <Text style={styles.infoValue}>{clientName}</Text>
           </View>
+          {proposalData.attn_to && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Attention To:</Text>
+              <Text style={styles.infoValue}>{proposalData.attn_to}</Text>
+            </View>
+          )}
         </View>
 
         {/* Services and Job Orders Table */}
@@ -254,7 +265,7 @@ const ProposalPDF = ({ companyInfo, proposalData, clientName, services }) => {
               {service.jobOrders && service.jobOrders.map((job, jobIndex) => (
                 <View key={`job-${jobIndex}`} style={styles.jobOrderRow}>
                   <Text style={styles.colNo}></Text>
-                  <Text style={styles.colParticulars}>- {job.description}</Text>
+                  <Text style={styles.colParticulars}>• {job.description}</Text>
                   <Text style={styles.colEstimatedFees}>{formatCurrency(job.estimated_fee)}</Text>
                   <Text style={styles.colServiceFee}></Text>
                 </View>
@@ -286,21 +297,19 @@ const ProposalPDF = ({ companyInfo, proposalData, clientName, services }) => {
             </View>
           </View>
 
-          {/* Payment Details */}
-          {proposalData.has_downpayment && (
-            <View style={{ marginTop: 20 }}>
-              <Text style={{ fontSize: 10, marginBottom: 5 }}>Upon Confirmation please pay:</Text>
-              <Text style={{ fontSize: 10, marginLeft: 20 }}>
-                50% on Service Fee: {formatCurrency(totals.downpayment)}
-              </Text>
-              <Text style={{ fontSize: 10, marginLeft: 20 }}>
-                Estimated Fees (subject for liquidation): {formatCurrency(totals.totalEstimatedFees)}
-              </Text>
-              <Text style={{ fontSize: 10, fontWeight: 'bold', marginTop: 5 }}>
-                GRAND TOTAL: {formatCurrency(totals.grandTotal)}
-              </Text>
-            </View>
-          )}
+          {/* Payment Instructions */}
+          <View style={styles.paymentInstructions}>
+            <Text style={{ fontSize: 10, marginBottom: 5 }}>Upon Confirmation please pay:</Text>
+            <Text style={{ fontSize: 10, marginLeft: 20 }}>
+              50% on Service Fee: {formatCurrency(totals.downpayment)}
+            </Text>
+            <Text style={{ fontSize: 10, marginLeft: 20 }}>
+              Estimated Fees (subject for liquidation): {formatCurrency(totals.totalEstimatedFees)}
+            </Text>
+            <Text style={{ fontSize: 10, fontWeight: 'bold', marginTop: 5 }}>
+              GRAND TOTAL: {formatCurrency(totals.grandTotal)}
+            </Text>
+          </View>
 
           {/* Bank Details */}
           <View style={styles.bankDetails}>
