@@ -20,17 +20,8 @@ async function makeRequest(url, method = 'GET', body = null) {
       options.body = JSON.stringify(body);
     }
 
-    console.log(`Making ${method} request to: ${url}`);
-    if (body) {
-      console.log('Request body keys:', Object.keys(body));
-      console.log('Request body data types:', {
-        base64: typeof body.base64 === 'string' ? `String (length: ${body.base64?.length})` : typeof body.base64,
-        name: typeof body.name
-      });
-    }
     
     const response = await fetch(url, options);
-    console.log('Response status:', response.status);
     
     // Check if response is ok (status in the range 200-299)
     if (!response.ok) {
@@ -38,7 +29,6 @@ async function makeRequest(url, method = 'GET', body = null) {
       let errorMessage;
       try {
         const errorData = await response.json();
-        console.error('Error response data:', errorData);
         errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
       } catch (e) {
         errorMessage = `HTTP error! status: ${response.status}`;
@@ -50,10 +40,8 @@ async function makeRequest(url, method = 'GET', body = null) {
     let data;
     try {
       const responseText = await response.text();
-      console.log('Response text:', responseText);
       data = JSON.parse(responseText);
     } catch (e) {
-      console.error('Error parsing JSON response:', e);
       throw new Error('Invalid JSON response from server');
     }
     
@@ -63,7 +51,6 @@ async function makeRequest(url, method = 'GET', body = null) {
       message: data.message
     };
   } catch (error) {
-    console.error('API request error:', error);
     return { 
       success: false, 
       message: error.message, 

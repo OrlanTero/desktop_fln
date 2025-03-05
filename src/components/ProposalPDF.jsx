@@ -5,8 +5,10 @@ import {
   Text, 
   View, 
   StyleSheet, 
-  Font 
+  Font,
+  Image 
 } from '@react-pdf/renderer';
+import logoPath from '../../assets/images/logo.jpg';
 
 // Register fonts
 Font.register({
@@ -24,254 +26,327 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
-    padding: 30,
+    padding: 40,
     fontFamily: 'Roboto',
   },
-  header: {
-    marginBottom: 20,
-    textAlign: 'center',
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 30,
+  },
+  logoSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 60,
+    height: 60,
+    marginRight: 16,
+  },
+  companyInfo: {
+    flex: 1,
   },
   companyName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1976d2',
-    marginBottom: 5,
+    marginBottom: 4,
   },
-  companyDetails: {
+  companyTagline: {
     fontSize: 10,
+    color: '#666',
+  },
+  contactInfo: {
+    alignItems: 'flex-end',
+  },
+  contactText: {
+    fontSize: 10,
+    color: '#666',
     marginBottom: 2,
   },
-  title: {
-    fontSize: 18,
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    marginBottom: 30,
+  },
+  titleSection: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  proposalTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#1976d2',
-    marginTop: 15,
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  infoTable: {
-    marginBottom: 20,
-  },
-  infoRow: {
-    flexDirection: 'row',
+    color: '#2c3e50',
     marginBottom: 5,
   },
-  infoLabel: {
-    width: 100,
-    fontSize: 10,
-    fontWeight: 'bold',
+  reference: {
+    fontSize: 14,
   },
-  infoValue: {
-    flex: 1,
+  infoSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 30,
+  },
+  clientSection: {
+    width: '48%',
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  detailLabel: {
+    width: '40%',
     fontSize: 10,
+    color: '#666',
+    marginBottom: 4,
+  },
+  detailValue: {
+    width: '60%',
+    fontSize: 10,
+    marginBottom: 4,
+  },
+  servicesSection: {
+    marginBottom: 30,
   },
   tableHeader: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#1976d2',
-    borderBottomStyle: 'solid',
     backgroundColor: '#f5f5f5',
-    paddingTop: 5,
-    paddingBottom: 5,
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  tableHeaderService: {
+    flex: 3,
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  tableHeaderPrice: {
+    flex: 1,
+    fontSize: 11,
+    fontWeight: 'bold',
+    textAlign: 'right',
   },
   tableRow: {
     flexDirection: 'row',
+    padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
-    borderBottomStyle: 'solid',
-    paddingTop: 5,
-    paddingBottom: 5,
+    borderBottomColor: '#eee',
   },
-  tableCol1: {
-    width: '40%',
-    fontSize: 9,
-    paddingLeft: 5,
+  serviceInfo: {
+    flex: 3,
   },
-  tableCol2: {
-    width: '10%',
-    fontSize: 9,
-    textAlign: 'right',
-    paddingRight: 5,
+  serviceName: {
+    fontSize: 11,
+    fontWeight: 'medium',
+    marginBottom: 2,
   },
-  tableCol3: {
-    width: '15%',
-    fontSize: 9,
-    textAlign: 'right',
-    paddingRight: 5,
-  },
-  tableCol4: {
-    width: '15%',
-    fontSize: 9,
-    textAlign: 'right',
-    paddingRight: 5,
-  },
-  tableCol5: {
-    width: '20%',
-    fontSize: 9,
-    textAlign: 'right',
-    paddingRight: 5,
-  },
-  tableHeaderText: {
+  serviceDescription: {
     fontSize: 10,
-    fontWeight: 'bold',
+    color: '#666',
   },
-  totals: {
-    marginTop: 20,
-    alignItems: 'flex-end',
+  servicePrice: {
+    flex: 1,
+    fontSize: 11,
+    textAlign: 'right',
+  },
+  totalsSection: {
+    borderTopWidth: 2,
+    borderTopColor: '#eee',
+    backgroundColor: '#fafafa',
+    padding: 10,
   },
   totalRow: {
     flexDirection: 'row',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   totalLabel: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginRight: 10,
+    flex: 3,
+    fontSize: 11,
+    textAlign: 'right',
+    paddingRight: 16,
   },
   totalValue: {
-    fontSize: 10,
-    width: 80,
+    flex: 1,
+    fontSize: 11,
     textAlign: 'right',
   },
-  grandTotal: {
-    fontSize: 12,
+  totalBold: {
     fontWeight: 'bold',
   },
   notes: {
     marginTop: 30,
-    fontSize: 10,
   },
   notesTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   notesText: {
     fontSize: 10,
+    lineHeight: 1.4,
   },
-  signature: {
-    marginTop: 50,
-    borderTopWidth: 1,
-    borderTopColor: '#000000',
-    borderTopStyle: 'solid',
-    width: 200,
-    paddingTop: 5,
+  terms: {
+    marginTop: 30,
   },
-  signatureText: {
+  termsTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  termsText: {
     fontSize: 10,
+    lineHeight: 1.4,
   }
 });
 
-// Create PDF Document component
 const ProposalPDF = ({ companyInfo, proposalData, clientName, services }) => {
-  // Calculate totals
-  const calculateSubtotal = () => {
-    return services.reduce((sum, service) => sum + service.price, 0);
+  const calculateTotals = () => {
+    const subtotal = services.reduce((sum, service) => sum + parseFloat(service.price || 0), 0);
+    const vat = subtotal * 0.12; // 12% VAT
+    const total = subtotal + vat;
+    
+    return {
+      subtotal: subtotal.toFixed(2),
+      vat: vat.toFixed(2),
+      total: total.toFixed(2)
+    };
   };
 
-  const formatCurrency = (value) => {
-    return `₱${parseFloat(value).toFixed(2)}`;
-  };
+  const { subtotal, vat, total } = calculateTotals();
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Company Header */}
-        <View style={styles.header}>
-          <Text style={styles.companyName}>{companyInfo.company_name}</Text>
-          <Text style={styles.companyDetails}>{companyInfo.address}</Text>
-          <Text style={styles.companyDetails}>Phone: {companyInfo.phone}</Text>
-          <Text style={styles.companyDetails}>Email: {companyInfo.email}</Text>
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>PROPOSAL</Text>
-
-        {/* Info Table */}
-        <View style={styles.infoTable}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Reference No:</Text>
-            <Text style={styles.infoValue}>{proposalData.proposal_reference}</Text>
+        {/* Header with Logo */}
+        <View style={styles.headerContainer}>
+          <View style={styles.logoSection}>
+            <Image src={logoPath} style={styles.logo} />
+            <View style={styles.companyInfo}>
+              <Text style={styles.companyName}>{companyInfo.name}</Text>
+              {companyInfo.tagline && (
+                <Text style={styles.companyTagline}>{companyInfo.tagline}</Text>
+              )}
+            </View>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Date:</Text>
-            <Text style={styles.infoValue}>{new Date().toLocaleDateString()}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Valid Until:</Text>
-            <Text style={styles.infoValue}>
-              {proposalData.valid_until ? new Date(proposalData.valid_until).toLocaleDateString() : 'N/A'}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Client:</Text>
-            <Text style={styles.infoValue}>{clientName}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Project:</Text>
-            <Text style={styles.infoValue}>{proposalData.project_name}</Text>
+          
+          <View style={styles.contactInfo}>
+            {companyInfo.address && (
+              <Text style={styles.contactText}>{companyInfo.address}</Text>
+            )}
+            {companyInfo.phone && (
+              <Text style={styles.contactText}>{companyInfo.phone}</Text>
+            )}
+            {companyInfo.email && (
+              <Text style={styles.contactText}>{companyInfo.email}</Text>
+            )}
           </View>
         </View>
 
-        {/* Services Table */}
-        <View>
+        <View style={styles.divider} />
+
+        {/* Title Section */}
+        <View style={styles.titleSection}>
+          <Text style={styles.proposalTitle}>PROPOSAL</Text>
+          <Text style={styles.reference}>{proposalData.proposal_reference}</Text>
+        </View>
+
+        {/* Client and Proposal Info */}
+        <View style={styles.infoSection}>
+          <View style={styles.clientSection}>
+            <Text style={styles.sectionTitle}>CLIENT</Text>
+            <Text style={styles.detailValue}>{clientName}</Text>
+            {proposalData.client_address && (
+              <Text style={styles.detailValue}>{proposalData.client_address}</Text>
+            )}
+            {proposalData.client_email && (
+              <Text style={styles.detailValue}>{proposalData.client_email}</Text>
+            )}
+          </View>
+
+          <View style={styles.clientSection}>
+            <Text style={styles.sectionTitle}>PROPOSAL DETAILS</Text>
+            <View style={styles.detailsGrid}>
+              <Text style={styles.detailLabel}>Date:</Text>
+              <Text style={styles.detailValue}>
+                {proposalData.proposal_date || new Date().toLocaleDateString()}
+              </Text>
+
+              {proposalData.valid_until && (
+                <>
+                  <Text style={styles.detailLabel}>Valid Until:</Text>
+                  <Text style={styles.detailValue}>{proposalData.valid_until}</Text>
+                </>
+              )}
+
+              {proposalData.status && (
+                <>
+                  <Text style={styles.detailLabel}>Status:</Text>
+                  <Text style={styles.detailValue}>{proposalData.status}</Text>
+                </>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Introduction/Notes */}
+        {proposalData.notes && (
+          <View style={styles.notes}>
+            <Text style={styles.notesTitle}>INTRODUCTION</Text>
+            <Text style={styles.notesText}>{proposalData.notes}</Text>
+          </View>
+        )}
+
+        {/* Services */}
+        <View style={styles.servicesSection}>
+          <Text style={styles.sectionTitle}>SERVICES</Text>
+
           {/* Table Header */}
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableCol1, styles.tableHeaderText]}>Service</Text>
-            <Text style={[styles.tableCol2, styles.tableHeaderText]}>Qty</Text>
-            <Text style={[styles.tableCol3, styles.tableHeaderText]}>Unit Price</Text>
-            <Text style={[styles.tableCol4, styles.tableHeaderText]}>Discount</Text>
-            <Text style={[styles.tableCol5, styles.tableHeaderText]}>Total</Text>
+            <Text style={styles.tableHeaderService}>Service</Text>
+            <Text style={styles.tableHeaderPrice}>Price</Text>
           </View>
 
           {/* Table Rows */}
           {services.map((service, index) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={styles.tableCol1}>{service.service_name}</Text>
-              <Text style={styles.tableCol2}>{service.quantity}</Text>
-              <Text style={styles.tableCol3}>{formatCurrency(service.unit_price)}</Text>
-              <Text style={styles.tableCol4}>{service.discount_percentage}%</Text>
-              <Text style={styles.tableCol5}>{formatCurrency(service.price)}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Totals */}
-        <View style={styles.totals}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Subtotal:</Text>
-            <Text style={styles.totalValue}>{formatCurrency(calculateSubtotal())}</Text>
-          </View>
-          
-          {proposalData.has_downpayment && (
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Required Downpayment:</Text>
-              <Text style={styles.totalValue}>
-                {formatCurrency(proposalData.downpayment_amount)}
+              <View style={styles.serviceInfo}>
+                <Text style={styles.serviceName}>{service.service_name}</Text>
+                <Text style={styles.serviceDescription}>{service.description}</Text>
+              </View>
+              <Text style={styles.servicePrice}>
+                ${parseFloat(service.price || 0).toFixed(2)}
               </Text>
             </View>
-          )}
-          
-          <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, styles.grandTotal]}>Total Amount:</Text>
-            <Text style={[styles.totalValue, styles.grandTotal]}>
-              {formatCurrency(calculateSubtotal())}
-            </Text>
+          ))}
+
+          {/* Totals */}
+          <View style={styles.totalsSection}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Subtotal:</Text>
+              <Text style={styles.totalValue}>${subtotal}</Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>VAT (12%):</Text>
+              <Text style={styles.totalValue}>${vat}</Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalLabel, styles.totalBold]}>Total:</Text>
+              <Text style={[styles.totalValue, styles.totalBold]}>${total}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Notes */}
-        {proposalData.notes && (
-          <View style={styles.notes}>
-            <Text style={styles.notesTitle}>Notes:</Text>
-            <Text style={styles.notesText}>{proposalData.notes}</Text>
+        {/* Terms and Conditions */}
+        {proposalData.terms && (
+          <View style={styles.terms}>
+            <Text style={styles.termsTitle}>TERMS AND CONDITIONS</Text>
+            <Text style={styles.termsText}>{proposalData.terms}</Text>
           </View>
         )}
-
-        {/* Signature */}
-        <View style={styles.signature}>
-          <Text style={styles.signatureText}>Authorized Signature</Text>
-        </View>
       </Page>
     </Document>
   );
