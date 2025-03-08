@@ -24,7 +24,7 @@ const TabBarIcon = ({ IconComponent, iconName, focused, badge }) => (
     ]}>
       <IconComponent 
         name={iconName} 
-        size={24} 
+        size={22} 
         color={focused ? '#FFFFFF' : '#666'}
       />
     </View>
@@ -59,16 +59,21 @@ const TabNavigator = () => {
         },
         tabBarActiveTintColor: '#007BFF',
         tabBarInactiveTintColor: '#666',
-        tabBarShowLabel: false, // Hide labels
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
         tabBarHideOnKeyboard: true,
-        safeAreaInsets: { bottom: 0 }, // Let the tab bar handle its own insets
+        safeAreaInsets: { bottom: 0 },
       }}
-      safeAreaInsets={{ bottom: 0 }} // Prevent double insets
+      safeAreaInsets={{ bottom: 0 }}
     >
       <Tab.Screen 
         name="JobOrders" 
         component={JobOrdersScreen} 
         options={{
+          tabBarLabel: 'Job Orders',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon 
               IconComponent={MaterialIcons} 
@@ -77,12 +82,14 @@ const TabNavigator = () => {
               badge={0}
             />
           ),
+          unmountOnBlur: false,
         }}
       />
       <Tab.Screen 
         name="Tasks" 
         component={TasksScreen} 
         options={{
+          tabBarLabel: 'Tasks',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon 
               IconComponent={MaterialIcons} 
@@ -97,6 +104,7 @@ const TabNavigator = () => {
         name="Messenger" 
         component={MessengerScreen} 
         options={{
+          tabBarLabel: 'Messages',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon 
               IconComponent={MaterialIcons} 
@@ -111,6 +119,7 @@ const TabNavigator = () => {
         name="Documents" 
         component={DocumentsScreen} 
         options={{
+          tabBarLabel: 'Documents',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon 
               IconComponent={MaterialIcons} 
@@ -125,6 +134,7 @@ const TabNavigator = () => {
         name="Profile" 
         component={ProfileScreen} 
         options={{
+          tabBarLabel: 'Profile',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon 
               IconComponent={FontAwesome} 
@@ -144,7 +154,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
-    paddingTop: 8,
+    paddingTop: 5,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -155,13 +165,14 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
+    marginTop: 5,
   },
   iconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -175,8 +186,8 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: 0,
-    right: 0,
+    top: -2,
+    right: -2,
     backgroundColor: '#FF3B30',
     borderRadius: 10,
     minWidth: 18,

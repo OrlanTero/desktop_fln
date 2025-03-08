@@ -2,12 +2,15 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
 import SplashScreen from '../screens/SplashScreen';
 // Import TabNavigator
 import TabNavigator from './TabNavigator';
+import ProjectsScreen from '../screens/ProjectsScreen';
+import JobOrdersByProjectScreen from '../screens/JobOrdersByProjectScreen';
 
 // Create stacks
 const AuthStack = createStackNavigator();
@@ -45,6 +48,20 @@ const AppNavigator = () => (
       component={TabNavigator} 
       options={{
         animationEnabled: false,
+      }}
+    />
+    <AppStack.Screen 
+      name="Projects" 
+      component={ProjectsScreen}
+      options={{
+        animationEnabled: true,
+      }}
+    />
+    <AppStack.Screen 
+      name="JobOrdersByProject" 
+      component={JobOrdersByProjectScreen}
+      options={{
+        animationEnabled: true,
       }}
     />
     {/* Add more screens here as needed */}
@@ -109,14 +126,32 @@ const Navigation = () => {
     <NavigationContainer
       theme={{
         colors: {
-          background: 'transparent',
+          primary: '#007BFF',
+          background: '#FFFFFF',
           card: '#FFFFFF',
           text: '#333333',
           border: '#E0E0E0',
           notification: '#FF3B30',
-          primary: '#007BFF',
         },
         dark: false,
+        fonts: {
+          regular: {
+            fontFamily: undefined,
+            fontWeight: 'normal',
+          },
+          medium: {
+            fontFamily: undefined,
+            fontWeight: '500',
+          },
+          light: {
+            fontFamily: undefined,
+            fontWeight: '300',
+          },
+          thin: {
+            fontFamily: undefined,
+            fontWeight: '100',
+          },
+        },
       }}
     >
       <RootNavigator />

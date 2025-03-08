@@ -24,7 +24,7 @@ const getBaseUrl = () => {
 // Create axios instance with dynamic base URL
 const apiClient = axios.create({
   baseURL: getBaseUrl(),
-  timeout: 10000,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -42,7 +42,7 @@ apiClient.interceptors.request.use(
       config.baseURL = currentUrl.replace('http://', 'https://');
     }
     
-    console.log(`API Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`);
+    console.log(`API Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`, config.data || '');
     return config;
   },
   (error) => {
@@ -51,25 +51,19 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Add response interceptor for debugging
+// Add response interceptor for logging
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`API Response from ${response.config.url}:`, response.data);
+    console.log(`API Response [${response.status}] from ${response.config.url}:`, 
+      response.data ? (Array.isArray(response.data) ? `Array with ${response.data.length} items` : response.data) : 'No data');
     return response;
   },
   (error) => {
-    console.error('API Response Error:', error);
+    console.error('API Response Error:', error.message);
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Error Response Data:', error.response.data);
-      console.error('Error Response Status:', error.response.status);
+      console.error(`Status: ${error.response.status}`, error.response.data);
     } else if (error.request) {
-      // The request was made but no response was received
-      console.error('Error Request:', error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('Error Message:', error.message);
+      console.error('No response received:', error.request);
     }
     return Promise.reject(error);
   }

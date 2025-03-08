@@ -80,6 +80,15 @@ const apiService = {
     deleteAssignment: (id) => apiClient.delete(`/job-orders/assigned/${id}`),
   },
 
+  // Project related API calls
+  projects: {
+    getAll: () => apiClient.get('/projects'),
+    getById: (id) => apiClient.get(`/projects/${id}`),
+    create: (projectData) => apiClient.post('/projects', projectData),
+    update: (id, projectData) => apiClient.put(`/projects/${id}`, projectData),
+    delete: (id) => apiClient.delete(`/projects/${id}`),
+  },
+
   // Add more API endpoints as needed
 };
 

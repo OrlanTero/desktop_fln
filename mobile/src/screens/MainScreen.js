@@ -42,7 +42,7 @@ const MainScreen = ({ navigation }) => {
       // Fetch projects (if you have this endpoint)
       try {
         const projectsResponse = await apiService.projects.getAll();
-        if (projectsResponse.data.status === 'success') {
+        if (projectsResponse.data.status === 'success' || projectsResponse.data.success) {
           setProjectCount(projectsResponse.data.data.length);
         }
       } catch (error) {
