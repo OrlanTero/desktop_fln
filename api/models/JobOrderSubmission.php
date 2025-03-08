@@ -26,8 +26,8 @@ class JobOrderSubmission {
         try {
             // Insert query
             $query = "INSERT INTO " . $this->table_name . " 
-                    (liaison_id, job_order_id, notes, total_expenses) 
-                    VALUES (:liaison_id, :job_order_id, :notes, :total_expenses)";
+                    (liaison_id, job_order_id, notes, total_expenses, status) 
+                    VALUES (:liaison_id, :job_order_id, :notes, :total_expenses, :status)";
 
             // Prepare statement
             $stmt = $this->conn->prepare($query);
@@ -37,11 +37,13 @@ class JobOrderSubmission {
             $job_order_id = htmlspecialchars(strip_tags($job_order_id));
             $notes = htmlspecialchars(strip_tags($notes));
             $total_expenses = htmlspecialchars(strip_tags($total_expenses));
+            $status = htmlspecialchars(strip_tags("Submitted"));
 
             $stmt->bindParam(":liaison_id", $liaison_id);
             $stmt->bindParam(":job_order_id", $job_order_id);
             $stmt->bindParam(":notes", $notes);
             $stmt->bindParam(":total_expenses", $total_expenses);
+            $stmt->bindParam(":status", $status);
 
             // Execute query
             if ($stmt->execute()) {

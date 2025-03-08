@@ -140,6 +140,23 @@ class JobOrderController {
         ];
     }
 
+    public function updateStatus($id, $status) {
+        $this->jobOrder->id = $id;
+        $this->jobOrder->status = $status;
+
+        if ($this->jobOrder->updateStatus()) {
+            return [
+                'success' => true,
+                'message' => 'Job order status updated successfully'
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Failed to update job order status'
+        ];
+    }
+
     public function delete($id) {
         $this->jobOrder->id = $id;
 

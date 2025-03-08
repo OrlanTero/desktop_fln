@@ -70,7 +70,7 @@ class JobOrder {
                     estimated_fee = :estimated_fee,
                     status = :status,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE id = :id";
+                WHERE job_order_id = :id";
 
         $stmt = $this->conn->prepare($query);
 
@@ -91,9 +91,31 @@ class JobOrder {
         return false;
     }
 
+    // Update job order status
+    public function updateStatus() {
+        $query = "UPDATE " . $this->table . "
+                SET status = :status,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE job_order_id = :id";
+
+        $stmt = $this->conn->prepare($query);
+
+        // Clean and bind data
+        $this->status = htmlspecialchars(strip_tags($this->status));
+        $this->id = htmlspecialchars(strip_tags($this->id));
+
+        $stmt->bindParam(':status', $this->status);
+        $stmt->bindParam(':id', $this->id);
+
+        if($stmt->execute()) {
+            return true;
+        }
+        return false;
+    }
+
     // Delete job order
     public function delete() {
-        $query = "DELETE FROM " . $this->table . " WHERE id = :id";
+        $query = "DELETE FROM " . $this->table . " WHERE job_order_id = :id";
         $stmt = $this->conn->prepare($query);
 
         $this->id = htmlspecialchars(strip_tags($this->id));

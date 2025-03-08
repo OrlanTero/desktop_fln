@@ -72,27 +72,32 @@ class AssignedJobOrder {
         return $stmt;
     }
 
-    // Update assignment status
+    // Update status
     public function updateStatus() {
+        // Prepare query
         $query = "UPDATE " . $this->table_name . "
-                SET status = :status, notes = :notes
-                WHERE id = :id";
+                SET status = :status, 
+                    notes = :notes
+                WHERE job_order_id = :job_order_id";
 
+        // Prepare statement
         $stmt = $this->conn->prepare($query);
 
-        // Sanitize inputs
+        // Clean data
         $this->status = htmlspecialchars(strip_tags($this->status));
         $this->notes = htmlspecialchars(strip_tags($this->notes));
         $this->id = htmlspecialchars(strip_tags($this->id));
 
-        // Bind values
+        // Bind data
         $stmt->bindParam(":status", $this->status);
         $stmt->bindParam(":notes", $this->notes);
-        $stmt->bindParam(":id", $this->id);
+        $stmt->bindParam(":job_order_id", $this->id);
 
+        // Execute query
         if($stmt->execute()) {
             return true;
         }
+
         return false;
     }
 
@@ -113,5 +118,31 @@ class AssignedJobOrder {
     // Get table name
     public function getTableName() {
         return $this->table_name;
+    }
+
+    // Update status of an assigned job order (new implementation)
+    public function updateJobOrderStatus($id, $status) {
+        try {
+            $query = "UPDATE " . $this->table_name . " 
+                    SET status = :status
+                    WHERE job_order_id = :id";
+
+            $stmt = $this->conn->prepare($query);
+            
+            // Sanitize and bind values
+            $status = htmlspecialchars(strip_tags($status));
+            $id = htmlspecialchars(strip_tags($id));
+            
+            $stmt->bindParam(":status", $status);
+            $stmt->bindParam(":id", $id);
+            
+            // Execute query
+            if ($stmt->execute()) {
+                return true;
+            }
+            return false;
+        } catch (Exception $e) {
+            throw new Exception("Error updating status: " . $e->getMessage());
+        }
     }
 } 

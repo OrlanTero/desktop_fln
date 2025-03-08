@@ -125,6 +125,8 @@ const ProjectsScreen = ({ navigation }) => {
               jo.status && jo.status.toLowerCase().includes('cancel')).length;
             const inProgress = jobOrders.filter(jo => 
               jo.status && jo.status.toLowerCase().includes('progress')).length;
+            const submitted = jobOrders.filter(jo => 
+              jo.status && jo.status.toLowerCase().includes('submitted')).length;
             
             return {
               projectId,
@@ -133,7 +135,8 @@ const ProjectsScreen = ({ navigation }) => {
                 pending,
                 completed,
                 cancelled,
-                inProgress
+                inProgress,
+                submitted
               }
             };
           }
@@ -144,7 +147,14 @@ const ProjectsScreen = ({ navigation }) => {
         // Return default stats if there was an error or no valid response
         return {
           projectId,
-          stats: { total: 0, pending: 0, completed: 0, cancelled: 0, inProgress: 0 }
+          stats: { 
+            total: 0, 
+            pending: 0, 
+            completed: 0, 
+            cancelled: 0, 
+            inProgress: 0,
+            submitted: 0
+          }
         };
       });
       
@@ -213,7 +223,7 @@ const ProjectsScreen = ({ navigation }) => {
     
     // Get stats for this project
     const stats = projectStats[projectId] || { 
-      total: 0, pending: 0, completed: 0, cancelled: 0, inProgress: 0 
+      total: 0, pending: 0, completed: 0, cancelled: 0, inProgress: 0, submitted: 0 
     };
     
     return (
@@ -255,6 +265,12 @@ const ProjectsScreen = ({ navigation }) => {
           {stats.cancelled > 0 && (
             <View style={[styles.countBadge, { backgroundColor: '#dc3545' }]}>
               <Text style={styles.countBadgeText}>{stats.cancelled} Cancelled</Text>
+            </View>
+          )}
+          
+          {stats.submitted > 0 && (
+            <View style={[styles.countBadge, { backgroundColor: '#9c27b0' }]}>
+              <Text style={styles.countBadgeText}>{stats.submitted} Submitted</Text>
             </View>
           )}
           

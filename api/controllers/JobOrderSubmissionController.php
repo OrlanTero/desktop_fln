@@ -1,4 +1,8 @@
 <?php
+require_once 'models/JobOrderSubmission.php';
+require_once 'controllers/JobOrderController.php';
+require_once 'controllers/AssignedJobOrderController.php';
+
 class JobOrderSubmissionController {
     private $jobOrderSubmission;
     private $conn;
@@ -62,6 +66,17 @@ class JobOrderSubmissionController {
             if (isset($_FILES['attachments'])) {
                 $this->processAttachments($submission_id, $_FILES['attachments']);
             }
+
+            // Update job order status if requested
+            // Get the job order controller
+            $jobOrderController = new JobOrderController($this->conn);
+        
+            // Update the job order status to Submitted
+            $jobOrderController->updateStatus($data->job_order_id, 'Submitted');
+            
+            // Also update the assigned job order status
+            $assignedJobOrderController = new AssignedJobOrderController($this->conn);
+            $assignedJobOrderController->updateStatus($data->job_order_id, ['status' => 'Submitted']);
 
             // Commit transaction
             $this->conn->commit();

@@ -1,5 +1,6 @@
 <?php
 require_once 'models/AssignedJobOrder.php';
+require_once 'controllers/JobOrderController.php';
 
 class AssignedJobOrderController {
     private $db;
@@ -107,30 +108,48 @@ class AssignedJobOrderController {
         }
     }
 
-    // Update assignment status
+    // Update assigned job order status
     public function updateStatus($id, $data) {
-        if(!isset($data['status'])) {
+        try {
+            // Extract status from data
+            $status = isset($data['status']) ? $data['status'] : null;
+            
+            if (!$status) {
+                return [
+                    'success' => false,
+                    'message' => 'Status is required'
+                ];
+            }
+            
+            // Update assigned job order status using the new method
+            $result = $this->assignedJobOrder->updateJobOrderStatus($id, $status);
+            
+            // Update job order status if requested
+            if (isset($data['update_both_tables']) && $data['update_both_tables'] === true) {
+                // Get the job order controller
+                $jobOrderController = new JobOrderController($this->conn);
+                
+                // Update the job order status
+                $jobOrderController->updateStatus($id, $status);
+            }
+            
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => 'Status updated successfully'
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to update status'
+                ];
+            }
+        } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Status is required'
+                'message' => 'Error updating status: ' . $e->getMessage()
             ];
         }
-
-        $this->assignedJobOrder->id = $id;
-        $this->assignedJobOrder->status = $data['status'];
-        $this->assignedJobOrder->notes = isset($data['notes']) ? $data['notes'] : '';
-
-        if($this->assignedJobOrder->updateStatus()) {
-            return [
-                'success' => true,
-                'message' => 'Assignment status updated successfully'
-            ];
-        }
-
-        return [
-            'success' => false,
-            'message' => 'Failed to update assignment status'
-        ];
     }
 
     // Delete assignment

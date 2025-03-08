@@ -263,6 +263,8 @@ const JobOrderSubmissionScreen = ({ route, navigation }) => {
       formData.append('job_order_id', jobOrderId);
       formData.append('liaison_id', user.id);
       formData.append('notes', notes);
+      formData.append('status', 'Submitted'); // Set status to Submitted for job_order_submissions table
+      formData.append('update_job_order_status', 'true'); // Flag to update status in job_orders table too
       
       // Add expenses
       formData.append('expenses', JSON.stringify(expenses.map(exp => ({
@@ -299,9 +301,22 @@ const JobOrderSubmissionScreen = ({ route, navigation }) => {
         if (response && response.data && (response.data.success || response.data.status === 'success')) {
           console.log('Job order submission successful:', response.data);
           
+          // Ensure job order status is updated in job_orders table
+          try {
+            await apiService.jobOrders.updateAssignedStatus(jobOrderId, {
+              status: 'Submitted',
+              notes: `Status updated to Submitted on ${new Date().toLocaleString()}`,
+              update_both_tables: true // Flag to update both tables
+            });
+            console.log('Job order status updated to Submitted in both tables');
+          } catch (statusError) {
+            console.error('Error updating job order status:', statusError);
+            // Continue with success message even if status update fails
+          }
+          
           Alert.alert(
             'Submission Successful',
-            'Your job order submission has been received.',
+            'Your job order submission has been received and marked as Submitted.',
             [
               { 
                 text: 'OK', 
@@ -319,13 +334,27 @@ const JobOrderSubmissionScreen = ({ route, navigation }) => {
         // Fallback to simulate a successful submission if API call fails
         setTimeout(() => {
           console.log('Using fallback submission success');
+          
+          // Simple status update in fallback mode
+          console.log('Attempting to update job order status to Submitted in fallback mode');
+          
           Alert.alert(
             'Submission Successful',
-            'Your job order submission has been received (simulated).',
+            'Your job order submission has been received and marked as Submitted (simulated).',
             [
               { 
                 text: 'OK', 
-                onPress: () => navigation.goBack() 
+                onPress: () => {
+                  // Try to update status before navigating back
+                  apiService.jobOrders.updateAssignedStatus(jobOrderId, {
+                    status: 'Submitted',
+                    notes: 'Submitted via mobile app',
+                    update_both_tables: true // Flag to update both tables
+                  }).catch(err => console.error('Status update failed:', err));
+                  
+                  // Navigate back regardless of status update result
+                  navigation.goBack();
+                }
               }
             ]
           );
