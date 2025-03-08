@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { apiService } from '../services/api';
 import ScreenWrapper from '../components/ScreenWrapper';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 const JobOrdersByProjectScreen = ({ route, navigation }) => {
   // Extract and normalize parameters from route
@@ -184,10 +185,14 @@ const JobOrdersByProjectScreen = ({ route, navigation }) => {
     return (
       <TouchableOpacity 
         style={styles.jobOrderItem}
+        activeOpacity={0.7}
         onPress={() => {
           console.log(`Job order pressed: ${id}`);
-          // Navigate to job order details when implemented
-          // navigation.navigate('JobOrderDetails', { jobOrderId: id });
+          // Navigate to job order submission screen
+          navigation.navigate('JobOrderSubmission', { 
+            jobOrderId: id,
+            jobOrderTitle: description
+          });
         }}
       >
         <View style={styles.jobOrderHeader}>
@@ -204,6 +209,12 @@ const JobOrdersByProjectScreen = ({ route, navigation }) => {
           Assigned to: {liaisonName}
           {liaisonId && ` (ID: ${liaisonId})`}
         </Text>
+        
+        {/* Submit button indicator */}
+        <View style={styles.submitIndicator}>
+          <MaterialIcons name="arrow-forward" size={16} color="#007BFF" />
+          <Text style={styles.submitText}>Tap to submit</Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -357,6 +368,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 5,
+  },
+  submitIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  submitText: {
+    color: '#007BFF',
+    fontSize: 14,
+    marginLeft: 5,
   },
 });
 

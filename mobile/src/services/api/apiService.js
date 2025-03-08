@@ -78,6 +78,21 @@ const apiService = {
     getUnassignedByProject: (projectId) => apiClient.get(`/job-orders/unassigned/project/${projectId}`),
     updateAssignedStatus: (id, statusData) => apiClient.put(`/job-orders/assigned/${id}/status`, statusData),
     deleteAssignment: (id) => apiClient.delete(`/job-orders/assigned/${id}`),
+    getById: (id) => apiClient.get(`/job-orders/${id}`),
+    submitCompletion: (formData) => {
+      // Set the correct content type for form data with files
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+      return apiClient.post('/job-orders/submit-completion', formData, config);
+    },
+    getSubmissions: (jobOrderId) => apiClient.get(`/job-orders/${jobOrderId}/submissions`),
+    getSubmissionById: (submissionId) => apiClient.get(`/job-orders/submissions/${submissionId}`),
+    getLiaisonSubmissions: (liaisonId) => apiClient.get(`/liaisons/${liaisonId}/submissions`),
+    updateSubmissionStatus: (submissionId, status) => apiClient.put(`/job-orders/submissions/${submissionId}/status`, { status }),
+    deleteSubmission: (submissionId) => apiClient.delete(`/job-orders/submissions/${submissionId}`),
   },
 
   // Project related API calls

@@ -11,6 +11,7 @@ import SplashScreen from '../screens/SplashScreen';
 import TabNavigator from './TabNavigator';
 import ProjectsScreen from '../screens/ProjectsScreen';
 import JobOrdersByProjectScreen from '../screens/JobOrdersByProjectScreen';
+import JobOrderSubmissionScreen from '../screens/JobOrderSubmissionScreen';
 
 // Create stacks
 const AuthStack = createStackNavigator();
@@ -60,6 +61,13 @@ const AppNavigator = () => (
     <AppStack.Screen 
       name="JobOrdersByProject" 
       component={JobOrdersByProjectScreen}
+      options={{
+        animationEnabled: true,
+      }}
+    />
+    <AppStack.Screen 
+      name="JobOrderSubmission" 
+      component={JobOrderSubmissionScreen}
       options={{
         animationEnabled: true,
       }}

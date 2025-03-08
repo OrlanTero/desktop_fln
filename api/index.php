@@ -31,12 +31,14 @@ require_once 'controllers/DocumentController.php';
 require_once 'controllers/JobOrderController.php';
 require_once 'controllers/EmailController.php';
 require_once 'controllers/AssignedJobOrderController.php';
+require_once 'controllers/JobOrderSubmissionController.php';
 
 // Add new includes
 require_once 'models/CompanyInfo.php';
 require_once 'controllers/CompanyInfoController.php';
 require_once 'models/Proposal.php';
 require_once 'controllers/ProposalController.php';
+require_once 'models/JobOrderSubmission.php';
 
 // Initialize Klein router
 $router = new \Klein\Klein();
@@ -59,6 +61,7 @@ $jobOrderController = new JobOrderController($db);
 $emailController = new EmailController($db);
 $companyInfoController = new CompanyInfoController($db);
 $assignedJobOrderController = new AssignedJobOrderController($db);
+$jobOrderSubmissionController = new JobOrderSubmissionController($db);
 
 // Test route to check if API is working
 $router->respond('GET', '/test', function() {
@@ -757,6 +760,45 @@ $router->respond('POST', '/email/send', function() use ($db) {
     $data = json_decode(file_get_contents('php://input'), true);
     $emailController = new EmailController($db);
     return json_encode($emailController->send($data));
+});
+
+// Job Order Submission endpoints
+$router->respond('POST', '/job-orders/submit-completion', function() use ($jobOrderSubmissionController) {
+    // For multipart/form-data with file uploads, we need to handle the data differently
+    $data = new stdClass();
+    $data->job_order_id = $_POST['job_order_id'] ?? null;
+    $data->liaison_id = $_POST['liaison_id'] ?? null;
+    $data->notes = $_POST['notes'] ?? '';
+    
+    // Parse expenses JSON if provided
+    if (isset($_POST['expenses'])) {
+        $data->expenses = json_decode($_POST['expenses']);
+    } else {
+        $data->expenses = [];
+    }
+    
+    echo json_encode($jobOrderSubmissionController->create($data));
+});
+
+$router->respond('GET', '/job-orders/submissions/[i:id]', function($request) use ($jobOrderSubmissionController) {
+    echo json_encode($jobOrderSubmissionController->getById($request->id));
+});
+
+$router->respond('GET', '/job-orders/[i:jobOrderId]/submissions', function($request) use ($jobOrderSubmissionController) {
+    echo json_encode($jobOrderSubmissionController->getByJobOrderId($request->jobOrderId));
+});
+
+$router->respond('GET', '/liaisons/[i:liaisonId]/submissions', function($request) use ($jobOrderSubmissionController) {
+    echo json_encode($jobOrderSubmissionController->getByLiaisonId($request->liaisonId));
+});
+
+$router->respond('PUT', '/job-orders/submissions/[i:id]/status', function($request) use ($jobOrderSubmissionController) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    echo json_encode($jobOrderSubmissionController->updateStatus($request->id, $data['status']));
+});
+
+$router->respond('DELETE', '/job-orders/submissions/[i:id]', function($request) use ($jobOrderSubmissionController) {
+    echo json_encode($jobOrderSubmissionController->delete($request->id));
 });
 
 // Dispatch the router
