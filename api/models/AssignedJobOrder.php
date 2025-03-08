@@ -44,10 +44,11 @@ class AssignedJobOrder {
     // Get assignments by project ID
     public function getByProject($project_id) {
         // Get assigned job orders using the is_assigned column
-        $query = "SELECT jo.*, u.name as liaison_name 
+        $query = "SELECT jo.*, u.name as liaison_name, s.service_name as service_name
                 FROM job_orders jo
                 JOIN " . $this->table_name . " ajo ON jo.job_order_id = ajo.job_order_id
                 JOIN users u ON ajo.liaison_id = u.id
+                JOIN services s ON jo.service_id = s.service_id
                 WHERE jo.project_id = :project_id 
                 AND jo.is_assigned = 1";
 

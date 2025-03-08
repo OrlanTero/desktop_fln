@@ -23,7 +23,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const JobOrderSubmissionScreen = ({ route, navigation }) => {
   // Extract job order details from route params
-  const { jobOrderId, jobOrderTitle } = route.params || {};
+  const { jobOrderId, jobOrderTitle, currentStatus, serviceName } = route.params || {};
   
   // State variables
   const [loading, setLoading] = useState(true);
@@ -104,8 +104,8 @@ const JobOrderSubmissionScreen = ({ route, navigation }) => {
           id: jobOrderId,
           title: jobOrderTitle || 'Job Order',
           description: 'Job order description',
-          status: 'In Progress',
-          service_name: 'Service Name',
+          status: currentStatus || 'In Progress',
+          service_name:  serviceName || 'Service Name',
           fee: 1000,
         };
         

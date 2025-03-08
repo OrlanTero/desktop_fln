@@ -159,6 +159,8 @@ const JobOrdersByProjectScreen = ({ route, navigation }) => {
 
     // Extract the description - handle different property names
     const description = item.description || item.title || item.name || 'No Description';
+
+    console.log('[DEBUG]: JobOrderItem', JSON.stringify(item));
     
     // Extract the service name - handle different property names
     const serviceName = item.service_name || item.service || 'N/A';
@@ -187,11 +189,12 @@ const JobOrdersByProjectScreen = ({ route, navigation }) => {
         style={styles.jobOrderItem}
         activeOpacity={0.7}
         onPress={() => {
-          console.log(`Job order pressed: ${id}`);
           // Navigate to job order submission screen
           navigation.navigate('JobOrderSubmission', { 
             jobOrderId: id,
-            jobOrderTitle: description
+            jobOrderTitle: description,
+            currentStatus: status,
+            serviceName: serviceName
           });
         }}
       >

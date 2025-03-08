@@ -190,7 +190,7 @@ const ProjectsScreen = ({ navigation }) => {
     const projectId = project.id || project.project_id;
     
     // Extract project name - handle different property names
-    const projectName = project.project_name || project.name || 'Project Details';
+    const projectName = project.service_name || project.project_name || project.name || 'Project Details';
     
     // Get liaison ID from user object - ensure it's a number if possible
     let liaisonId = null;
