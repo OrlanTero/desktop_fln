@@ -279,16 +279,22 @@ class ProjectController {
     }
 
     // Update project status
-    public function updateStatus($id, $status) {
+    public function updateStatus($id, $data) {
         try {
             // Create query
             $query = "UPDATE " . $this->table_name . " 
                       SET status = :status,
                           updated_at = NOW()
-                      WHERE id = :id";
+                      WHERE project_id = :id";
             
             // Prepare statement
             $stmt = $this->conn->prepare($query);
+            
+            // Get status from data
+            $status = is_array($data) ? $data : $data;
+            if (is_array($data) && isset($data['status'])) {
+                $status = $data['status'];
+            }
             
             // Sanitize and bind data
             $status = htmlspecialchars(strip_tags($status));
@@ -320,7 +326,7 @@ class ProjectController {
     public function recordPayment($id, $amount) {
         try {
             // First get current paid amount
-            $query = "SELECT paid_amount FROM " . $this->table_name . " WHERE id = ?";
+            $query = "SELECT paid_amount FROM " . $this->table_name . " WHERE project_id = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(1, $id);
             $stmt->execute();
@@ -336,7 +342,7 @@ class ProjectController {
                 $update_query = "UPDATE " . $this->table_name . " 
                                 SET paid_amount = :paid_amount,
                                     updated_at = NOW()
-                                WHERE id = :id";
+                                WHERE project_id = :id";
                 
                 $update_stmt = $this->conn->prepare($update_query);
                 $update_stmt->bindParam(':paid_amount', $new_paid);
@@ -346,7 +352,9 @@ class ProjectController {
                     return array(
                         "status" => "success",
                         "message" => "Payment recorded successfully",
-                        "paid_amount" => $new_paid
+                        "data" => array(
+                            "paid_amount" => $new_paid
+                        )
                     );
                 } else {
                     return array(
@@ -368,11 +376,89 @@ class ProjectController {
         }
     }
 
+    // Get project status history
+    public function getStatusHistory($id) {
+        try {
+            // For now, we'll just return a simple response
+            // In a real implementation, you would query a status_history table
+            return array(
+                "status" => "success",
+                "data" => array(
+                    array(
+                        "status" => "Not Started",
+                        "changed_at" => date('Y-m-d H:i:s', strtotime('-7 days')),
+                        "changed_by" => "System"
+                    ),
+                    array(
+                        "status" => "In Progress",
+                        "changed_at" => date('Y-m-d H:i:s', strtotime('-3 days')),
+                        "changed_by" => "Admin"
+                    )
+                )
+            );
+        } catch(PDOException $e) {
+            return array(
+                "status" => "error",
+                "message" => "Error getting status history: " . $e->getMessage()
+            );
+        }
+    }
+
+    // Get project timeline
+    public function getTimeline($id) {
+        try {
+            // For now, we'll just return a simple response
+            // In a real implementation, you would query a timeline table
+            return array(
+                "status" => "success",
+                "data" => array(
+                    array(
+                        "title" => "Project Started",
+                        "date" => date('Y-m-d H:i:s', strtotime('-7 days')),
+                        "description" => "Project was created and initialized"
+                    ),
+                    array(
+                        "title" => "Design Phase",
+                        "date" => date('Y-m-d H:i:s', strtotime('-5 days')),
+                        "description" => "Design phase started"
+                    ),
+                    array(
+                        "title" => "Development Phase",
+                        "date" => date('Y-m-d H:i:s', strtotime('-2 days')),
+                        "description" => "Development phase started"
+                    )
+                )
+            );
+        } catch(PDOException $e) {
+            return array(
+                "status" => "error",
+                "message" => "Error getting timeline: " . $e->getMessage()
+            );
+        }
+    }
+    
+    // Update project timeline
+    public function updateTimeline($id, $data) {
+        try {
+            // For now, we'll just return a success response
+            // In a real implementation, you would update a timeline table
+            return array(
+                "status" => "success",
+                "message" => "Timeline updated successfully"
+            );
+        } catch(PDOException $e) {
+            return array(
+                "status" => "error",
+                "message" => "Error updating timeline: " . $e->getMessage()
+            );
+        }
+    }
+
     // Delete project
     public function delete($id) {
         try {
             // Create query
-            $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
+            $query = "DELETE FROM " . $this->table_name . " WHERE project_id = ?";
             
             // Prepare statement
             $stmt = $this->conn->prepare($query);

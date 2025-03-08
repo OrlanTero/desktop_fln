@@ -75,6 +75,42 @@ class JobOrderController {
         ];
     }
 
+    public function getAll() {
+        $result = $this->jobOrder->getAll();
+        $jobOrders = $result->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($jobOrders) {
+            return [
+                'success' => true,
+                'data' => $jobOrders
+            ];
+        }
+
+        return [
+            'success' => true,
+            'data' => [],
+            'message' => 'No job orders found'
+        ];
+    }
+
+    public function getByProject($projectId) {
+        $result = $this->jobOrder->getByProject($projectId);
+        $jobOrders = $result->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($jobOrders) {
+            return [
+                'success' => true,
+                'data' => $jobOrders
+            ];
+        }
+
+        return [
+            'success' => true,
+            'data' => [],
+            'message' => 'No job orders found for this project'
+        ];
+    }
+
     public function update($id, $request) {
         $data = json_decode($request->body(), true);
 
@@ -86,7 +122,7 @@ class JobOrderController {
         }
 
         // Set job order properties
-        $this->jobOrder->job_order_id = $id;
+        $this->jobOrder->id = $id;
         $this->jobOrder->description = $data['description'] ?? null;
         $this->jobOrder->estimated_fee = $data['estimated_fee'] ?? null;
         $this->jobOrder->status = $data['status'] ?? null;
@@ -105,7 +141,7 @@ class JobOrderController {
     }
 
     public function delete($id) {
-        $this->jobOrder->job_order_id = $id;
+        $this->jobOrder->id = $id;
 
         if ($this->jobOrder->delete()) {
             return [

@@ -30,6 +30,7 @@ require_once 'controllers/ProServiceController.php';
 require_once 'controllers/DocumentController.php';
 require_once 'controllers/JobOrderController.php';
 require_once 'controllers/EmailController.php';
+require_once 'controllers/AssignedJobOrderController.php';
 
 // Add new includes
 require_once 'models/CompanyInfo.php';
@@ -55,8 +56,9 @@ $projectController = new ProjectController($db);
 $proServiceController = new ProServiceController($db);
 $documentController = new DocumentController($db);
 $jobOrderController = new JobOrderController($db);
-
-
+$emailController = new EmailController($db);
+$companyInfoController = new CompanyInfoController($db);
+$assignedJobOrderController = new AssignedJobOrderController($db);
 
 // Test route to check if API is working
 $router->respond('GET', '/test', function() {
@@ -305,6 +307,46 @@ $router->respond('PUT', '/projects/[i:id]', function($request) use ($projectCont
 // Delete project
 $router->respond('DELETE', '/projects/[i:id]', function($request) use ($projectController) {
     echo json_encode($projectController->delete($request->id));
+});
+
+// Update project status
+$router->respond('PUT', '/projects/[i:id]/status', function($request) use ($projectController) {
+    $projectId = $request->id;
+    $data = json_decode(file_get_contents('php://input'), true);
+    echo json_encode($projectController->updateStatus($projectId, $data));
+});
+
+// Update project payment
+$router->respond('PUT', '/projects/[i:id]/payment', function($request) use ($projectController) {
+    $projectId = $request->id;
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (isset($data['amount'])) {
+        echo json_encode($projectController->recordPayment($projectId, $data['amount']));
+    } else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "Payment amount is required"
+        ]);
+    }
+});
+
+// Get project status history
+$router->respond('GET', '/projects/[i:id]/status-history', function($request) use ($projectController) {
+    $projectId = $request->id;
+    echo json_encode($projectController->getStatusHistory($projectId));
+});
+
+// Get project timeline
+$router->respond('GET', '/projects/[i:id]/timeline', function($request) use ($projectController) {
+    $projectId = $request->id;
+    echo json_encode($projectController->getTimeline($projectId));
+});
+
+// Update project timeline
+$router->respond('PUT', '/projects/[i:id]/timeline', function($request) use ($projectController) {
+    $projectId = $request->id;
+    $data = json_decode(file_get_contents('php://input'), true);
+    echo json_encode($projectController->updateTimeline($projectId, $data));
 });
 
 // Delete client
@@ -639,25 +681,27 @@ $router->respond('DELETE', '/documents/[:document_id]', function ($request) use 
 });
 
 // Job Orders Routes
-// $router->post('/job-orders', function($request) use ($db) {
-//     $controller = new JobOrderController($db);
-//     return $controller->create($request);
-// });
-
 $router->respond('POST', '/job-orders', function($request) use ($db) {
+    $data = json_decode(file_get_contents('php://input'), true);
     $controller = new JobOrderController($db);
-    return json_encode($controller->create($request));
+    echo json_encode($controller->create($data));
+});
+
+$router->respond('GET', '/job-orders', function() use ($db) {
+    $controller = new JobOrderController($db);
+    echo json_encode($controller->getAll());
+});
+
+$router->respond('GET', '/job-orders/project/[i:projectId]', function($request) use ($db) {
+    $projectId = $request->projectId;
+    $controller = new JobOrderController($db);
+    echo json_encode($controller->getByProject($projectId));
 });
 
 $router->respond('GET', '/job-orders/service/[:serviceId]/proposal/[:proposalId]', function($request) use ($db) {
     $controller = new JobOrderController($db);
     return json_encode($controller->getByService($request->serviceId, $request->proposalId));
 });
-
-// $router->get('/job-orders/service/:serviceId/proposal/:proposalId', function($serviceId, $proposalId) use ($db) {
-//     $controller = new JobOrderController($db);
-//     return $controller->getByService($serviceId, $proposalId);
-// });
 
 $router->put('/job-orders/:id', function($id, $request) use ($db) {
     $controller = new JobOrderController($db);
@@ -667,6 +711,45 @@ $router->put('/job-orders/:id', function($id, $request) use ($db) {
 $router->delete('/job-orders/:id', function($id) use ($db) {
     $controller = new JobOrderController($db);
     return $controller->delete($id);
+});
+
+// Assigned Job Orders Routes
+$router->respond('POST', '/job-orders/assign', function() use ($assignedJobOrderController) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    echo json_encode($assignedJobOrderController->create($data));
+});
+
+$router->respond('GET', '/job-orders/assigned/project/[i:projectId]', function($request) use ($assignedJobOrderController) {
+    try {
+        $result = $assignedJobOrderController->getAssignedByProject($request->projectId);
+        echo json_encode($result);
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Error in assigned job orders endpoint: ' . $e->getMessage()
+        ]);
+    }
+});
+
+$router->respond('GET', '/job-orders/unassigned/project/[i:projectId]', function($request) use ($assignedJobOrderController) {
+    try {
+        $result = $assignedJobOrderController->getUnassignedByProject($request->projectId);
+        echo json_encode($result);
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Error in unassigned job orders endpoint: ' . $e->getMessage()
+        ]);
+    }
+});
+
+$router->respond('PUT', '/job-orders/assigned/[i:id]/status', function($request) use ($assignedJobOrderController) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    echo json_encode($assignedJobOrderController->updateStatus($request->id, $data));
+});
+
+$router->respond('DELETE', '/job-orders/assigned/[i:id]', function($request) use ($assignedJobOrderController) {
+    echo json_encode($assignedJobOrderController->delete($request->id));
 });
 
 // Email endpoints

@@ -98,7 +98,7 @@ const ProjectView = () => {
     try {
       const response = await window.api.project.updatePaidAmount(
         project.project_id,
-        parseFloat(project.paid_amount || 0) + parseFloat(paymentAmount)
+        parseFloat(paymentAmount)
       );
       
       if (response.success) {

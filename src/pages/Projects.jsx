@@ -136,11 +136,14 @@ const Projects = ({ user, onLogout }) => {
     
     setLoading(true);
     try {
+      // Use selectedProject.id instead of selectedProject.project_id
+      const projectId = selectedProject.id || selectedProject.project_id;
+      
       // First delete all services associated with this project
-      await window.api.proService.deleteByProject(selectedProject.project_id);
+      await window.api.proService.deleteByProject(projectId);
       
       // Then delete the project
-      const response = await window.api.project.delete(selectedProject.project_id);
+      const response = await window.api.project.delete(projectId);
       if (response.success) {
         setSuccess('Project deleted successfully');
         fetchProjects();
@@ -158,6 +161,8 @@ const Projects = ({ user, onLogout }) => {
   
   // Handle status change
   const handleStatusClick = (project, status) => {
+    console.log('handleStatusClick - project:', project);
+    console.log('handleStatusClick - status:', status);
     setSelectedProject(project);
     setNewStatus(status);
     setStatusDialogOpen(true);
@@ -165,13 +170,18 @@ const Projects = ({ user, onLogout }) => {
   };
   
   const handleStatusConfirm = async () => {
+    console.log('handleStatusConfirm - selectedProject:', selectedProject);
+    console.log('handleStatusConfirm - newStatus:', newStatus);
     if (!selectedProject || !newStatus) return;
     
     setLoading(true);
     try {
+      // Use selectedProject.id instead of selectedProject.project_id
+      const projectId = selectedProject.id || selectedProject.project_id;
+      console.log('Calling updateStatus with:', projectId, { status: newStatus });
       const response = await window.api.project.updateStatus(
-        selectedProject.project_id,
-        newStatus
+        projectId,
+        { status: newStatus }
       );
       
       if (response.success) {
@@ -203,9 +213,11 @@ const Projects = ({ user, onLogout }) => {
     
     setLoading(true);
     try {
+      // Use selectedProject.id instead of selectedProject.project_id
+      const projectId = selectedProject.id || selectedProject.project_id;
       const response = await window.api.project.updatePaidAmount(
-        selectedProject.project_id,
-        parseFloat(selectedProject.paid_amount || 0) + parseFloat(paymentAmount)
+        projectId,
+        parseFloat(paymentAmount)
       );
       
       if (response.success) {
@@ -226,6 +238,7 @@ const Projects = ({ user, onLogout }) => {
   
   // Menu handlers
   const handleMenuOpen = (event, project) => {
+    console.log('handleMenuOpen - project:', project);
     setAnchorEl(event.currentTarget);
     setMenuProject(project);
   };
@@ -237,16 +250,20 @@ const Projects = ({ user, onLogout }) => {
   
   // Get status chip color
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'Not Started':
+    // Normalize status to uppercase for comparison
+    const normalizedStatus = status ? status.toUpperCase() : '';
+    
+    switch (normalizedStatus) {
+      case 'NOT STARTED':
+      case 'PENDING':
         return 'default';
-      case 'In Progress':
+      case 'IN PROGRESS':
         return 'primary';
-      case 'On Hold':
+      case 'ON HOLD':
         return 'warning';
-      case 'Completed':
+      case 'COMPLETED':
         return 'success';
-      case 'Cancelled':
+      case 'CANCELLED':
         return 'error';
       default:
         return 'default';
@@ -365,7 +382,7 @@ const Projects = ({ user, onLogout }) => {
                     const paymentStatus = getPaymentStatus(project);
                     
                     return (
-                      <TableRow key={project.project_id}>
+                      <TableRow key={project.id || project.project_id}>
                         <TableCell>{project.project_name}</TableCell>
                         <TableCell>{project.client_name}</TableCell>
                         <TableCell>{formatDate(project.start_date)}</TableCell>
@@ -389,18 +406,27 @@ const Projects = ({ user, onLogout }) => {
                         <TableCell align="center">
                           <IconButton
                             color="primary"
-                            onClick={() => handleViewProject(project.project_id)}
+                            onClick={() => handleViewProject(project.id || project.project_id)}
                             title="View Project"
                           >
                             <VisibilityIcon />
                           </IconButton>
                           <IconButton
                             color="secondary"
-                            onClick={() => handleEditProject(project.project_id)}
+                            onClick={() => handleEditProject(project.id || project.project_id)}
                             title="Edit Project"
                           >
                             <EditIcon />
                           </IconButton>
+                          {project.status?.toUpperCase() === 'PENDING' && (
+                            <IconButton
+                              color="success"
+                              onClick={() => handleStatusClick(project, 'IN PROGRESS')}
+                              title="Start Project"
+                            >
+                              <AssignmentIcon />
+                            </IconButton>
+                          )}
                           <IconButton
                             color="default"
                             onClick={(e) => handleMenuOpen(e, project)}
@@ -437,25 +463,37 @@ const Projects = ({ user, onLogout }) => {
             </ListItemIcon>
             <ListItemText>Record Payment</ListItemText>
           </MenuItem>
-          <MenuItem disabled={menuProject?.status === 'In Progress'} onClick={() => handleStatusClick(menuProject, 'In Progress')}>
+          <MenuItem 
+            disabled={menuProject?.status?.toUpperCase() === 'IN PROGRESS'} 
+            onClick={() => handleStatusClick(menuProject, 'IN PROGRESS')}
+          >
             <ListItemIcon>
               <AssignmentIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText>Mark as In Progress</ListItemText>
           </MenuItem>
-          <MenuItem disabled={menuProject?.status === 'On Hold'} onClick={() => handleStatusClick(menuProject, 'On Hold')}>
+          <MenuItem 
+            disabled={menuProject?.status?.toUpperCase() === 'ON HOLD'} 
+            onClick={() => handleStatusClick(menuProject, 'ON HOLD')}
+          >
             <ListItemIcon>
               <PauseCircleIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText>Put On Hold</ListItemText>
           </MenuItem>
-          <MenuItem disabled={menuProject?.status === 'Completed'} onClick={() => handleStatusClick(menuProject, 'Completed')}>
+          <MenuItem 
+            disabled={menuProject?.status?.toUpperCase() === 'COMPLETED'} 
+            onClick={() => handleStatusClick(menuProject, 'COMPLETED')}
+          >
             <ListItemIcon>
               <CheckCircleIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText>Mark as Completed</ListItemText>
           </MenuItem>
-          <MenuItem disabled={menuProject?.status === 'Cancelled'} onClick={() => handleStatusClick(menuProject, 'Cancelled')}>
+          <MenuItem 
+            disabled={menuProject?.status?.toUpperCase() === 'CANCELLED'} 
+            onClick={() => handleStatusClick(menuProject, 'CANCELLED')}
+          >
             <ListItemIcon>
               <CancelIcon fontSize="small" />
             </ListItemIcon>

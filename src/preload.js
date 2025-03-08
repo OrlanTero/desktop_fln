@@ -378,6 +378,11 @@ contextBridge.exposeInMainWorld('api', {
     // Update project timeline
     updateTimeline: async (id, timelineData) => {
       return makeRequest(`${API_BASE_URL}/projects/${id}/timeline`, 'PUT', timelineData);
+    },
+    
+    // Update project paid amount
+    updatePaidAmount: async (id, amount) => {
+      return makeRequest(`${API_BASE_URL}/projects/${id}/payment`, 'PUT', { amount });
     }
   },
 
@@ -577,6 +582,24 @@ contextBridge.exposeInMainWorld('api', {
       }
     },
 
+    getAll: async () => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders`);
+      } catch (error) {
+        console.error('Error fetching job orders:', error);
+        return { success: false, message: error.message };
+      }
+    },
+
+    getByProject: async (projectId) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders/project/${projectId}`);
+      } catch (error) {
+        console.error('Error fetching job orders by project:', error);
+        return { success: false, message: error.message };
+      }
+    },
+
     getByService: async (serviceId, proposalId) => {
       try {
         return await makeRequest(`${API_BASE_URL}/job-orders/service/${serviceId}/proposal/${proposalId}`);
@@ -600,6 +623,36 @@ contextBridge.exposeInMainWorld('api', {
         return await makeRequest(`${API_BASE_URL}/job-orders/${id}`, 'DELETE');
       } catch (error) {
         console.error('Error deleting job order:', error);
+        return { success: false, message: error.message };
+      }
+    },
+
+    // Get unassigned job orders by project
+    getUnassignedByProject: async (projectId) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders/unassigned/project/${projectId}`);
+      } catch (error) {
+        console.error('Error fetching unassigned job orders:', error);
+        return { success: false, message: error.message };
+      }
+    },
+
+    // Get assigned job orders by project
+    getAssignedByProject: async (projectId) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders/assigned/project/${projectId}`);
+      } catch (error) {
+        console.error('Error fetching assigned job orders:', error);
+        return { success: false, message: error.message };
+      }
+    },
+
+    // Assign job order to liaison
+    assign: async (assignmentData) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders/assign`, 'POST', assignmentData);
+      } catch (error) {
+        console.error('Error assigning job order:', error);
         return { success: false, message: error.message };
       }
     }

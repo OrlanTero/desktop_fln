@@ -208,7 +208,7 @@ class UserController {
         if(!$this->user->verifyPassword($data['password'])) {
             return [
                 "status" => "error",
-                "message" => "Invalid email or password"
+                "message" => "Invalid email or password",
             ];
         }
         

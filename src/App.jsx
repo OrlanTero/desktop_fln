@@ -18,6 +18,7 @@ import ProposalConversion from './pages/ProposalConversion';
 import Projects from './pages/Projects';
 import ProjectForm from './pages/ProjectForm';
 import ProjectView from './pages/ProjectView';
+import JobOrders from './pages/JobOrders';
 
 // Import components
 import SplashScreen from './components/SplashScreen';
@@ -294,6 +295,14 @@ const App = () => {
         <Route 
           path="/main_window/*" 
           element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
+        />
+        <Route 
+          path="/job-orders" 
+          element={
+            isAuthenticated ? 
+              <JobOrders user={currentUser} onLogout={handleLogout} /> : 
+              <Navigate to="/login" replace />
+          } 
         />
         <Route 
           path="*" 

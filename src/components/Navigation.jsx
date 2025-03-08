@@ -61,7 +61,7 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
   // Expand Project Manager section when on Proposals or Projects pages
   useEffect(() => {
     const path = location.pathname;
-    if (path.includes('/proposals') || path.includes('/projects')) {
+    if (path.includes('/proposals') || path.includes('/projects') || path.includes('/job-orders')) {
       setExpanded(prev => ({
         ...prev,
         projectManager: true
@@ -152,6 +152,11 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
           text: 'Projects',
           icon: <ProjectsIcon />,
           path: '/projects',
+        },
+        {
+          text: 'Job Orders',
+          icon: <TasksIcon />,
+          path: '/job-orders',
         },
         {
           text: 'Tasks',
