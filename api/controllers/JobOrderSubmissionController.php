@@ -32,6 +32,10 @@ class JobOrderSubmissionController {
                 ];
             }
 
+            // Check if this is an update to an existing submission
+            $isUpdate = isset($data->is_update) && $data->is_update === 'true';
+            $submissionId = isset($data->submission_id) ? $data->submission_id : null;
+
             // Calculate total expenses
             $total_expenses = 0;
             foreach ($data->expenses as $expense) {
@@ -41,62 +45,150 @@ class JobOrderSubmissionController {
             // Start transaction
             $this->conn->beginTransaction();
 
-            // Create submission
-            $submission_id = $this->jobOrderSubmission->create(
-                $data->liaison_id,
-                $data->job_order_id,
-                $data->notes ?? '',
-                $total_expenses
-            );
-
-            if (!$submission_id) {
-                throw new Exception("Failed to create submission");
-            }
-
-            // Add expenses
-            foreach ($data->expenses as $expense) {
-                $this->jobOrderSubmission->addExpense(
-                    $submission_id,
-                    $expense->description,
-                    $expense->amount
+            if ($isUpdate && $submissionId) {
+                // Update existing submission
+                $this->jobOrderSubmission->updateSubmission(
+                    $submissionId,
+                    $data->notes ?? '',
+                    $total_expenses
                 );
-            }
+                
+                // Delete existing expenses for this submission
+                $this->jobOrderSubmission->deleteExpenses($submissionId);
+                
+                // Re-add all expenses
+                foreach ($data->expenses as $expense) {
+                    $this->jobOrderSubmission->addExpense(
+                        $submissionId,
+                        $expense->description,
+                        $expense->amount
+                    );
+                }
+                
+                // Handle attachments
+                $this->handleAttachmentsUpdate($submissionId, $data);
+            } else {
+                // Create new submission
+                $submissionId = $this->jobOrderSubmission->create(
+                    $data->liaison_id,
+                    $data->job_order_id,
+                    $data->notes ?? '',
+                    $total_expenses
+                );
 
-            // Process attachments if any
-            if (isset($_FILES['attachments'])) {
-                $this->processAttachments($submission_id, $_FILES['attachments']);
+                if (!$submissionId) {
+                    throw new Exception("Failed to create submission");
+                }
+
+                // Add expenses
+                foreach ($data->expenses as $expense) {
+                    $this->jobOrderSubmission->addExpense(
+                        $submissionId,
+                        $expense->description,
+                        $expense->amount
+                    );
+                }
+
+                // Process attachments if any
+                if (isset($_FILES['attachments'])) {
+                    $this->processAttachments($submissionId, $_FILES['attachments']);
+                }
+                
+                // Process manual attachments if any
+                if (isset($data->manual_attachments)) {
+                    $this->processManualAttachments($submissionId, $data->manual_attachments);
+                }
             }
 
             // Update job order status if requested
-            // Get the job order controller
-            $jobOrderController = new JobOrderController($this->conn);
-        
-            // Update the job order status to Submitted
-            $jobOrderController->updateStatus($data->job_order_id, 'Submitted');
-            
-            // Also update the assigned job order status
-            $assignedJobOrderController = new AssignedJobOrderController($this->conn);
-            $assignedJobOrderController->updateStatus($data->job_order_id, ['status' => 'Submitted']);
+            if (isset($data->update_job_order_status) && $data->update_job_order_status === 'true') {
+                // Get the job order controller
+                $jobOrderController = new JobOrderController($this->conn);
+                
+                // Update the job order status to Submitted
+                $jobOrderController->updateStatus($data->job_order_id, 'Submitted');
+                
+                // Also update the assigned job order status
+                $assignedJobOrderController = new AssignedJobOrderController($this->conn);
+                $assignedJobOrderController->updateStatus($data->job_order_id, ['status' => 'Submitted']);
+            }
 
             // Commit transaction
             $this->conn->commit();
 
-            // Get the created submission with all details
-            $submission = $this->jobOrderSubmission->getById($submission_id);
+            // Get the created/updated submission with all details
+            $submission = $this->jobOrderSubmission->getById($submissionId);
 
             return [
                 'success' => true,
-                'message' => 'Job order submission created successfully',
+                'message' => $isUpdate ? 'Job order submission updated successfully' : 'Job order submission created successfully',
                 'data' => $submission
             ];
         } catch (Exception $e) {
             // Rollback transaction on error
             $this->conn->rollBack();
             
+            // Define isUpdate if it's not set (in case the error happens before it's defined)
+            if (!isset($isUpdate)) {
+                $isUpdate = isset($data->is_update) && $data->is_update === 'true';
+            }
+            
             return [
                 'success' => false,
-                'message' => 'Error creating job order submission: ' . $e->getMessage()
+                'message' => 'Error ' . ($isUpdate ? 'updating' : 'creating') . ' job order submission: ' . $e->getMessage()
             ];
+        }
+    }
+    
+    // Handle attachments update
+    private function handleAttachmentsUpdate($submissionId, $data) {
+        try {
+            // Get existing attachment IDs to keep
+            $existingAttachmentIds = [];
+            if (isset($data->existing_attachment_ids)) {
+                $existingAttachmentIds = json_decode($data->existing_attachment_ids);
+            }
+            
+            // Delete attachments not in the existing_attachment_ids list
+            $this->jobOrderSubmission->deleteAttachmentsExcept($submissionId, $existingAttachmentIds);
+            
+            // Process new attachments if any
+            if (isset($_FILES['attachments'])) {
+                $this->processAttachments($submissionId, $_FILES['attachments']);
+            }
+            
+            // Process manual attachments if any
+            if (isset($data->manual_attachments)) {
+                $this->processManualAttachments($submissionId, $data->manual_attachments);
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            throw new Exception("Error handling attachments update: " . $e->getMessage());
+        }
+    }
+    
+    // Process manual attachments
+    private function processManualAttachments($submissionId, $manualAttachmentsJson) {
+        try {
+            $manualAttachments = json_decode($manualAttachmentsJson);
+            
+            if (is_array($manualAttachments)) {
+                foreach ($manualAttachments as $attachmentName) {
+                    // Add a manual attachment record
+                    $this->jobOrderSubmission->addAttachment(
+                        $submissionId,
+                        $attachmentName,
+                        'manual_attachment',
+                        'text/plain',
+                        0
+                    );
+                }
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            throw new Exception("Error processing manual attachments: " . $e->getMessage());
         }
     }
 
@@ -176,21 +268,64 @@ class JobOrderSubmissionController {
 
     // Get submission by ID
     public function getById($id) {
+        error_log("DEBUG: JobOrderSubmissionController->getById called with ID: $id");
+        
         try {
             $submission = $this->jobOrderSubmission->getById($id);
             
             if (!$submission) {
+                error_log("DEBUG: JobOrderSubmissionController->getById - No submission found with ID: $id");
                 return [
                     'success' => false,
                     'message' => 'Submission not found'
                 ];
             }
-
+            
+            error_log("DEBUG: JobOrderSubmissionController->getById found submission: " . json_encode($submission));
+            
+            // Ensure expenses and attachments are included
+            if (!isset($submission['expenses']) && !isset($submission['expenses_data'])) {
+                error_log("DEBUG: JobOrderSubmissionController->getById - No expenses found, fetching separately");
+                // Get expenses separately
+                $query = "SELECT * FROM job_order_submission_expenses WHERE submission_id = :submission_id";
+                $stmt = $this->conn->prepare($query);
+                $stmt->bindParam(":submission_id", $id);
+                $stmt->execute();
+                $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                $submission['expenses'] = $expenses;
+                $submission['expenses_data'] = $expenses;
+                error_log("DEBUG: JobOrderSubmissionController->getById - Fetched expenses: " . json_encode($expenses));
+            } else {
+                error_log("DEBUG: JobOrderSubmissionController->getById - Expenses already included: " . 
+                    (isset($submission['expenses']) ? json_encode($submission['expenses']) : 'null') . ", " .
+                    (isset($submission['expenses_data']) ? json_encode($submission['expenses_data']) : 'null'));
+            }
+            
+            if (!isset($submission['attachments']) && !isset($submission['attachments_data'])) {
+                error_log("DEBUG: JobOrderSubmissionController->getById - No attachments found, fetching separately");
+                // Get attachments separately
+                $query = "SELECT * FROM job_order_submission_attachments WHERE submission_id = :submission_id";
+                $stmt = $this->conn->prepare($query);
+                $stmt->bindParam(":submission_id", $id);
+                $stmt->execute();
+                $attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                $submission['attachments'] = $attachments;
+                $submission['attachments_data'] = $attachments;
+                error_log("DEBUG: JobOrderSubmissionController->getById - Fetched attachments: " . json_encode($attachments));
+            } else {
+                error_log("DEBUG: JobOrderSubmissionController->getById - Attachments already included: " . 
+                    (isset($submission['attachments']) ? json_encode($submission['attachments']) : 'null') . ", " .
+                    (isset($submission['attachments_data']) ? json_encode($submission['attachments_data']) : 'null'));
+            }
+            
             return [
                 'success' => true,
                 'data' => $submission
             ];
         } catch (Exception $e) {
+            error_log("DEBUG: JobOrderSubmissionController->getById - Error: " . $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Error retrieving submission: ' . $e->getMessage()
@@ -201,11 +336,29 @@ class JobOrderSubmissionController {
     // Get submissions by job order ID
     public function getByJobOrderId($job_order_id) {
         try {
-            $stmt = $this->jobOrderSubmission->getByJobOrderId($job_order_id);
-            $submissions = [];
+            // Query to get submissions for this job order
+            $query = "SELECT * FROM " . $this->jobOrderSubmission->getTableName() . " 
+                    WHERE job_order_id = :job_order_id
+                    ORDER BY created_at DESC";
 
+            // Prepare statement
+            $stmt = $this->conn->prepare($query);
+
+            // Bind job order ID
+            $stmt->bindParam(":job_order_id", $job_order_id);
+
+            // Execute query
+            $stmt->execute();
+            
+            $submissions = [];
+            
+            // Fetch all submissions
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $submissions[] = $row;
+                // Get full submission details including expenses and attachments
+                $submission = $this->jobOrderSubmission->getById($row['id']);
+                if ($submission) {
+                    $submissions[] = $submission;
+                }
             }
 
             return [
@@ -316,6 +469,69 @@ class JobOrderSubmissionController {
             return [
                 'success' => false,
                 'message' => 'Error deleting submission: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    // Delete an attachment
+    public function deleteAttachment($id) {
+        try {
+            $result = $this->jobOrderSubmission->deleteAttachment($id);
+            
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => 'Attachment deleted successfully'
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to delete attachment'
+                ];
+            }
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error deleting attachment: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    // Debug function to directly check the database for expenses and attachments
+    public function debugGetExpensesAndAttachments($submission_id) {
+        error_log("DEBUG: JobOrderSubmissionController->debugGetExpensesAndAttachments called with ID: $submission_id");
+        
+        try {
+            // Get expenses directly from the database
+            $query = "SELECT * FROM job_order_submission_expenses WHERE submission_id = :submission_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":submission_id", $submission_id);
+            $stmt->execute();
+            $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("DEBUG: JobOrderSubmissionController->debugGetExpensesAndAttachments - Direct DB query for expenses returned: " . json_encode($expenses));
+            
+            // Get attachments directly from the database
+            $query = "SELECT * FROM job_order_submission_attachments WHERE submission_id = :submission_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":submission_id", $submission_id);
+            $stmt->execute();
+            $attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("DEBUG: JobOrderSubmissionController->debugGetExpensesAndAttachments - Direct DB query for attachments returned: " . json_encode($attachments));
+            
+            return [
+                'success' => true,
+                'data' => [
+                    'expenses' => $expenses,
+                    'attachments' => $attachments
+                ]
+            ];
+        } catch (Exception $e) {
+            error_log("DEBUG: JobOrderSubmissionController->debugGetExpensesAndAttachments - Error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error retrieving data: ' . $e->getMessage()
             ];
         }
     }

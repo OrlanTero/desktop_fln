@@ -121,6 +121,8 @@ class JobOrderSubmission {
 
     // Get submission by ID with expenses and attachments
     public function getById($id) {
+        error_log("DEBUG: JobOrderSubmission->getById called with ID: $id");
+        
         try {
             // Query to get submission
             $query = "SELECT s.*, jo.title as job_order_title, u.name as liaison_name 
@@ -134,31 +136,51 @@ class JobOrderSubmission {
 
             // Bind ID
             $stmt->bindParam(":id", $id);
-
+            
             // Execute query
             $stmt->execute();
             $submission = $stmt->fetch(PDO::FETCH_ASSOC);
-
+            
             if (!$submission) {
+                error_log("DEBUG: JobOrderSubmission->getById - No submission found with ID: $id");
                 return null;
             }
-
+            
+            error_log("DEBUG: JobOrderSubmission->getById - Found submission: " . json_encode($submission));
+            
             // Get expenses
             $query = "SELECT * FROM " . $this->expenses_table . " WHERE submission_id = :submission_id";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(":submission_id", $id);
             $stmt->execute();
-            $submission['expenses'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+            $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("DEBUG: JobOrderSubmission->getById - Fetched expenses: " . json_encode($expenses));
+            
+            // Add expenses to submission
+            $submission['expenses'] = $expenses;
+            // Also add as expenses_data for compatibility
+            $submission['expenses_data'] = $expenses;
+            
             // Get attachments
             $query = "SELECT * FROM " . $this->attachments_table . " WHERE submission_id = :submission_id";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(":submission_id", $id);
             $stmt->execute();
-            $submission['attachments'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("DEBUG: JobOrderSubmission->getById - Fetched attachments: " . json_encode($attachments));
+            
+            // Add attachments to submission
+            $submission['attachments'] = $attachments;
+            // Also add as attachments_data for compatibility
+            $submission['attachments_data'] = $attachments;
+            
+            error_log("DEBUG: JobOrderSubmission->getById - Final submission data: " . json_encode($submission));
 
             return $submission;
         } catch (Exception $e) {
+            error_log("DEBUG: JobOrderSubmission->getById - Error: " . $e->getMessage());
             throw new Exception("Error retrieving submission: " . $e->getMessage());
         }
     }
@@ -274,5 +296,132 @@ class JobOrderSubmission {
             $this->conn->rollBack();
             throw new Exception("Error deleting submission: " . $e->getMessage());
         }
+    }
+
+    // Update an existing submission
+    public function updateSubmission($id, $notes, $total_expenses) {
+        try {
+            // Update query
+            $query = "UPDATE " . $this->table_name . " 
+                    SET notes = :notes, total_expenses = :total_expenses, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = :id";
+
+            // Prepare statement
+            $stmt = $this->conn->prepare($query);
+
+            // Sanitize and bind values
+            $notes = htmlspecialchars(strip_tags($notes));
+            $total_expenses = htmlspecialchars(strip_tags($total_expenses));
+            $id = htmlspecialchars(strip_tags($id));
+
+            $stmt->bindParam(":notes", $notes);
+            $stmt->bindParam(":total_expenses", $total_expenses);
+            $stmt->bindParam(":id", $id);
+
+            // Execute query
+            if ($stmt->execute()) {
+                return true;
+            }
+            return false;
+        } catch (Exception $e) {
+            throw new Exception("Error updating submission: " . $e->getMessage());
+        }
+    }
+
+    // Delete all expenses for a submission
+    public function deleteExpenses($submission_id) {
+        try {
+            // Delete query
+            $query = "DELETE FROM " . $this->expenses_table . " WHERE submission_id = :submission_id";
+
+            // Prepare statement
+            $stmt = $this->conn->prepare($query);
+
+            // Sanitize and bind values
+            $submission_id = htmlspecialchars(strip_tags($submission_id));
+            $stmt->bindParam(":submission_id", $submission_id);
+
+            // Execute query
+            if ($stmt->execute()) {
+                return true;
+            }
+            return false;
+        } catch (Exception $e) {
+            throw new Exception("Error deleting expenses: " . $e->getMessage());
+        }
+    }
+
+    // Delete attachments except those with specified IDs
+    public function deleteAttachmentsExcept($submission_id, $attachment_ids = []) {
+        try {
+            // If no attachment IDs provided, delete all attachments
+            if (empty($attachment_ids)) {
+                $query = "DELETE FROM " . $this->attachments_table . " WHERE submission_id = :submission_id";
+                $stmt = $this->conn->prepare($query);
+                $stmt->bindParam(":submission_id", $submission_id);
+                return $stmt->execute();
+            }
+
+            // Convert attachment IDs to string for SQL IN clause
+            $attachment_ids_str = implode(',', array_map('intval', $attachment_ids));
+
+            // Delete query with NOT IN clause
+            $query = "DELETE FROM " . $this->attachments_table . " 
+                    WHERE submission_id = :submission_id 
+                    AND id NOT IN (" . $attachment_ids_str . ")";
+
+            // Prepare statement
+            $stmt = $this->conn->prepare($query);
+
+            // Sanitize and bind values
+            $submission_id = htmlspecialchars(strip_tags($submission_id));
+            $stmt->bindParam(":submission_id", $submission_id);
+
+            // Execute query
+            if ($stmt->execute()) {
+                return true;
+            }
+            return false;
+        } catch (Exception $e) {
+            throw new Exception("Error deleting attachments: " . $e->getMessage());
+        }
+    }
+
+    // Delete a specific attachment
+    public function deleteAttachment($attachment_id) {
+        try {
+            // Get attachment info first to delete the file
+            $query = "SELECT file_path FROM " . $this->attachments_table . " WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":id", $attachment_id);
+            $stmt->execute();
+            $attachment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Delete the file if it exists and is not a manual attachment
+            if ($attachment && $attachment['file_path'] !== 'manual_attachment') {
+                $file_path = $_SERVER['DOCUMENT_ROOT'] . '/' . $attachment['file_path'];
+                if (file_exists($file_path)) {
+                    unlink($file_path);
+                }
+            }
+
+            // Delete query
+            $query = "DELETE FROM " . $this->attachments_table . " WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":id", $attachment_id);
+
+            // Execute query
+            if ($stmt->execute()) {
+                return true;
+            }
+            return false;
+        } catch (Exception $e) {
+            throw new Exception("Error deleting attachment: " . $e->getMessage());
+        }
+    }
+
+    // Get table name
+    public function getTableName() {
+        return $this->table_name;
     }
 } 

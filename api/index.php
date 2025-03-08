@@ -769,6 +769,11 @@ $router->respond('POST', '/job-orders/submit-completion', function() use ($jobOr
     $data->job_order_id = $_POST['job_order_id'] ?? null;
     $data->liaison_id = $_POST['liaison_id'] ?? null;
     $data->notes = $_POST['notes'] ?? '';
+    $data->update_job_order_status = $_POST['update_job_order_status'] ?? 'false';
+    
+    // Check if this is an update
+    $data->is_update = $_POST['is_update'] ?? 'false';
+    $data->submission_id = $_POST['submission_id'] ?? null;
     
     // Parse expenses JSON if provided
     if (isset($_POST['expenses'])) {
@@ -777,29 +782,32 @@ $router->respond('POST', '/job-orders/submit-completion', function() use ($jobOr
         $data->expenses = [];
     }
     
+    // Parse manual attachments JSON if provided
+    if (isset($_POST['manual_attachments'])) {
+        $data->manual_attachments = $_POST['manual_attachments'];
+    }
+    
+    // Parse existing attachment IDs JSON if provided
+    if (isset($_POST['existing_attachment_ids'])) {
+        $data->existing_attachment_ids = $_POST['existing_attachment_ids'];
+    }
+    
     echo json_encode($jobOrderSubmissionController->create($data));
-});
-
-$router->respond('GET', '/job-orders/submissions/[i:id]', function($request) use ($jobOrderSubmissionController) {
-    echo json_encode($jobOrderSubmissionController->getById($request->id));
 });
 
 $router->respond('GET', '/job-orders/[i:jobOrderId]/submissions', function($request) use ($jobOrderSubmissionController) {
     echo json_encode($jobOrderSubmissionController->getByJobOrderId($request->jobOrderId));
 });
 
-$router->respond('GET', '/liaisons/[i:liaisonId]/submissions', function($request) use ($jobOrderSubmissionController) {
-    echo json_encode($jobOrderSubmissionController->getByLiaisonId($request->liaisonId));
+$router->respond('GET', '/job-orders/submissions/[i:id]', function($request) use ($jobOrderSubmissionController) {
+    echo json_encode($jobOrderSubmissionController->getById($request->id));
 });
 
-$router->respond('PUT', '/job-orders/submissions/[i:id]/status', function($request) use ($jobOrderSubmissionController) {
-    $data = json_decode(file_get_contents('php://input'), true);
-    echo json_encode($jobOrderSubmissionController->updateStatus($request->id, $data['status']));
+$router->respond('DELETE', '/job-orders/submissions/attachments/[i:id]', function($request) use ($jobOrderSubmissionController) {
+    echo json_encode($jobOrderSubmissionController->deleteAttachment($request->id));
 });
 
-$router->respond('DELETE', '/job-orders/submissions/[i:id]', function($request) use ($jobOrderSubmissionController) {
-    echo json_encode($jobOrderSubmissionController->delete($request->id));
-});
+
 
 // Dispatch the router
 $router->dispatch(); 
