@@ -80,75 +80,16 @@ const apiService = {
     deleteAssignment: (id) => apiClient.delete(`/job-orders/assigned/${id}`),
     getById: (id) => apiClient.get(`/job-orders/${id}`),
     submitCompletion: (formData) => {
-      console.log('[DEBUG API] submitCompletion - Called with formData');
-      
-      // Log the FormData contents
-      console.log('[DEBUG API] submitCompletion - FormData keys:');
-      for (const pair of formData._parts) {
-        if (pair[0] === 'expenses') {
-          console.log(`  ${pair[0]}: ${pair[1]}`);
-        } else if (pair[0].startsWith('attachments')) {
-          console.log(`  ${pair[0]}: [File object]`);
-        } else {
-          console.log(`  ${pair[0]}: ${pair[1]}`);
-        }
-      }
-      
+      // Set the correct content type for form data with files
       const config = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       };
-      
-      return apiClient.post('/job-orders/submit-completion', formData, config)
-        .then(response => {
-          console.log('[DEBUG API] submitCompletion - Response:', JSON.stringify(response.data));
-          return response;
-        })
-        .catch(error => {
-          console.error('[DEBUG API] submitCompletion - Error:', error.message);
-          if (error.response) {
-            console.error('[DEBUG API] submitCompletion - Response data:', JSON.stringify(error.response.data));
-          }
-          throw error;
-        });
+      return apiClient.post('/job-orders/submit-completion', formData, config);
     },
-    getSubmissions: (jobOrderId) => {
-      console.log(`[DEBUG API] getSubmissions - Called with jobOrderId: ${jobOrderId}`);
-      return apiClient.get(`/job-orders/${jobOrderId}/submissions`)
-        .then(response => {
-          console.log(`[DEBUG API] getSubmissions - Response for job order ID ${jobOrderId}:`, JSON.stringify(response.data));
-          return response;
-        })
-        .catch(error => {
-          console.error(`[DEBUG API] getSubmissions - Error for job order ID ${jobOrderId}:`, error.message);
-          throw error;
-        });
-    },
-    getSubmissionById: (submissionId) => {
-      console.log(`[DEBUG API] getSubmissionById - Called with submissionId: ${submissionId}`);
-      return apiClient.get(`/job-orders/submissions/${submissionId}`)
-        .then(response => {
-          console.log(`[DEBUG API] getSubmissionById - Response for ID ${submissionId}:`, JSON.stringify(response.data));
-          return response;
-        })
-        .catch(error => {
-          console.error(`[DEBUG API] getSubmissionById - Error for ID ${submissionId}:`, error.message);
-          throw error;
-        });
-    },
-    debugGetExpensesAndAttachments: (submissionId) => {
-      console.log(`[DEBUG API] debugGetExpensesAndAttachments - Called with submissionId: ${submissionId}`);
-      return apiClient.get(`/job-orders/submissions/debug?id=${submissionId}`)
-        .then(response => {
-          console.log(`[DEBUG API] debugGetExpensesAndAttachments - Response for ID ${submissionId}:`, JSON.stringify(response.data));
-          return response;
-        })
-        .catch(error => {
-          console.error(`[DEBUG API] debugGetExpensesAndAttachments - Error for ID ${submissionId}:`, error.message);
-          throw error;
-        });
-    },
+    getSubmissions: (jobOrderId) => apiClient.get(`/job-orders/${jobOrderId}/submissions`),
+    getSubmissionById: (submissionId) => apiClient.get(`/job-orders/submissions/${submissionId}`),
     getLiaisonSubmissions: (liaisonId) => apiClient.get(`/liaisons/${liaisonId}/submissions`),
     updateSubmissionStatus: (submissionId, status) => apiClient.put(`/job-orders/submissions/${submissionId}/status`, { status }),
     deleteSubmission: (submissionId) => apiClient.delete(`/job-orders/submissions/${submissionId}`),

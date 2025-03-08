@@ -42,15 +42,11 @@ apiClient.interceptors.request.use(
       config.baseURL = currentUrl.replace('http://', 'https://');
     }
     
-    console.log(`[DEBUG API REQUEST] ${config.method.toUpperCase()} ${config.url}`, {
-      headers: config.headers,
-      data: config.data,
-      params: config.params
-    });
+    console.log(`API Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`, config.data || '');
     return config;
   },
   (error) => {
-    console.error('[DEBUG API REQUEST ERROR]', error.message);
+    console.error('API Request Error:', error);
     return Promise.reject(error);
   }
 );
@@ -58,22 +54,17 @@ apiClient.interceptors.request.use(
 // Add response interceptor for logging
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`[DEBUG API RESPONSE] ${response.config.method.toUpperCase()} ${response.config.url}`, {
-      status: response.status,
-      statusText: response.statusText,
-      data: response.data
-    });
+    console.log(`API Response [${response.status}] from ${response.config.url}:`, 
+      response.data ? (Array.isArray(response.data) ? `Array with ${response.data.length} items` : response.data) : 'No data');
     return response;
   },
   (error) => {
-    console.error('[DEBUG API RESPONSE ERROR]', {
-      url: error.config?.url,
-      method: error.config?.method?.toUpperCase(),
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message
-    });
+    console.error('API Response Error:', error.message);
+    if (error.response) {
+      console.error(`Status: ${error.response.status}`, error.response.data);
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    }
     return Promise.reject(error);
   }
 );

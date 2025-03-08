@@ -268,64 +268,21 @@ class JobOrderSubmissionController {
 
     // Get submission by ID
     public function getById($id) {
-        error_log("DEBUG: JobOrderSubmissionController->getById called with ID: $id");
-        
         try {
             $submission = $this->jobOrderSubmission->getById($id);
             
             if (!$submission) {
-                error_log("DEBUG: JobOrderSubmissionController->getById - No submission found with ID: $id");
                 return [
                     'success' => false,
                     'message' => 'Submission not found'
                 ];
             }
-            
-            error_log("DEBUG: JobOrderSubmissionController->getById found submission: " . json_encode($submission));
-            
-            // Ensure expenses and attachments are included
-            if (!isset($submission['expenses']) && !isset($submission['expenses_data'])) {
-                error_log("DEBUG: JobOrderSubmissionController->getById - No expenses found, fetching separately");
-                // Get expenses separately
-                $query = "SELECT * FROM job_order_submission_expenses WHERE submission_id = :submission_id";
-                $stmt = $this->conn->prepare($query);
-                $stmt->bindParam(":submission_id", $id);
-                $stmt->execute();
-                $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                $submission['expenses'] = $expenses;
-                $submission['expenses_data'] = $expenses;
-                error_log("DEBUG: JobOrderSubmissionController->getById - Fetched expenses: " . json_encode($expenses));
-            } else {
-                error_log("DEBUG: JobOrderSubmissionController->getById - Expenses already included: " . 
-                    (isset($submission['expenses']) ? json_encode($submission['expenses']) : 'null') . ", " .
-                    (isset($submission['expenses_data']) ? json_encode($submission['expenses_data']) : 'null'));
-            }
-            
-            if (!isset($submission['attachments']) && !isset($submission['attachments_data'])) {
-                error_log("DEBUG: JobOrderSubmissionController->getById - No attachments found, fetching separately");
-                // Get attachments separately
-                $query = "SELECT * FROM job_order_submission_attachments WHERE submission_id = :submission_id";
-                $stmt = $this->conn->prepare($query);
-                $stmt->bindParam(":submission_id", $id);
-                $stmt->execute();
-                $attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                $submission['attachments'] = $attachments;
-                $submission['attachments_data'] = $attachments;
-                error_log("DEBUG: JobOrderSubmissionController->getById - Fetched attachments: " . json_encode($attachments));
-            } else {
-                error_log("DEBUG: JobOrderSubmissionController->getById - Attachments already included: " . 
-                    (isset($submission['attachments']) ? json_encode($submission['attachments']) : 'null') . ", " .
-                    (isset($submission['attachments_data']) ? json_encode($submission['attachments_data']) : 'null'));
-            }
-            
+
             return [
                 'success' => true,
                 'data' => $submission
             ];
         } catch (Exception $e) {
-            error_log("DEBUG: JobOrderSubmissionController->getById - Error: " . $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Error retrieving submission: ' . $e->getMessage()
@@ -493,45 +450,6 @@ class JobOrderSubmissionController {
             return [
                 'success' => false,
                 'message' => 'Error deleting attachment: ' . $e->getMessage()
-            ];
-        }
-    }
-
-    // Debug function to directly check the database for expenses and attachments
-    public function debugGetExpensesAndAttachments($submission_id) {
-        error_log("DEBUG: JobOrderSubmissionController->debugGetExpensesAndAttachments called with ID: $submission_id");
-        
-        try {
-            // Get expenses directly from the database
-            $query = "SELECT * FROM job_order_submission_expenses WHERE submission_id = :submission_id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(":submission_id", $submission_id);
-            $stmt->execute();
-            $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            error_log("DEBUG: JobOrderSubmissionController->debugGetExpensesAndAttachments - Direct DB query for expenses returned: " . json_encode($expenses));
-            
-            // Get attachments directly from the database
-            $query = "SELECT * FROM job_order_submission_attachments WHERE submission_id = :submission_id";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(":submission_id", $submission_id);
-            $stmt->execute();
-            $attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            error_log("DEBUG: JobOrderSubmissionController->debugGetExpensesAndAttachments - Direct DB query for attachments returned: " . json_encode($attachments));
-            
-            return [
-                'success' => true,
-                'data' => [
-                    'expenses' => $expenses,
-                    'attachments' => $attachments
-                ]
-            ];
-        } catch (Exception $e) {
-            error_log("DEBUG: JobOrderSubmissionController->debugGetExpensesAndAttachments - Error: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Error retrieving data: ' . $e->getMessage()
             ];
         }
     }

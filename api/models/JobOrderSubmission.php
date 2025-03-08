@@ -121,11 +121,9 @@ class JobOrderSubmission {
 
     // Get submission by ID with expenses and attachments
     public function getById($id) {
-        error_log("DEBUG: JobOrderSubmission->getById called with ID: $id");
-        
         try {
             // Query to get submission
-            $query = "SELECT s.*, jo.title as job_order_title, u.name as liaison_name 
+            $query = "SELECT s.*, jo.description as job_order_title, u.name as liaison_name 
                     FROM " . $this->table_name . " s
                     LEFT JOIN job_orders jo ON s.job_order_id = jo.job_order_id
                     LEFT JOIN users u ON s.liaison_id = u.id
@@ -136,18 +134,15 @@ class JobOrderSubmission {
 
             // Bind ID
             $stmt->bindParam(":id", $id);
-            
+
             // Execute query
             $stmt->execute();
             $submission = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             if (!$submission) {
-                error_log("DEBUG: JobOrderSubmission->getById - No submission found with ID: $id");
                 return null;
             }
-            
-            error_log("DEBUG: JobOrderSubmission->getById - Found submission: " . json_encode($submission));
-            
+
             // Get expenses
             $query = "SELECT * FROM " . $this->expenses_table . " WHERE submission_id = :submission_id";
             $stmt = $this->conn->prepare($query);
@@ -155,13 +150,9 @@ class JobOrderSubmission {
             $stmt->execute();
             $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            error_log("DEBUG: JobOrderSubmission->getById - Fetched expenses: " . json_encode($expenses));
-            
             // Add expenses to submission
             $submission['expenses'] = $expenses;
-            // Also add as expenses_data for compatibility
-            $submission['expenses_data'] = $expenses;
-            
+
             // Get attachments
             $query = "SELECT * FROM " . $this->attachments_table . " WHERE submission_id = :submission_id";
             $stmt = $this->conn->prepare($query);
@@ -169,18 +160,11 @@ class JobOrderSubmission {
             $stmt->execute();
             $attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            error_log("DEBUG: JobOrderSubmission->getById - Fetched attachments: " . json_encode($attachments));
-            
             // Add attachments to submission
             $submission['attachments'] = $attachments;
-            // Also add as attachments_data for compatibility
-            $submission['attachments_data'] = $attachments;
-            
-            error_log("DEBUG: JobOrderSubmission->getById - Final submission data: " . json_encode($submission));
 
             return $submission;
         } catch (Exception $e) {
-            error_log("DEBUG: JobOrderSubmission->getById - Error: " . $e->getMessage());
             throw new Exception("Error retrieving submission: " . $e->getMessage());
         }
     }

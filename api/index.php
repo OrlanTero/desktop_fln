@@ -807,7 +807,5 @@ $router->respond('DELETE', '/job-orders/submissions/attachments/[i:id]', functio
     echo json_encode($jobOrderSubmissionController->deleteAttachment($request->id));
 });
 
-
-
 // Dispatch the router
 $router->dispatch(); 
