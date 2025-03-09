@@ -621,7 +621,7 @@ const JobOrders = ({ user, onLogout }) => {
     if (allJobOrders.length === 0) return 0;
     
     const completedCount = allJobOrders.filter(job => 
-      job.status === 'COMPLETED' || job.status === 'SUBMITTED'
+      job.status === 'COMPLETED' 
     ).length;
     
     return Math.round((completedCount / allJobOrders.length) * 100);

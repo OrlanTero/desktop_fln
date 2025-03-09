@@ -380,6 +380,18 @@ const Projects = ({ user, onLogout }) => {
     }
   };
   
+  // Add progress calculation function
+  const calculateProgress = (project) => {
+    // If no tasks, return 0
+    if (!project.total_tasks || project.total_tasks === 0) return 0;
+    
+    // If completed_tasks is undefined, treat as 0
+    const completedTasks = project.completed_tasks || 0;
+    
+    // Calculate percentage
+    return Math.round((completedTasks / project.total_tasks) * 100);
+  };
+  
   // Get paginated data
   const paginatedProjects = filteredProjects.slice(
     page * rowsPerPage,
@@ -633,11 +645,11 @@ const Projects = ({ user, onLogout }) => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <LinearProgress
                           variant="determinate"
-                          value={(project.completed_tasks / project.total_tasks) * 100}
+                          value={calculateProgress(project)}
                           sx={{ flexGrow: 1 }}
                         />
                         <Typography variant="body2">
-                          {Math.round((project.completed_tasks / project.total_tasks) * 100)}%
+                          {calculateProgress(project)}%
                         </Typography>
                       </Box>
                     </TableCell>

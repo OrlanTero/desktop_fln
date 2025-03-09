@@ -632,16 +632,12 @@ const JobOrderSubmissionScreen = ({ route, navigation }) => {
   // Render loading state
   if (loading) {
     return (
-      <ScreenWrapper 
-        title="Job Order Submission" 
-        showBackButton={true}
-        onBackPress={() => navigation.goBack()}
-      >
+      <View style={{ flex: 1 }}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#007BFF" />
           <Text style={styles.loadingText}>Loading job order details...</Text>
         </View>
-      </ScreenWrapper>
+      </View>
     );
   }
 

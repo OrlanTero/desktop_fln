@@ -48,7 +48,10 @@ class ProjectController {
                         "total_amount" => $row['total_amount'],
                         "paid_amount" => $row['paid_amount'],
                         "created_at" => $row['created_at'],
-                        "updated_at" => $row['updated_at']
+                        "updated_at" => $row['updated_at'],
+                        
+                        "total_tasks" => $this->getTotalTasks($row['project_id']),
+                        "completed_tasks" => $this->getCompletedTasks($row['project_id']),
                     );
                     
                     array_push($projects_arr, $project_item);
@@ -70,6 +73,28 @@ class ProjectController {
                 "message" => "Error fetching projects: " . $e->getMessage()
             );
         }
+    }
+
+    // Get total tasks for a project
+    private function getTotalTasks($project_id) {
+        $query = "SELECT COUNT(*) as total_jobs FROM job_orders WHERE project_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $project_id);
+        $stmt->execute();   
+        
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row['total_jobs'];
+    }
+
+    // Get completed tasks for a project
+    private function getCompletedTasks($project_id) {
+        $query = "SELECT COUNT(*) as completed_jobs FROM job_orders WHERE project_id = ? AND status = 'COMPLETED'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $project_id);
+        $stmt->execute();
+        
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row['completed_jobs'];
     }
 
     // Get project by ID
