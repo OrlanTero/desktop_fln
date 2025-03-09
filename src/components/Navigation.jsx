@@ -144,11 +144,6 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
           path: '/proposals',
         },
         {
-          text: 'Proposal Conversion',
-          icon: <TransformIcon />,
-          path: '/proposal-conversion',
-        },
-        {
           text: 'Projects',
           icon: <ProjectsIcon />,
           path: '/projects',

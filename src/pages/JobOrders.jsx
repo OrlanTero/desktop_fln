@@ -604,6 +604,53 @@ const JobOrders = ({ user, onLogout }) => {
     return service ? service.service_name : 'Unknown Service';
   };
   
+  // Calculate overall completion percentage
+  const calculateOverallProgress = () => {
+    const allJobOrders = [...unassignedJobOrders, ...assignedJobOrders];
+    if (allJobOrders.length === 0) return 0;
+    
+    const completedCount = allJobOrders.filter(job => 
+      job.status === 'COMPLETED' || job.status === 'SUBMITTED'
+    ).length;
+    
+    return Math.round((completedCount / allJobOrders.length) * 100);
+  };
+  
+  // Calculate days remaining
+  const calculateDaysRemaining = () => {
+    const allJobOrders = [...unassignedJobOrders, ...assignedJobOrders];
+    const incompleteTasks = allJobOrders.filter(job => 
+      job.status !== 'COMPLETED' && 
+      job.status !== 'CANCELLED' && 
+      job.due_date
+    );
+    
+    if (incompleteTasks.length === 0) return null;
+    
+    const today = new Date();
+    const daysRemaining = incompleteTasks.map(job => {
+      const dueDate = new Date(job.due_date);
+      const diffTime = dueDate - today;
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    });
+    
+    return Math.min(...daysRemaining);
+  };
+  
+  // Calculate status counts
+  const calculateStatusCounts = () => {
+    const allJobOrders = [...unassignedJobOrders, ...assignedJobOrders];
+    return {
+      total: allJobOrders.length,
+      pending: allJobOrders.filter(job => job.status === 'PENDING').length,
+      inProgress: allJobOrders.filter(job => job.status === 'IN PROGRESS').length,
+      onHold: allJobOrders.filter(job => job.status === 'ON HOLD').length,
+      completed: allJobOrders.filter(job => job.status === 'COMPLETED').length,
+      cancelled: allJobOrders.filter(job => job.status === 'CANCELLED').length,
+      submitted: allJobOrders.filter(job => job.status === 'SUBMITTED').length
+    };
+  };
+  
   if (loading && projects.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -623,16 +670,89 @@ const JobOrders = ({ user, onLogout }) => {
           Job Orders
         </Typography>
         
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ flexGrow: 1, mr: 3 }}>
+            {/* Overall Progress */}
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="h6">Overall Progress</Typography>
+                <Typography variant="h6">{calculateOverallProgress()}%</Typography>
+              </Box>
+              <LinearProgress 
+                variant="determinate" 
+                value={calculateOverallProgress()} 
+                sx={{ 
+                  height: 10, 
+                  borderRadius: 5,
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: '#4CAF50'
+                  }
+                }}
+              />
+            </Box>
+            
+            {/* Days Remaining */}
+            {calculateDaysRemaining() !== null && (
+              <Typography variant="subtitle1" color={calculateDaysRemaining() < 0 ? 'error' : 'textSecondary'}>
+                {calculateDaysRemaining() < 0 
+                  ? `Overdue by ${Math.abs(calculateDaysRemaining())} days`
+                  : `${calculateDaysRemaining()} days remaining until next due date`
+                }
+              </Typography>
+            )}
+          </Box>
+          
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
             onClick={handleCreateDialogOpen}
-            disabled={projects.length === 0}
           >
-            Create New Job Order
+            Add New Job Order
           </Button>
+        </Box>
+        
+        {/* Add after the overall progress section and before the project tabs */}
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'grey.100' }}>
+                <Typography variant="h6" color="textSecondary">Total</Typography>
+                <Typography variant="h4">{calculateStatusCounts().total}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff3e0' }}>
+                <Typography variant="h6" color="warning.main">Pending</Typography>
+                <Typography variant="h4">{calculateStatusCounts().pending}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e3f2fd' }}>
+                <Typography variant="h6" color="primary.main">In Progress</Typography>
+                <Typography variant="h4">{calculateStatusCounts().inProgress}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff8e1' }}>
+                <Typography variant="h6" color="warning.dark">On Hold</Typography>
+                <Typography variant="h4">{calculateStatusCounts().onHold}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e8f5e9' }}>
+                <Typography variant="h6" color="success.main">Completed</Typography>
+                <Typography variant="h4">{calculateStatusCounts().completed}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#ffebee' }}>
+                <Typography variant="h6" color="error.main">Cancelled</Typography>
+                <Typography variant="h4">{calculateStatusCounts().cancelled}</Typography>
+              </Paper>
+            </Grid>
+          </Grid>
         </Box>
         
         {projects.length === 0 ? (
@@ -807,16 +927,6 @@ const JobOrders = ({ user, onLogout }) => {
                                   <Typography variant="body2" sx={{ mb: 1 }}>
                                     {jobOrder.description}
                                   </Typography>
-                                  <Box sx={{ mt: 2 }}>
-                                    <Typography variant="body2" color="textSecondary" gutterBottom>
-                                      Progress: {jobOrder.progress || 0}%
-                                    </Typography>
-                                    <LinearProgress 
-                                      variant="determinate" 
-                                      value={jobOrder.progress || 0} 
-                                      sx={{ height: 8, borderRadius: 5 }}
-                                    />
-                                  </Box>
                                   <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
                                     Assigned to: {jobOrder.liaison_name || 'Unknown'}
                                   </Typography>

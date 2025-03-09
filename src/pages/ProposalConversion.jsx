@@ -81,6 +81,7 @@ const Proposals = ({ user, onLogout }) => {
       }
       
       const response = await window.api.proposal.getAll();
+      
       if (response && response.success) {
 
         const dataa =(response.data || []).filter(proposal => proposal.status.toLowerCase() === 'accepted');
@@ -115,11 +116,13 @@ const Proposals = ({ user, onLogout }) => {
       setError('Only accepted proposals can be converted to projects');
       return;
     }
-    
+
+    const proposalData = proposals.find(p => p.proposal_id === proposal.proposal_id);
+
     // Navigate to project form with proposal data
     navigate('/projects/new', { 
       state: { 
-        proposalData: proposal,
+        proposalData: proposalData,
         isConversion: true
       }
     });

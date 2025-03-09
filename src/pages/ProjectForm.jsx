@@ -110,6 +110,7 @@ const ProjectForm = ({ user, onLogout }) => {
         
         // If converting from proposal
         if (isConversion && proposalData) {
+          console.log(proposalData)
           setFormData({
             project_name: proposalData.project_name || '',
             client_id: proposalData.client_id || '',
@@ -330,7 +331,7 @@ const ProjectForm = ({ user, onLogout }) => {
         start_date: formData.start_date ? format(formData.start_date, 'yyyy-MM-dd') : null,
         end_date: formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : null,
         total_amount: calculateSubtotal(),
-        status: 'Pending'
+        status: 'PENDING'
       };
 
       if (proposalData) {
@@ -386,13 +387,11 @@ const ProjectForm = ({ user, onLogout }) => {
             service_id: createdServiceId,
             project_id: projectId,
             proposal_id: proposalData ? proposalData.id : null,
-            status: 'Pending'
+            status: 'PENDING'
           };
 
-          console.log(jobOrderData)
-          
+
           const jobOrderResponse = await window.api.jobOrders.create(jobOrderData);
-          console.log(jobOrderResponse)
           if (!jobOrderResponse.success) {
             throw new Error('Failed to create job order: ' + jobOrderResponse.message);
           }
@@ -401,7 +400,7 @@ const ProjectForm = ({ user, onLogout }) => {
       
       // If this is a conversion, update the proposal status
       if (isConversion && proposalData) {
-        const updateResponse =await window.api.proposal.updateOnlyStatus(proposalData.id, 'Converted' );
+        const updateResponse = await window.api.proposal.updateOnlyStatus(proposalData.id, 'CONVERTED' );
         console.log(updateResponse)
       }
       

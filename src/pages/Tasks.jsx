@@ -550,6 +550,18 @@ const Tasks = ({ user, onLogout }) => {
     }, 0).toFixed(2);
   };
   
+  // Calculate status counts
+  const calculateStatusCounts = () => {
+    return {
+      total: tasks.length,
+      pending: tasks.filter(task => task.status === 'PENDING').length,
+      inProgress: tasks.filter(task => task.status === 'IN_PROGRESS').length,
+      completed: tasks.filter(task => task.status === 'COMPLETED').length,
+      cancelled: tasks.filter(task => task.status === 'CANCELLED').length,
+      submitted: tasks.filter(task => task.status === 'SUBMITTED').length
+    };
+  };
+
   return (
     <Box sx={{ display: 'flex' }}>
       <Navigation drawerWidth={240} />
@@ -558,6 +570,48 @@ const Tasks = ({ user, onLogout }) => {
         <Typography variant="h4" gutterBottom>
           Tasks
         </Typography>
+        
+        {/* Status Summary Cards */}
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'grey.100' }}>
+                <Typography variant="h6" color="textSecondary">Total</Typography>
+                <Typography variant="h4">{calculateStatusCounts().total}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff3e0' }}>
+                <Typography variant="h6" color="warning.main">Pending</Typography>
+                <Typography variant="h4">{calculateStatusCounts().pending}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e3f2fd' }}>
+                <Typography variant="h6" color="info.main">In Progress</Typography>
+                <Typography variant="h4">{calculateStatusCounts().inProgress}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e8f5e9' }}>
+                <Typography variant="h6" color="success.main">Completed</Typography>
+                <Typography variant="h4">{calculateStatusCounts().completed}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#ffebee' }}>
+                <Typography variant="h6" color="error.main">Cancelled</Typography>
+                <Typography variant="h4">{calculateStatusCounts().cancelled}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e3f2fd' }}>
+                <Typography variant="h6" color="primary.main">Submitted</Typography>
+                <Typography variant="h4">{calculateStatusCounts().submitted}</Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Box>
         
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
           <Button
