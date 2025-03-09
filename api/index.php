@@ -32,6 +32,7 @@ require_once 'controllers/JobOrderController.php';
 require_once 'controllers/EmailController.php';
 require_once 'controllers/AssignedJobOrderController.php';
 require_once 'controllers/JobOrderSubmissionController.php';
+require_once 'controllers/TaskController.php';
 
 // Add new includes
 require_once 'models/CompanyInfo.php';
@@ -39,6 +40,7 @@ require_once 'controllers/CompanyInfoController.php';
 require_once 'models/Proposal.php';
 require_once 'controllers/ProposalController.php';
 require_once 'models/JobOrderSubmission.php';
+require_once 'models/Task.php';
 
 // Initialize Klein router
 $router = new \Klein\Klein();
@@ -62,6 +64,7 @@ $emailController = new EmailController($db);
 $companyInfoController = new CompanyInfoController($db);
 $assignedJobOrderController = new AssignedJobOrderController($db);
 $jobOrderSubmissionController = new JobOrderSubmissionController($db);
+$taskController = new TaskController($db);
 
 // Test route to check if API is working
 $router->respond('GET', '/test', function() {
@@ -90,6 +93,11 @@ $router->respond('GET', '/db-test', function() use ($db) {
 // Get all users
 $router->respond('GET', '/users', function() use ($userController) {
     echo json_encode($userController->getAll());
+});
+
+// Get all users by role
+$router->respond('GET', '/users/role/[s:role]', function($request) use ($userController) {
+    echo json_encode($userController->getAllByRole($request->role));
 });
 
 // Get user by ID
@@ -805,6 +813,34 @@ $router->respond('GET', '/job-orders/submissions/[i:id]', function($request) use
 
 $router->respond('DELETE', '/job-orders/submissions/attachments/[i:id]', function($request) use ($jobOrderSubmissionController) {
     echo json_encode($jobOrderSubmissionController->deleteAttachment($request->id));
+});
+
+// Task routes
+$router->respond('GET', '/tasks', function() use ($taskController) {
+    echo json_encode($taskController->getAllTasks());
+});
+
+$router->respond('GET', '/tasks/liaison/[i:id]', function($request) use ($taskController) {
+    return $taskController->getTasksByLiaison($request->id);
+});
+
+$router->respond('POST', '/tasks', function() use ($taskController) {
+    $data = json_decode(file_get_contents("php://input"));
+    echo json_encode($taskController->createTask($data));
+});
+
+$router->respond('PUT', '/tasks/[i:id]', function($request) use ($taskController) {
+    $data = json_decode(file_get_contents("php://input"));
+    echo json_encode($taskController->updateTask($request->id, $data));
+});
+
+$router->respond('PUT', '/tasks/[i:id]/status', function($request) use ($taskController) {
+    $data = json_decode(file_get_contents("php://input"));
+    echo json_encode($taskController->updateTaskStatus($request->id, $data));
+});
+
+$router->respond('DELETE', '/tasks/[i:id]', function($request) use ($taskController) {
+    echo $taskController->deleteTask($request->id);
 });
 
 // Dispatch the router

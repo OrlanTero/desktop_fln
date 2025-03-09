@@ -21,6 +21,17 @@ class UserController {
             "users" => $users
         ];
     }
+
+    // Get all users by role
+    public function getAllByRole($role) {
+        $stmt = $this->user->getAllByRole($role);
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return [
+            "status" => "success",
+            "users" => $users
+        ];
+    }
     
     // Get user by ID
     public function getById($id) {

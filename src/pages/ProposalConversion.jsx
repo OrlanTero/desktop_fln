@@ -116,8 +116,13 @@ const Proposals = ({ user, onLogout }) => {
       return;
     }
     
-    setSelectedProposal(proposal);
-    setConvertDialogOpen(true);
+    // Navigate to project form with proposal data
+    navigate('/projects/new', { 
+      state: { 
+        proposalData: proposal,
+        isConversion: true
+      }
+    });
   };
   
   const handleConvertConfirm = async () => {

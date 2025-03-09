@@ -84,6 +84,11 @@ contextBridge.exposeInMainWorld('api', {
     getAll: async () => {
       return makeRequest(`${API_BASE_URL}/users`);
     },
+
+    // Get all users by role
+    getAllByRole: async (role) => {
+      return makeRequest(`${API_BASE_URL}/users/role/${role}`);
+    },
     
     // Get user by ID
     getById: async (id) => {
@@ -662,6 +667,39 @@ contextBridge.exposeInMainWorld('api', {
   email: {
     send: async (emailData) => {
       return makeRequest(`${API_BASE_URL}/email/send`, 'POST', emailData);
+    }
+  },
+
+  // Task API
+  task: {
+    // Get all tasks
+    getAll: async () => {
+      return makeRequest(`${API_BASE_URL}/tasks`);
+    },
+    
+    // Get tasks by liaison
+    getByLiaison: async (liaisonId) => {
+      return makeRequest(`${API_BASE_URL}/tasks/liaison/${liaisonId}`);
+    },
+    
+    // Create task
+    create: async (taskData) => {
+      return makeRequest(`${API_BASE_URL}/tasks`, 'POST', taskData);
+    },
+    
+    // Update task
+    update: async (id, taskData) => {
+      return makeRequest(`${API_BASE_URL}/tasks/${id}`, 'PUT', taskData);
+    },
+    
+    // Update task status
+    updateStatus: async (id, statusData) => {
+      return makeRequest(`${API_BASE_URL}/tasks/${id}/status`, 'PUT', statusData);
+    },
+    
+    // Delete task
+    delete: async (id) => {
+      return makeRequest(`${API_BASE_URL}/tasks/${id}`, 'DELETE');
     }
   },
 });

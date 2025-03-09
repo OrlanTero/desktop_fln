@@ -30,6 +30,21 @@ class User {
         
         return $stmt;
     }
+
+    // Get all users by role
+    public function getAllByRole($role) {
+        $query = "SELECT id, name, email, role, photo_url, created_at, updated_at 
+                  FROM " . $this->table_name . " 
+                  WHERE role = :role 
+                  ORDER BY id DESC";
+                  
+        $stmt = $this->conn->prepare($query);   
+        $stmt->bindParam(":role", $role);
+        $stmt->execute();
+        
+        return $stmt;
+    }
+    
     
     // Get single user by ID
     public function getById() {
