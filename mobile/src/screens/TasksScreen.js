@@ -6,92 +6,226 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Alert
 } from 'react-native';
 import { apiService } from '../services/api';
-import SafeAreaWrapper from '../components/SafeAreaWrapper';
+import ScreenWrapper from '../components/ScreenWrapper';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import PauseCircleIcon from 'react-native-vector-icons/MaterialIcons';
+import AssignmentIcon from 'react-native-vector-icons/MaterialIcons';
+import CheckCircleIcon from 'react-native-vector-icons/MaterialIcons';
+import CancelIcon from 'react-native-vector-icons/MaterialIcons';
 
 const TasksScreen = ({ navigation }) => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
 
-  const loadTasks = async () => {
+  // Load user data and tasks
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  // Load user data from AsyncStorage
+  const loadUserData = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('@fln_liaison_user_data');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        console.log('User data loaded:', parsedUser);
+        setUser(parsedUser);
+        // Load tasks for this user
+        loadTasks(parsedUser.id);
+      } else {
+        console.log('No user data found in AsyncStorage');
+        setError('User data not found. Please log in again.');
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('Error loading user data:', err);
+      setError('Error loading user data: ' + err.message);
+      setLoading(false);
+    }
+  };
+
+  const loadTasks = async (liaisonId) => {
     try {
       setError(null);
-      // Replace with your actual API endpoint for tasks
-      // const response = await apiService.tasks.getAll();
-      // if (response.data.status === 'success') {
-      //   setTasks(response.data.data);
-      // }
+      console.log(`Loading tasks for liaison ID: ${liaisonId}`);
       
-      // Placeholder data until API is connected
-      setTasks([
-        { id: 1, title: 'Design homepage mockup', project: 'Website Development', priority: 'High', dueDate: '2023-07-10', status: 'In Progress' },
-        { id: 2, title: 'Implement user authentication', project: 'Mobile App Development', priority: 'Medium', dueDate: '2023-07-15', status: 'Pending' },
-        { id: 3, title: 'Create logo variations', project: 'Logo Design', priority: 'High', dueDate: '2023-07-12', status: 'Completed' },
-        { id: 4, title: 'Optimize meta tags', project: 'SEO Optimization', priority: 'Low', dueDate: '2023-07-20', status: 'Pending' },
-        { id: 5, title: 'Write blog articles', project: 'Content Writing', priority: 'Medium', dueDate: '2023-07-25', status: 'In Progress' },
-      ]);
+      if (!liaisonId) {
+        throw new Error('No liaison ID provided');
+      }
+      
+      const response = await apiService.tasks.getByLiaison(liaisonId);
+      console.log('Tasks API response:', JSON.stringify(response));
+      
+      if (response && response.data && 
+          (response.data.success || response.data.status === 'success')) {
+        const tasksData = response.data.data || [];
+        console.log(`Loaded ${tasksData.length} tasks for liaison ${liaisonId}`);
+        console.log('Tasks data:', JSON.stringify(tasksData));
+        
+        // Check if the data is in the expected format
+        if (tasksData.length > 0) {
+          console.log('First task sample:', JSON.stringify(tasksData[0]));
+        }
+        
+        // Normalize the data if needed
+        const normalizedTasks = tasksData.map(task => ({
+          id: task.id || task.task_id || Math.random().toString(),
+          description: task.description || 'No description',
+          service_name: task.service_name || '',
+          service_category_name: task.service_category_name || '',
+          status: task.status || 'PENDING',
+          due_date: task.due_date || null
+        }));
+        
+        console.log('Normalized tasks:', JSON.stringify(normalizedTasks));
+        setTasks(normalizedTasks);
+      } else {
+        console.error('API response indicates failure:', response?.data?.message);
+        throw new Error(response?.data?.message || 'Failed to load tasks');
+      }
     } catch (err) {
       console.error('Error loading tasks:', err);
       setError('Failed to load tasks. Please try again.');
+      
+      // If API is not yet connected, use placeholder data
+      if (!apiService.tasks || err.message.includes('Network Error')) {
+        console.log('Using placeholder data for tasks');
+        setTasks([
+          { id: 1, description: 'Design homepage mockup', service_name: 'Website Design', service_category_name: 'Web Development', status: 'IN_PROGRESS', due_date: '2023-07-10' },
+          { id: 2, description: 'Implement user authentication', service_name: 'Web Application Development', service_category_name: 'Web Development', status: 'PENDING', due_date: '2023-07-15' },
+          { id: 3, description: 'Create logo variations', service_name: 'Logo Design', service_category_name: 'Graphic Design', status: 'COMPLETED', due_date: '2023-07-12' },
+          { id: 4, description: 'Optimize meta tags', service_name: 'SEO Optimization', service_category_name: 'Digital Marketing', status: 'PENDING', due_date: '2023-07-20' },
+          { id: 5, description: 'Write blog articles', service_name: 'Content Writing', service_category_name: 'Content Creation', status: 'IN_PROGRESS', due_date: '2023-07-25' },
+        ]);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
-
   const onRefresh = () => {
     setRefreshing(true);
-    loadTasks();
+    if (user && user.id) {
+      loadTasks(user.id);
+    } else {
+      setRefreshing(false);
+    }
+  };
+
+  const handleTaskPress = (task) => {
+    navigation.navigate('TaskSubmission', { 
+      taskId: task.id,
+      taskTitle: task.description,
+      currentStatus: task.status,
+      serviceName: task.service_name || 'No Service'
+    });
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'No due date';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } catch (err) {
+      return dateString;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'PENDING':
+        return {
+          color: 'warning',
+          icon: <MaterialIcons name="pause-circle" size={16} color="#ffc107" />
+        };
+      case 'IN_PROGRESS':
+        return {
+          color: 'info',
+          icon: <MaterialIcons name="assignment" size={16} color="#007bff" />
+        };
+      case 'COMPLETED':
+        return {
+          color: 'success',
+          icon: <MaterialIcons name="check-circle" size={16} color="#28a745" />
+        };
+      case 'CANCELLED':
+        return {
+          color: 'error',
+          icon: <MaterialIcons name="cancel" size={16} color="#dc3545" />
+        };
+      case 'SUBMITTED':
+        return {
+          color: 'primary',
+          icon: <MaterialIcons name="assignment-turned-in" size={16} color="#007bff" />
+        };
+      default:
+        return {
+          color: 'default',
+          icon: null
+        };
+    }
   };
 
   const renderTaskItem = ({ item }) => {
-    // Determine priority color
-    let priorityColor = '#999';
-    if (item.priority === 'High') priorityColor = '#dc3545';
-    if (item.priority === 'Medium') priorityColor = '#ffc107';
-    if (item.priority === 'Low') priorityColor = '#28a745';
-
+    console.log('Rendering task item:', JSON.stringify(item));
+    
     // Determine status style
     let statusStyle = styles.statusPending;
     let statusTextStyle = styles.statusTextPending;
     
-    if (item.status === 'In Progress') {
+    if (item.status === 'IN_PROGRESS') {
       statusStyle = styles.statusInProgress;
       statusTextStyle = styles.statusTextInProgress;
-    } else if (item.status === 'Completed') {
+    } else if (item.status === 'COMPLETED') {
       statusStyle = styles.statusCompleted;
       statusTextStyle = styles.statusTextCompleted;
+    } else if (item.status === 'CANCELLED') {
+      statusStyle = styles.statusCancelled;
+      statusTextStyle = styles.statusTextCancelled;
+    } else if (item.status === 'SUBMITTED') {
+      statusStyle = styles.statusSubmitted;
+      statusTextStyle = styles.statusTextSubmitted;
     }
+
+    // Format status text for display
+    const statusText = item.status ? item.status.replace('_', ' ') : 'Unknown';
 
     return (
       <TouchableOpacity 
         style={styles.taskItem}
-        onPress={() => {
-          // Navigate to task details when implemented
-          // navigation.navigate('TaskDetails', { taskId: item.id });
-        }}
+        onPress={() => handleTaskPress(item)}
       >
         <View style={styles.taskHeader}>
-          <Text style={styles.taskTitle}>{item.title}</Text>
-          <View style={[styles.priorityBadge, { backgroundColor: priorityColor }]}>
-            <Text style={styles.priorityText}>{item.priority}</Text>
-          </View>
+          <Text style={styles.taskTitle}>{item.description || 'No description'}</Text>
         </View>
         
-        <Text style={styles.projectName}>Project: {item.project}</Text>
-        <Text style={styles.dueDate}>Due: {item.dueDate}</Text>
+        {item.service_name && (
+          <Text style={styles.serviceName}>Service: {item.service_name}</Text>
+        )}
+        
+        {item.service_category_name && (
+          <Text style={styles.categoryName}>Category: {item.service_category_name}</Text>
+        )}
+        
+        <Text style={styles.dueDate}>Due: {formatDate(item.due_date)}</Text>
         
         <View style={styles.taskFooter}>
           <View style={statusStyle}>
-            <Text style={statusTextStyle}>{item.status}</Text>
+            <Text style={statusTextStyle}>{statusText}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -100,52 +234,58 @@ const TasksScreen = ({ navigation }) => {
 
   if (loading && !refreshing) {
     return (
-      <SafeAreaWrapper edges={['top']}>
+      <ScreenWrapper>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#007BFF" />
           <Text style={styles.loadingText}>Loading tasks...</Text>
         </View>
-      </SafeAreaWrapper>
+      </ScreenWrapper>
     );
   }
 
   return (
-    <SafeAreaWrapper edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Tasks</Text>
-      </View>
-      
+    <ScreenWrapper title="Tasks">
       {error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity 
             style={styles.retryButton}
-            onPress={loadTasks}
+            onPress={() => user && user.id ? loadTasks(user.id) : loadUserData()}
           >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : (
-        <FlatList
-          data={tasks}
-          renderItem={renderTaskItem}
-          keyExtractor={item => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={['#007BFF']}
-            />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No tasks found</Text>
+        <>
+          {/* Debug info */}
+          {__DEV__ && (
+            <View style={styles.debugContainer}>
+              <Text style={styles.debugText}>Tasks count: {tasks.length}</Text>
+              <Text style={styles.debugText}>User ID: {user?.id || 'Not loaded'}</Text>
             </View>
-          }
-        />
+          )}
+          
+          <FlatList
+            data={tasks}
+            renderItem={renderTaskItem}
+            keyExtractor={item => (item.id ? item.id.toString() : Math.random().toString())}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#007BFF']}
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No tasks found</Text>
+              </View>
+            }
+          />
+        </>
       )}
-    </SafeAreaWrapper>
+    </ScreenWrapper>
   );
 };
 
@@ -193,17 +333,12 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 10,
   },
-  priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  serviceName: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
   },
-  priorityText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  projectName: {
+  categoryName: {
     fontSize: 14,
     color: '#666',
     marginBottom: 5,
@@ -253,6 +388,30 @@ const styles = StyleSheet.create({
     color: '#52c41a',
     fontSize: 12,
   },
+  statusCancelled: {
+    backgroundColor: '#fff1f0',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ffa39e',
+  },
+  statusTextCancelled: {
+    color: '#f5222d',
+    fontSize: 12,
+  },
+  statusSubmitted: {
+    backgroundColor: '#fff3e0',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ffd591',
+  },
+  statusTextSubmitted: {
+    color: '#ffa940',
+    fontSize: 12,
+  },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -272,7 +431,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: '#d32f2f',
+    color: '#dc3545',
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -294,6 +453,18 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#666',
+  },
+  debugContainer: {
+    padding: 10,
+    backgroundColor: '#f8d7da',
+    marginHorizontal: 15,
+    marginVertical: 5,
+    borderRadius: 4,
+    display: __DEV__ ? 'flex' : 'none',
+  },
+  debugText: {
+    color: '#721c24',
+    fontSize: 12,
   },
 });
 

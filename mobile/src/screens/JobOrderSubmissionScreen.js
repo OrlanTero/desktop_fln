@@ -648,11 +648,7 @@ const JobOrderSubmissionScreen = ({ route, navigation }) => {
   // Render error state
   if (error) {
     return (
-      <ScreenWrapper 
-        title="Job Order Submission" 
-        showBackButton={true}
-        onBackPress={() => navigation.goBack()}
-      >
+      <View style={{ flex: 1 }}>
         <View style={styles.centerContainer}>
           <MaterialIcons name="error-outline" size={48} color="#d32f2f" />
           <Text style={styles.errorText}>
@@ -665,16 +661,12 @@ const JobOrderSubmissionScreen = ({ route, navigation }) => {
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
-      </ScreenWrapper>
+      </View>
     );
   }
 
   return (
-    <ScreenWrapper 
-      title={isEditing ? `Edit: ${jobOrder?.title || 'Job Order'}` : `Submit: ${jobOrder?.title || 'Job Order'}`}
-      showBackButton={true}
-      onBackPress={() => navigation.goBack()}
-    >
+    <View style={{ flex: 1 }}>
       {/* Manual Attachment Modal */}
       <Modal
         visible={showManualAttachmentModal}
@@ -899,7 +891,7 @@ const JobOrderSubmissionScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </ScreenWrapper>
+    </View>
   );
 };
 

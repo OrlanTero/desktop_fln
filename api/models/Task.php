@@ -12,6 +12,9 @@ class Task {
     public $due_date;
     public $created_at;
     public $updated_at;
+    public $liaison_name;
+    public $service_name;
+    public $service_category_name;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -97,7 +100,10 @@ class Task {
         if($row) {
             $this->id = $row['id'];
             $this->liaison_id = $row['liaison_id'];
+            $this->liaison_name = $row['liaison_name'];
             $this->service_id = $row['service_id'];
+            $this->service_name = $row['service_name'];
+            $this->service_category_name = $row['service_category_name'];
             $this->description = $row['description'];
             $this->status = $row['status'];
             $this->due_date = $row['due_date'];

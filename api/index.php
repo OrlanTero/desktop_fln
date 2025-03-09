@@ -821,7 +821,11 @@ $router->respond('GET', '/tasks', function() use ($taskController) {
 });
 
 $router->respond('GET', '/tasks/liaison/[i:id]', function($request) use ($taskController) {
-    return $taskController->getTasksByLiaison($request->id);
+    echo json_encode($taskController->getTasksByLiaison($request->id));
+});
+
+$router->respond('GET', '/tasks/[i:id]', function($request) use ($taskController) {
+    echo json_encode($taskController->getTaskById($request->id));
 });
 
 $router->respond('POST', '/tasks', function() use ($taskController) {
@@ -840,7 +844,41 @@ $router->respond('PUT', '/tasks/[i:id]/status', function($request) use ($taskCon
 });
 
 $router->respond('DELETE', '/tasks/[i:id]', function($request) use ($taskController) {
-    echo $taskController->deleteTask($request->id);
+    echo json_encode($taskController->deleteTask($request->id));
+});
+
+// Task submission routes
+$router->respond('POST', '/tasks/submit-completion', function() use ($taskController) {
+    echo json_encode($taskController->submitCompletion($_POST, $_FILES));
+});
+
+$router->respond('POST', '/tasks/update-submission', function() use ($taskController) {
+    echo json_encode($taskController->updateSubmission($_POST, $_FILES));
+});
+
+$router->respond('GET', '/tasks/[i:id]/submissions', function($request) use ($taskController) {
+    echo json_encode($taskController->getSubmissions($request->id));
+});
+
+$router->respond('GET', '/tasks/submissions/[i:id]', function($request) use ($taskController) {
+    echo json_encode($taskController->getSubmissionById($request->id));
+});
+
+$router->respond('PUT', '/tasks/submissions/[i:id]/status', function($request) use ($taskController) {
+    $data = json_decode(file_get_contents("php://input"));
+    echo json_encode($taskController->updateSubmissionStatus($request->id, $data->status));
+});
+
+$router->respond('DELETE', '/tasks/submissions/[i:id]', function($request) use ($taskController) {
+    echo json_encode($taskController->deleteSubmission($request->id));
+});
+
+$router->respond('DELETE', '/tasks/submissions/attachments/[i:id]', function($request) use ($taskController) {
+    echo json_encode($taskController->deleteSubmissionAttachment($request->id));
+});
+
+$router->respond('GET', '/liaisons/[i:id]/task-submissions', function($request) use ($taskController) {
+    echo json_encode($taskController->getLiaisonSubmissions($request->id));
 });
 
 // Dispatch the router

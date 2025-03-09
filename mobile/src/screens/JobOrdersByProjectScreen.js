@@ -224,25 +224,15 @@ const JobOrdersByProjectScreen = ({ route, navigation }) => {
 
   if (loading && !refreshing) {
     return (
-      <ScreenWrapper 
-        title={projectName || 'Job Orders'} 
-        showBackButton={true}
-        onBackPress={() => navigation.goBack()}
-      >
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#007BFF" />
           <Text style={styles.loadingText}>Loading job orders...</Text>
         </View>
-      </ScreenWrapper>
     );
   }
 
   return (
-    <ScreenWrapper 
-      title={projectName || 'Job Orders'} 
-      showBackButton={true}
-      onBackPress={() => navigation.goBack()}
-    >
+    <View style={{ flex: 1 }}>
       {error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
@@ -273,7 +263,7 @@ const JobOrdersByProjectScreen = ({ route, navigation }) => {
           }
         />
       )}
-    </ScreenWrapper>
+    </View>
   );
 };
 

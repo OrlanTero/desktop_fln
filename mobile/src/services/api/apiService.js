@@ -105,6 +105,150 @@ const apiService = {
     delete: (id) => apiClient.delete(`/projects/${id}`),
   },
 
+  // Tasks related API calls
+  tasks: {
+    getAll: () => apiClient.get('/tasks').then(response => {
+      console.log('Raw getAll tasks response:', response);
+      return {
+        data: {
+          success: response.data.status === 'success',
+          data: response.data.data || []
+        }
+      };
+    }),
+    getByLiaison: (liaisonId) => apiClient.get(`/tasks/liaison/${liaisonId}`).then(response => {
+      console.log('Raw getByLiaison tasks response:', response);
+      return {
+        data: {
+          success: response.data.status === 'success',
+          data: response.data.data || []
+        }
+      };
+    }),
+    getById: (id) => apiClient.get(`/tasks/${id}`).then(response => {
+      return {
+        data: {
+          success: response.data.status === 'success',
+          data: response.data.data || {}
+        }
+      };
+    }),
+    create: (taskData) => apiClient.post('/tasks', taskData),
+    update: (id, taskData) => apiClient.put(`/tasks/${id}`, taskData),
+    updateStatus: (id, statusData) => apiClient.put(`/tasks/${id}/status`, statusData),
+    delete: (id) => apiClient.delete(`/tasks/${id}`),
+    submitCompletion: (formData) => {
+      // Set the correct content type for form data with files
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+      
+      console.log('Submitting task completion with form data:', formData);
+      
+      // Log all form data entries
+      if (formData && typeof formData.forEach === 'function') {
+        formData.forEach((value, key) => {
+          console.log(`Form data entry - ${key}:`, value);
+        });
+      }
+      
+      return apiClient.post('/tasks/submit-completion', formData, config).then(response => {
+        console.log('Task submission response:', response);
+        return {
+          data: {
+            success: response.data.status === 'success',
+            data: response.data.data || {},
+            message: response.data.message
+          }
+        };
+      }).catch(error => {
+        console.error('Task submission error:', error);
+        throw error;
+      });
+    },
+    updateSubmission: (formData) => {
+      // Set the correct content type for form data with files
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+      
+      console.log('Updating task submission with form data:', formData);
+      
+      // Log all form data entries
+      if (formData && typeof formData.forEach === 'function') {
+        formData.forEach((value, key) => {
+          console.log(`Form data entry - ${key}:`, value);
+        });
+      }
+      
+      return apiClient.post('/tasks/update-submission', formData, config).then(response => {
+        console.log('Task update response:', response);
+        return {
+          data: {
+            success: response.data.status === 'success',
+            data: response.data.data || {},
+            message: response.data.message
+          }
+        };
+      }).catch(error => {
+        console.error('Task update error:', error);
+        throw error;
+      });
+    },
+    getSubmissions: (taskId) => apiClient.get(`/tasks/${taskId}/submissions`).then(response => {
+      return {
+        data: {
+          success: response.data.status === 'success',
+          data: response.data.data || []
+        }
+      };
+    }),
+    getSubmissionById: (submissionId) => apiClient.get(`/tasks/submissions/${submissionId}`).then(response => {
+      return {
+        data: {
+          success: response.data.status === 'success',
+          data: response.data.data || {}
+        }
+      };
+    }),
+    getLiaisonSubmissions: (liaisonId) => apiClient.get(`/liaisons/${liaisonId}/task-submissions`).then(response => {
+      return {
+        data: {
+          success: response.data.status === 'success',
+          data: response.data.data || []
+        }
+      };
+    }),
+    updateSubmissionStatus: (submissionId, status) => apiClient.put(`/tasks/submissions/${submissionId}/status`, { status }).then(response => {
+      return {
+        data: {
+          success: response.data.status === 'success',
+          data: response.data.data || {}
+        }
+      };
+    }),
+    deleteSubmission: (submissionId) => apiClient.delete(`/tasks/submissions/${submissionId}`).then(response => {
+      return {
+        data: {
+          success: response.data.status === 'success',
+          data: response.data.data || {}
+        }
+      };
+    }),
+    deleteSubmissionAttachment: (attachmentId) => apiClient.delete(`/tasks/submissions/attachments/${attachmentId}`).then(response => {
+      return {
+        data: {
+          success: response.data.status === 'success',
+          data: response.data.data || {}
+        }
+      };
+    }),
+  },
+
   // Add more API endpoints as needed
 };
 

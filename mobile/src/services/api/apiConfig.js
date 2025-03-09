@@ -7,7 +7,7 @@ const API_CONFIG = {
   LOCAL_URL: 'http://localhost:4005',
   
   // Ngrok tunnel URL (for physical devices)
-  NGROK_URL: 'https://7a5a-161-49-94-40.ngrok-free.app',
+  NGROK_URL: 'https://561b-120-28-70-225.ngrok-free.app',
 };
 
 // Determine the base URL based on the platform and environment

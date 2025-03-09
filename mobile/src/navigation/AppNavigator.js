@@ -12,6 +12,7 @@ import TabNavigator from './TabNavigator';
 import ProjectsScreen from '../screens/ProjectsScreen';
 import JobOrdersByProjectScreen from '../screens/JobOrdersByProjectScreen';
 import JobOrderSubmissionScreen from '../screens/JobOrderSubmissionScreen';
+import TaskSubmissionScreen from '../screens/TaskSubmissionScreen';
 
 // Create stacks
 const AuthStack = createStackNavigator();
@@ -61,16 +62,26 @@ const AppNavigator = () => (
     <AppStack.Screen 
       name="JobOrdersByProject" 
       component={JobOrdersByProjectScreen}
-      options={{
-        animationEnabled: true,
-      }}
+      options={({ route }) => ({ 
+        title: route.params?.projectName || 'Job Orders',
+        headerShown: true
+      })}
     />
     <AppStack.Screen 
       name="JobOrderSubmission" 
       component={JobOrderSubmissionScreen}
-      options={{
-        animationEnabled: true,
-      }}
+      options={({ route }) => ({ 
+        title: 'Submit Job Order',
+        headerShown: true
+      })}
+    />
+    <AppStack.Screen 
+      name="TaskSubmission" 
+      component={TaskSubmissionScreen}
+      options={({ route }) => ({ 
+        title: 'Submit Task',
+        headerShown: true
+      })}
     />
     {/* Add more screens here as needed */}
   </AppStack.Navigator>

@@ -59,11 +59,7 @@ const TabNavigator = () => {
         },
         tabBarActiveTintColor: '#007BFF',
         tabBarInactiveTintColor: '#666',
-        tabBarShowLabel: true,
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
-        },
+        tabBarShowLabel: false,
         tabBarHideOnKeyboard: true,
         safeAreaInsets: { bottom: 0 },
       }}
@@ -73,7 +69,6 @@ const TabNavigator = () => {
         name="JobOrders" 
         component={JobOrdersScreen} 
         options={{
-          tabBarLabel: 'Job Orders',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon 
               IconComponent={MaterialIcons} 
@@ -89,7 +84,6 @@ const TabNavigator = () => {
         name="Tasks" 
         component={TasksScreen} 
         options={{
-          tabBarLabel: 'Tasks',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon 
               IconComponent={MaterialIcons} 
@@ -104,7 +98,6 @@ const TabNavigator = () => {
         name="Messenger" 
         component={MessengerScreen} 
         options={{
-          tabBarLabel: 'Messages',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon 
               IconComponent={MaterialIcons} 
@@ -119,7 +112,6 @@ const TabNavigator = () => {
         name="Documents" 
         component={DocumentsScreen} 
         options={{
-          tabBarLabel: 'Documents',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon 
               IconComponent={MaterialIcons} 
@@ -134,7 +126,6 @@ const TabNavigator = () => {
         name="Profile" 
         component={ProfileScreen} 
         options={{
-          tabBarLabel: 'Profile',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon 
               IconComponent={FontAwesome} 
