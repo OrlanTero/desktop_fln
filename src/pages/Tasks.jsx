@@ -34,7 +34,11 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   PauseCircle as PauseCircleIcon,
-  Assignment as AssignmentIcon
+  Assignment as AssignmentIcon,
+  Visibility as VisibilityIcon,
+  AttachFile as AttachFileIcon,
+  ThumbUp as ThumbUpIcon,
+  ThumbDown as ThumbDownIcon
 } from '@mui/icons-material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -75,6 +79,13 @@ const Tasks = ({ user, onLogout }) => {
     liaison_id: '',
     description: ''
   });
+  
+  // Add new state variables
+  const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
+  const [submissionData, setSubmissionData] = useState(null);
+  const [submissionLoading, setSubmissionLoading] = useState(false);
+  const [approveRejectDialogOpen, setApproveRejectDialogOpen] = useState(false);
+  const [approveRejectAction, setApproveRejectAction] = useState('');
   
   // Fetch tasks, liaisons, services, and service categories on component mount
   useEffect(() => {
@@ -343,6 +354,11 @@ const Tasks = ({ user, onLogout }) => {
           color: 'error',
           icon: <CancelIcon />
         };
+      case 'SUBMITTED':
+        return {
+          color: 'primary',
+          icon: <VisibilityIcon />
+        };
       default:
         return {
           color: 'default',
@@ -388,6 +404,140 @@ const Tasks = ({ user, onLogout }) => {
   const handleSnackbarClose = () => {
     setError(null);
     setSuccess(null);
+  };
+  
+  // Handle view submission dialog open
+  const handleViewSubmissionDialogOpen = async (task) => {
+    setSelectedTask(task);
+    setSubmissionLoading(true);
+    setSubmissionDialogOpen(true);
+    
+    try {
+      // Get the task details with submission data
+      const response = await window.api.task.getById(task.id);
+      
+      console.log(response);
+      
+      if (response.success && response.data) {
+        // Check if there's submission data
+        if (response.data.submission) {
+          // Get the latest submission if it's an array
+          let submissionData;
+          if (Array.isArray(response.data.submission.data) && response.data.submission.data.length > 0) {
+            submissionData = response.data.submission.data[response.data.submission.data.length - 1];
+          } else {
+            submissionData = response.data.submission;
+          }
+          
+          // Parse expenses data if it's a JSON string
+          if (submissionData.expenses_data && typeof submissionData.expenses_data === 'string') {
+            try {
+              submissionData.expenses = JSON.parse(submissionData.expenses_data);
+            } catch (e) {
+              console.error('Error parsing expenses data:', e);
+              submissionData.expenses = [];
+            }
+          }
+          
+          // Process attachments to ensure URLs are properly formatted
+          if (submissionData.attachments && Array.isArray(submissionData.attachments)) {
+            submissionData.attachments = submissionData.attachments.map(attachment => {
+              // Use the API method to get the full URL
+              if (attachment.file_url) {
+                attachment.full_url = window.api.task.getAttachmentUrl(attachment.file_url);
+              } else if (attachment.file_path) {
+                attachment.full_url = window.api.task.getAttachmentUrl(attachment.file_path);
+              }
+              return attachment;
+            });
+          }
+          
+          setSubmissionData(submissionData);
+        } else {
+          setError('No submission data found for this task.');
+        }
+      } else {
+        setError('Failed to fetch task details: ' + (response.message || 'Unknown error'));
+      }
+    } catch (err) {
+      setError('Failed to fetch submission data. Please try again.');
+      console.error('Error fetching submission data:', err);
+    }
+    
+    setSubmissionLoading(false);
+  };
+  
+  // Handle submission dialog close
+  const handleSubmissionDialogClose = () => {
+    setSubmissionDialogOpen(false);
+    setSubmissionData(null);
+  };
+  
+  // Handle approve/reject dialog open
+  const handleApproveRejectDialogOpen = (action) => {
+    setApproveRejectAction(action);
+    setApproveRejectDialogOpen(true);
+  };
+  
+  // Handle approve/reject submission
+  const handleApproveRejectSubmission = async () => {
+    try {
+      if (!submissionData || !selectedTask) {
+        setError('No submission data found.');
+        return;
+      }
+      
+      // Update task status based on approval/rejection
+      let newTaskStatus = selectedTask.status; // Keep current status by default
+      
+      if (approveRejectAction === 'REJECT') {
+        // If rejected, set task status back to IN_PROGRESS
+        newTaskStatus = 'IN_PROGRESS';
+      } else if (approveRejectAction === 'APPROVE') {
+        // If approved, keep as SUBMITTED or potentially change to COMPLETED
+        // Depending on your business logic
+        newTaskStatus = 'COMPLETED';
+      }
+      
+      // Update the task status
+      const taskResponse = await window.api.task.updateStatus(selectedTask.id, { status: newTaskStatus });
+      
+      if (taskResponse.success) {
+        // If there's a submission ID, try to update its status too (if the API supports it)
+        if (submissionData.id) {
+          try {
+            // This is optional and depends on if your API supports this endpoint
+            await window.api.task.updateSubmissionStatus(
+              submissionData.id, 
+              approveRejectAction === 'APPROVE' ? 'APPROVED' : 'REJECTED'
+            );
+          } catch (err) {
+            console.log('Submission status update not supported or failed:', err);
+            // Continue anyway since we've already updated the task status
+          }
+        }
+        
+        setApproveRejectDialogOpen(false);
+        setSubmissionDialogOpen(false);
+        setSuccess(`Submission ${approveRejectAction === 'APPROVE' ? 'approved' : 'rejected'} successfully`);
+        fetchTasks();
+      } else {
+        setError('Failed to update task status: ' + (taskResponse.message || 'Unknown error'));
+      }
+    } catch (err) {
+      setError('Failed to process submission. Please try again.');
+      console.error('Error processing submission:', err);
+    }
+  };
+  
+  // Calculate total expenses
+  const calculateTotalExpenses = (expenses) => {
+    if (!expenses || !Array.isArray(expenses) || expenses.length === 0) return 0;
+    
+    return expenses.reduce((total, expense) => {
+      const amount = parseFloat(expense.amount);
+      return total + (isNaN(amount) ? 0 : amount);
+    }, 0).toFixed(2);
   };
   
   return (
@@ -484,7 +634,19 @@ const Tasks = ({ user, onLogout }) => {
                         <DeleteIcon />
                       </IconButton>
                       
-                      {task.status !== 'COMPLETED' && (
+                      {/* Add View button for SUBMITTED tasks */}
+                      {task.status === 'SUBMITTED' && (
+                        <IconButton
+                          size="small"
+                          color="info"
+                          onClick={() => handleViewSubmissionDialogOpen(task)}
+                          title="View Submission"
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                      )}
+                      
+                      {task.status !== 'COMPLETED' && task.status !== 'SUBMITTED' && (
                         <IconButton
                           size="small"
                           color="success"
@@ -495,7 +657,7 @@ const Tasks = ({ user, onLogout }) => {
                         </IconButton>
                       )}
                       
-                      {task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED' && (
+                      {task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED' && task.status !== 'SUBMITTED' && (
                         <IconButton
                           size="small"
                           color="info"
@@ -767,6 +929,210 @@ const Tasks = ({ user, onLogout }) => {
           <DialogActions>
             <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleStatusChange} variant="contained" color="primary">
+              Confirm
+            </Button>
+          </DialogActions>
+        </Dialog>
+        
+        {/* Submission View Dialog */}
+        <Dialog 
+          open={submissionDialogOpen} 
+          onClose={handleSubmissionDialogClose}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            Task Submission Details
+            <IconButton
+              aria-label="close"
+              onClick={handleSubmissionDialogClose}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <CancelIcon />
+            </IconButton>
+          </DialogTitle>
+          
+          <DialogContent dividers>
+            {submissionLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress />
+              </Box>
+            ) : submissionData ? (
+              <Box>
+                {/* Task Info */}
+                <Typography variant="h6" gutterBottom>
+                  Task Information
+                </Typography>
+                <Paper sx={{ p: 2, mb: 3 }}>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Description:</strong> {selectedTask?.description}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Status:</strong> {selectedTask?.status}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Liaison:</strong> {selectedTask?.liaison_name}
+                  </Typography>
+                  <Typography variant="body1">
+                    <strong>Due Date:</strong> {formatDate(selectedTask?.due_date)}
+                  </Typography>
+                </Paper>
+                
+                {/* Notes */}
+                <Typography variant="h6" gutterBottom>
+                  Notes
+                </Typography>
+                <Paper sx={{ p: 2, mb: 3 }}>
+                  <Typography variant="body1">
+                    {submissionData.notes || 'No notes provided.'}
+                  </Typography>
+                </Paper>
+                
+                {/* Expenses */}
+                <Typography variant="h6" gutterBottom>
+                  Expenses
+                </Typography>
+                <Paper sx={{ p: 2, mb: 3 }}>
+                  {submissionData.expenses && Array.isArray(submissionData.expenses) && submissionData.expenses.length > 0 ? (
+                    <>
+                      <Box sx={{ mb: 2 }}>
+                        {submissionData.expenses.map((expense, index) => (
+                          <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="body1">{expense.description}</Typography>
+                            <Typography variant="body1">${parseFloat(expense.amount || 0).toFixed(2)}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                      <Divider />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                        <Typography variant="h6">Total</Typography>
+                        <Typography variant="h6">${calculateTotalExpenses(submissionData.expenses)}</Typography>
+                      </Box>
+                    </>
+                  ) : (
+                    <Typography variant="body1">No expenses reported.</Typography>
+                  )}
+                </Paper>
+                
+                {/* Attachments */}
+                <Typography variant="h6" gutterBottom>
+                  Attachments
+                </Typography>
+                <Paper sx={{ p: 2 }}>
+                  {submissionData.attachments && Array.isArray(submissionData.attachments) && submissionData.attachments.length > 0 ? (
+                    <Grid container spacing={2}>
+                      {submissionData.attachments.map((attachment, index) => {
+                        // Use the full_url property that was set in handleViewSubmissionDialogOpen
+                        const imageUrl = attachment.full_url || '';
+                        
+                        return (
+                          <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Card>
+                              <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                  <AttachFileIcon sx={{ mr: 1 }} />
+                                  <Typography variant="body1" noWrap>
+                                    {attachment.filename || attachment.file_path || 'Attachment'}
+                                  </Typography>
+                                </Box>
+                                
+                                {attachment.file_type && attachment.file_type.startsWith('image/') && imageUrl && (
+                                  <Box sx={{ mt: 1, mb: 1 }}>
+                                    <img 
+                                      src={imageUrl} 
+                                      alt={attachment.filename || 'Image attachment'}
+                                      style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'contain' }}
+                                      onError={(e) => {
+                                        console.error('Image failed to load:', imageUrl);
+                                        e.target.style.display = 'none';
+                                      }}
+                                    />
+                                  </Box>
+                                )}
+                                
+                                {imageUrl && (
+                                  <Button 
+                                    variant="outlined" 
+                                    size="small" 
+                                    sx={{ mt: 1 }}
+                                    onClick={() => {
+                                      window.api.utils.openExternal(imageUrl);
+                                    }}
+                                  >
+                                    View
+                                  </Button>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+                  ) : (
+                    <Typography variant="body1">No attachments provided.</Typography>
+                  )}
+                </Paper>
+              </Box>
+            ) : (
+              <Typography variant="body1">No submission data available.</Typography>
+            )}
+          </DialogContent>
+          
+          <DialogActions sx={{ justifyContent: 'space-between', p: 2 }}>
+            <Button 
+              onClick={handleSubmissionDialogClose} 
+              variant="outlined"
+            >
+              Close
+            </Button>
+            
+            <Box>
+              <Button 
+                onClick={() => handleApproveRejectDialogOpen('REJECT')} 
+                variant="contained" 
+                color="error"
+                startIcon={<ThumbDownIcon />}
+                sx={{ mr: 1 }}
+              >
+                Reject
+              </Button>
+              
+              <Button 
+                onClick={() => handleApproveRejectDialogOpen('APPROVE')} 
+                variant="contained" 
+                color="success"
+                startIcon={<ThumbUpIcon />}
+              >
+                Approve
+              </Button>
+            </Box>
+          </DialogActions>
+        </Dialog>
+        
+        {/* Approve/Reject Confirmation Dialog */}
+        <Dialog open={approveRejectDialogOpen} onClose={() => setApproveRejectDialogOpen(false)}>
+          <DialogTitle>
+            {approveRejectAction === 'APPROVE' ? 'Approve Submission' : 'Reject Submission'}
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              {approveRejectAction === 'APPROVE' 
+                ? 'Are you sure you want to approve this submission?' 
+                : 'Are you sure you want to reject this submission? This will change the task status back to IN_PROGRESS.'}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setApproveRejectDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleApproveRejectSubmission} 
+              variant="contained" 
+              color={approveRejectAction === 'APPROVE' ? 'success' : 'error'}
+            >
               Confirm
             </Button>
           </DialogActions>

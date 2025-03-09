@@ -676,6 +676,11 @@ contextBridge.exposeInMainWorld('api', {
     getAll: async () => {
       return makeRequest(`${API_BASE_URL}/tasks`);
     },
+
+    // Get tasks by project
+    getById: async (id) => {
+      return makeRequest(`${API_BASE_URL}/tasks/${id}`);
+    },
     
     // Get tasks by liaison
     getByLiaison: async (liaisonId) => {
@@ -697,9 +702,32 @@ contextBridge.exposeInMainWorld('api', {
       return makeRequest(`${API_BASE_URL}/tasks/${id}/status`, 'PUT', statusData);
     },
     
+    // Update submission status
+    updateSubmissionStatus: async (submissionId, status) => {
+      return makeRequest(`${API_BASE_URL}/task-submissions/${submissionId}/status`, 'PUT', { status });
+    },
+    
+    // Get attachment URL
+    getAttachmentUrl: (path) => {
+      if (!path) return '';
+      if (path.startsWith('http')) return path;
+      return `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    },
+    
     // Delete task
     delete: async (id) => {
       return makeRequest(`${API_BASE_URL}/tasks/${id}`, 'DELETE');
+    }
+  },
+
+  // Utility functions
+  utils: {
+    // Open URL in default browser
+    openExternal: (url) => {
+      if (!url) return;
+      
+      // Use the Electron shell to open the URL in the default browser
+      ipcRenderer.send('open-external', url);
     }
   },
 });

@@ -182,7 +182,7 @@ const TasksScreen = ({ navigation }) => {
 
   const renderTaskItem = ({ item }) => {
     console.log('Rendering task item:', JSON.stringify(item));
-    
+
     // Determine status style
     let statusStyle = styles.statusPending;
     let statusTextStyle = styles.statusTextPending;
@@ -265,24 +265,24 @@ const TasksScreen = ({ navigation }) => {
             </View>
           )}
           
-          <FlatList
-            data={tasks}
-            renderItem={renderTaskItem}
+        <FlatList
+          data={tasks}
+          renderItem={renderTaskItem}
             keyExtractor={item => (item.id ? item.id.toString() : Math.random().toString())}
-            contentContainerStyle={styles.listContainer}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={['#007BFF']}
-              />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No tasks found</Text>
-              </View>
-            }
-          />
+          contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#007BFF']}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No tasks found</Text>
+            </View>
+          }
+        />
         </>
       )}
     </ScreenWrapper>

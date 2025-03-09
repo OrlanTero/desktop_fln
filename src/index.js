@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, session } from 'electron';
+import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
 import path from 'path';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -27,7 +27,7 @@ const createWindow = () => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data:; connect-src 'self' http://localhost:* ws://localhost:* https://cdnjs.cloudflare.com data:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https://cdnjs.cloudflare.com; img-src 'self' data: blob:; media-src 'self' data: blob:; object-src 'self' blob: data:; child-src 'self' blob:; frame-src 'self' blob: data:; worker-src 'self' blob:;"
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data:; connect-src 'self' http://localhost:* ws://localhost:* https://cdnjs.cloudflare.com data:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https://cdnjs.cloudflare.com; img-src 'self' data: blob: http://localhost:4005 http://localhost:*; media-src 'self' data: blob:; object-src 'self' blob: data:; child-src 'self' blob:; frame-src 'self' blob: data:; worker-src 'self' blob:;"
         ]
       }
     });
@@ -40,6 +40,18 @@ const createWindow = () => {
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
   }
+  
+  // Additional CSP setup for the window
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data:; connect-src 'self' http://localhost:* ws://localhost:* https://cdnjs.cloudflare.com data:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https://cdnjs.cloudflare.com; img-src 'self' data: blob: http://localhost:4005 http://localhost:*; media-src 'self' data: blob:; object-src 'self' blob: data:; child-src 'self' blob:; frame-src 'self' blob: data:; worker-src 'self' blob:;"
+        ]
+      }
+    });
+  });
 };
 
 // This method will be called when Electron has finished
@@ -78,6 +90,15 @@ ipcMain.handle('test-db', async () => {
     return { status: 'success', message: 'Database connection successful' };
   } catch (error) {
     return { status: 'error', message: error.message };
+  }
+});
+
+// Handler for opening URLs in default browser
+ipcMain.on('open-external', (event, url) => {
+  if (url && typeof url === 'string') {
+    shell.openExternal(url).catch(err => {
+      console.error('Failed to open URL:', err);
+    });
   }
 });
 

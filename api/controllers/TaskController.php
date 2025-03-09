@@ -2,10 +2,18 @@
 class TaskController {
     private $db;
     private $task;
+
+    private $upload_dir;
     
     public function __construct($db) {
         $this->db = $db;
         $this->task = new Task($db);
+
+        $this->upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/task_attachments/';
+        
+        if (!file_exists($this->upload_dir)) {
+            mkdir($this->upload_dir, 0777, true);
+        }
     }
     
     // Get all tasks
@@ -195,6 +203,7 @@ class TaskController {
         $this->task->id = $id;
         
         if($this->task->getById()) {
+
             $task_item = array(
                 "id" => $this->task->id,
                 "liaison_id" => $this->task->liaison_id,
@@ -206,7 +215,9 @@ class TaskController {
                 "status" => $this->task->status,
                 "due_date" => $this->task->due_date,
                 "created_at" => $this->task->created_at,
-                "updated_at" => $this->task->updated_at
+                "updated_at" => $this->task->updated_at,
+                "hatdog" => 1,
+                "submission" => $this->getSubmissionByTaskId($this->task->id, $this->task->liaison_id)
             );
             
             return [
@@ -376,9 +387,8 @@ class TaskController {
     private function processAttachments($submissionId, $attachments) {
         try {
             // Create uploads directory if it doesn't exist
-            $uploadsDir = dirname(__FILE__) . '/../../uploads/task_attachments/';
-            if (!file_exists($uploadsDir)) {
-                mkdir($uploadsDir, 0777, true);
+            if (!file_exists($this->upload_dir)) {
+                mkdir($this->upload_dir, 0777, true);
             }
             
             // Process each attachment
@@ -390,7 +400,7 @@ class TaskController {
                 
                 // Generate unique filename
                 $filename = uniqid() . '_' . basename($attachment['name']);
-                $targetPath = $uploadsDir . $filename;
+                $targetPath = $this->upload_dir . $filename;
                 $relativePath = 'uploads/task_attachments/' . $filename;
                 
                 // Move uploaded file
@@ -619,7 +629,61 @@ class TaskController {
             ];
         }
     }
+        
+    public function getSubmissionByTaskId($taskId, $liaisonId) {
+        try {
+            $query = "SELECT * FROM task_submissions WHERE task_id = :task_id AND liaison_id = :liaison_id";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':task_id', $taskId);
+            $stmt->bindParam(':liaison_id', $liaisonId);
+            $stmt->execute();
     
+            $submissions = [];
+            
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $expensesQuery = "SELECT * FROM task_submission_expenses WHERE submission_id = :submission_id";
+                $expensesStmt = $this->db->prepare($expensesQuery);
+                $expensesStmt->bindParam(':submission_id', $row['id']);
+                $expensesStmt->execute();
+                
+                $expenses = $expensesStmt->fetchAll(PDO::FETCH_ASSOC);
+                $row['expenses'] = $expenses;
+                $row['expenses_data'] = $expenses; // For backward compatibility
+                
+                // Get attachments for this submission
+                $attachmentsQuery = "SELECT * FROM task_submission_attachments WHERE submission_id = :submission_id";
+                $attachmentsStmt = $this->db->prepare($attachmentsQuery);
+                $attachmentsStmt->bindParam(':submission_id', $row['id']);
+                $attachmentsStmt->execute();
+                
+                $attachments = $attachmentsStmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                // Add file URLs to attachments
+                foreach ($attachments as &$attachment) {
+                    if ($attachment['file_path'] !== 'manual_attachment') {
+                        $attachment['file_url'] = $this->getBaseUrl() . '/' . $attachment['file_path'];
+                    }
+                }
+                
+                $row['attachments'] = $attachments;
+                
+                $submissions[] = $row;
+            }
+    
+            return [
+                "status" => "success",
+                "message" => "Submissions retrieved successfully",
+                "data" => $submissions
+            ];
+        } catch(Exception $e) {
+            return [
+                "status" => "error",
+                "message" => "Failed to get submissions: " . $e->getMessage()
+            ];
+        }
+    }
+
+
     // Get submissions for a task
     public function getSubmissions($taskId) {
         try {
