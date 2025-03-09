@@ -208,11 +208,6 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
       ],
     },
     {
-      text: 'Messenger',
-      icon: <MessengerIcon />,
-      path: '/messenger',
-    },
-    {
       text: 'Settings',
       icon: <SettingsIcon />,
       path: '/settings',

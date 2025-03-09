@@ -496,25 +496,25 @@ const Projects = ({ user, onLogout }) => {
             Create Project
           </Button>
         </Box>
-
+        
         {/* Filters */}
         <Box sx={{ mb: 3 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={3}>
-              <TextField
-                fullWidth
+          <TextField
+            fullWidth
                 name="search"
                 value={filters.search}
                 onChange={handleFilterChange}
                 placeholder="Search projects..."
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
             </Grid>
             <Grid item xs={12} sm={2}>
               <FormControl fullWidth>
@@ -596,27 +596,27 @@ const Projects = ({ user, onLogout }) => {
             </Grid>
           </Grid>
         </Box>
-
+        
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
           </Alert>
         )}
 
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Project Name</TableCell>
-                <TableCell>Client</TableCell>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Project Name</TableCell>
+                  <TableCell>Client</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Progress</TableCell>
-                <TableCell>Start Date</TableCell>
+                  <TableCell>Start Date</TableCell>
                 <TableCell>Due Date</TableCell>
                 <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+                </TableRow>
+              </TableHead>
+              <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
@@ -624,24 +624,24 @@ const Projects = ({ user, onLogout }) => {
                   </TableCell>
                 </TableRow>
               ) : paginatedProjects.length === 0 ? (
-                <TableRow>
+                  <TableRow>
                   <TableCell colSpan={7} align="center">
                     No projects found
-                  </TableCell>
-                </TableRow>
-              ) : (
+                    </TableCell>
+                  </TableRow>
+                ) : (
                 paginatedProjects.map((project) => (
                   <TableRow key={project.project_id}>
-                    <TableCell>{project.project_name}</TableCell>
-                    <TableCell>{project.client_name}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={project.status}
-                        color={getStatusColor(project.status)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
+                        <TableCell>{project.project_name}</TableCell>
+                        <TableCell>{project.client_name}</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={project.status} 
+                            color={getStatusColor(project.status)} 
+                            size="small" 
+                          />
+                        </TableCell>
+                        <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <LinearProgress
                           variant="determinate"
@@ -652,7 +652,7 @@ const Projects = ({ user, onLogout }) => {
                           {calculateProgress(project)}%
                         </Typography>
                       </Box>
-                    </TableCell>
+                        </TableCell>
                     <TableCell>{new Date(project.start_date).toLocaleDateString()}</TableCell>
                     <TableCell>{new Date(project.due_date).toLocaleDateString()}</TableCell>
                     <TableCell align="right">
@@ -662,32 +662,32 @@ const Projects = ({ user, onLogout }) => {
                       >
                         <TaskIcon />
                       </IconButton>
-                      <IconButton
-                        color="primary"
+                          <IconButton
+                            color="primary"
                         onClick={() => handleViewTimeline(project.project_id)}
-                      >
+                          >
                         <TimelineIcon />
-                      </IconButton>
-                      <IconButton
+                          </IconButton>
+                          <IconButton
                         color="primary"
                         onClick={() => handleOpenDialog('edit', project)}
-                      >
-                        <EditIcon />
-                      </IconButton>
+                          >
+                            <EditIcon />
+                          </IconButton>
                       {project.status !== 'COMPLETED' && project.status !== 'CANCELLED' && (
-                        <IconButton
-                          color="error"
+                          <IconButton
+                            color="error"
                           onClick={() => handleOpenDialog('delete', project)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                          >
+                            <DeleteIcon />
+                          </IconButton>
                       )}
-                    </TableCell>
-                  </TableRow>
+                        </TableCell>
+                      </TableRow>
                 ))
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
@@ -697,8 +697,8 @@ const Projects = ({ user, onLogout }) => {
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
-        </TableContainer>
-
+          </TableContainer>
+        
         {/* Actions Menu */}
         <Menu
           anchorEl={anchorEl}

@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, AppBar, Toolbar, IconButton, Typography, useTheme, useMediaQuery } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import Navigation from './Navigation';
-
+import FloatingMessenger from './FloatingMessenger';
+import { useAuth } from '../contexts/AuthContext';
 // Drawer width
 const drawerWidth = 280;
 
-const Layout = ({ children, title, userMenu }) => {
+const Layout = ({  children, title, userMenu }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { currentUser } = useAuth();
+
+
+  useEffect(() => {
+    console.log('User:', currentUser);
+  }, [currentUser]);
+
+
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -67,6 +76,9 @@ const Layout = ({ children, title, userMenu }) => {
         <Toolbar /> {/* This creates space for the AppBar */}
         {children}
       </Box>
+
+      {/* Floating Messenger */}
+      <FloatingMessenger  currentUser={currentUser}/>
     </Box>
   );
 };

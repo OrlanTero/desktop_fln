@@ -13,6 +13,8 @@ import ProjectsScreen from '../screens/ProjectsScreen';
 import JobOrdersByProjectScreen from '../screens/JobOrdersByProjectScreen';
 import JobOrderSubmissionScreen from '../screens/JobOrderSubmissionScreen';
 import TaskSubmissionScreen from '../screens/TaskSubmissionScreen';
+import ConversationScreen from '../screens/ConversationScreen';
+import UserListScreen from '../screens/UserListScreen';
 
 // Create stacks
 const AuthStack = createStackNavigator();
@@ -82,6 +84,22 @@ const AppNavigator = () => (
         title: 'Submit Task',
         headerShown: true
       })}
+    />
+    <AppStack.Screen 
+      name="Conversation" 
+      component={ConversationScreen}
+      options={{
+        headerShown: false,
+        animationEnabled: true,
+      }}
+    />
+    <AppStack.Screen 
+      name="UserList" 
+      component={UserListScreen}
+      options={{
+        headerShown: false,
+        animationEnabled: true,
+      }}
     />
     {/* Add more screens here as needed */}
   </AppStack.Navigator>

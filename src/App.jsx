@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Import pages
 import Login from './pages/Login';
@@ -96,48 +97,15 @@ const theme = createTheme({
   },
 });
 
-const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+const AppContent = () => {
+  const { isAuthenticated, currentUser, logout } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
   const location = useLocation();
-
-  useEffect(() => {
-    // Check if user is logged in
-    const checkAuth = async () => {
-      try {
-        const userData = localStorage.getItem('user');
-        if (userData) {
-          setCurrentUser(JSON.parse(userData));
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Authentication error:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
 
   // Log the current location for debugging
   useEffect(() => {
     console.log('Current location:', location.pathname);
   }, [location]);
-
-  const handleLogin = (userData) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    setCurrentUser(userData);
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    setCurrentUser(null);
-    setIsAuthenticated(false);
-  };
 
   const handleSplashFinish = () => {
     setShowSplash(false);
@@ -147,177 +115,181 @@ const App = () => {
     return <SplashScreen onFinish={handleSplashFinish} />;
   }
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  return (
+    <Routes>
+      <Route 
+        path="/login" 
+        element={
+          isAuthenticated() ? 
+            <Navigate to="/dashboard" replace /> : 
+            <Login />
+        } 
+      />
+      <Route 
+        path="/dashboard" 
+        element={
+          isAuthenticated() ? 
+            <Dashboard user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/users" 
+        element={
+          isAuthenticated() ? 
+            <Users user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/clients" 
+        element={
+          isAuthenticated() ? 
+            <Clients user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/client-types" 
+        element={
+          isAuthenticated() ? 
+            <ClientTypes user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/service-categories" 
+        element={
+          isAuthenticated() ? 
+            <ServiceCategories user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/services" 
+        element={
+          isAuthenticated() ? 
+            <Services user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      {/* Proposals Routes */}
+      <Route 
+        path="/proposals" 
+        element={
+          isAuthenticated() ? 
+            <Proposals user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/proposals/new" 
+        element={
+          isAuthenticated() ? 
+            <ProposalForm user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/proposals/edit/:id" 
+        element={
+          isAuthenticated() ? 
+            <ProposalForm user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/proposal-conversion" 
+        element={
+          isAuthenticated() ? 
+            <ProposalConversion user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      {/* Projects Routes */}
+      <Route 
+        path="/projects" 
+        element={
+          isAuthenticated() ? 
+            <Projects user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/projects/new" 
+        element={
+          isAuthenticated() ? 
+            <ProjectForm user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/projects/edit/:id" 
+        element={
+          isAuthenticated() ? 
+            <ProjectForm user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/projects/view/:id" 
+        element={
+          isAuthenticated() ? 
+            <ProjectView user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/settings" 
+        element={
+          isAuthenticated() ? 
+            <Settings user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/job-orders" 
+        element={
+          isAuthenticated() ? 
+            <JobOrders user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/tasks" 
+        element={
+          isAuthenticated() ? 
+            <Tasks user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/" 
+        element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} 
+      />
+      <Route 
+        path="/main_window" 
+        element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} 
+      />
+      <Route 
+        path="/main_window/*" 
+        element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} 
+      />
+      <Route 
+        path="*" 
+        element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} 
+      />
+    </Routes>
+  );
+};
 
+const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Routes>
-        <Route 
-          path="/login" 
-          element={
-            isAuthenticated ? 
-              <Navigate to="/dashboard" replace /> : 
-              <Login onLogin={handleLogin} />
-          } 
-        />
-        <Route 
-          path="/dashboard" 
-          element={
-            isAuthenticated ? 
-              <Dashboard user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/users" 
-          element={
-            isAuthenticated ? 
-              <Users user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/clients" 
-          element={
-            isAuthenticated ? 
-              <Clients user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/client-types" 
-          element={
-            isAuthenticated ? 
-              <ClientTypes user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/service-categories" 
-          element={
-            isAuthenticated ? 
-              <ServiceCategories user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/services" 
-          element={
-            isAuthenticated ? 
-              <Services user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        {/* Proposals Routes */}
-        <Route 
-          path="/proposals" 
-          element={
-            isAuthenticated ? 
-              <Proposals user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/proposals/new" 
-          element={
-            isAuthenticated ? 
-              <ProposalForm user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/proposals/edit/:id" 
-          element={
-            isAuthenticated ? 
-              <ProposalForm user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/proposal-conversion" 
-          element={
-            isAuthenticated ? 
-              <ProposalConversion user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        {/* Projects Routes */}
-        <Route 
-          path="/projects" 
-          element={
-            isAuthenticated ? 
-              <Projects user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/projects/new" 
-          element={
-            isAuthenticated ? 
-              <ProjectForm user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/projects/edit/:id" 
-          element={
-            isAuthenticated ? 
-              <ProjectForm user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/projects/view/:id" 
-          element={
-            isAuthenticated ? 
-              <ProjectView user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/settings" 
-          element={
-            isAuthenticated ? 
-              <Settings user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/" 
-          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
-        />
-        <Route 
-          path="/main_window" 
-          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
-        />
-        <Route 
-          path="/main_window/*" 
-          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
-        />
-        <Route 
-          path="/job-orders" 
-          element={
-            isAuthenticated ? 
-              <JobOrders user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/tasks" 
-          element={
-            isAuthenticated ? 
-              <Tasks user={currentUser} onLogout={handleLogout} /> : 
-              <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="*" 
-          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
-        />
-      </Routes>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ThemeProvider>
   );
 };

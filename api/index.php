@@ -33,6 +33,7 @@ require_once 'controllers/EmailController.php';
 require_once 'controllers/AssignedJobOrderController.php';
 require_once 'controllers/JobOrderSubmissionController.php';
 require_once 'controllers/TaskController.php';
+require_once 'controllers/MessageController.php';
 
 // Add new includes
 require_once 'models/CompanyInfo.php';
@@ -41,6 +42,7 @@ require_once 'models/Proposal.php';
 require_once 'controllers/ProposalController.php';
 require_once 'models/JobOrderSubmission.php';
 require_once 'models/Task.php';
+require_once 'models/Message.php';
 
 // Initialize Klein router
 $router = new \Klein\Klein();
@@ -65,6 +67,7 @@ $companyInfoController = new CompanyInfoController($db);
 $assignedJobOrderController = new AssignedJobOrderController($db);
 $jobOrderSubmissionController = new JobOrderSubmissionController($db);
 $taskController = new TaskController($db);
+$messageController = new MessageController($db);
 
 // Test route to check if API is working
 $router->respond('GET', '/test', function() {
@@ -906,6 +909,92 @@ $router->respond('DELETE', '/tasks/submissions/attachments/[i:id]', function($re
 
 $router->respond('GET', '/liaisons/[i:id]/task-submissions', function($request) use ($taskController) {
     echo json_encode($taskController->getLiaisonSubmissions($request->id));
+});
+
+// Message routes
+// Get conversation between two users
+$router->respond('GET', '/messages/conversation/[i:user1_id]/[i:user2_id]', function($request) use ($messageController) {
+    echo json_encode($messageController->getConversation($request->user1_id, $request->user2_id));
+});
+
+// Get recent conversations for a user
+$router->respond('GET', '/messages/conversations/[i:user_id]', function($request) use ($messageController) {
+    echo json_encode($messageController->getRecentConversations($request->user_id));
+});
+
+// Send a message
+$router->respond('POST', '/messages', function() use ($messageController) {
+    // Get posted data
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    // Check required fields
+    if(
+        !empty($data['sender_id']) &&
+        !empty($data['receiver_id']) &&
+        !empty($data['message'])
+    ) {
+        echo json_encode($messageController->sendMessage($data));
+    } else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "Missing required fields"
+        ]);
+    }
+});
+
+// Send a message with attachments
+$router->respond('POST', '/messages/with-attachments', function() use ($messageController) {
+    // Check required fields
+    if(
+        !empty($_POST['sender_id']) &&
+        !empty($_POST['receiver_id']) &&
+        !empty($_POST['message'])
+    ) {
+        $data = [
+            'sender_id' => $_POST['sender_id'],
+            'receiver_id' => $_POST['receiver_id'],
+            'message' => $_POST['message'],
+            'attachments' => $_FILES['attachments'] ?? []
+        ];
+        
+        echo json_encode($messageController->sendMessage($data));
+    } else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "Missing required fields"
+        ]);
+    }
+});
+
+// Mark messages as read
+$router->respond('PUT', '/messages/read/[i:sender_id]/[i:receiver_id]', function($request) use ($messageController) {
+    echo json_encode($messageController->markMessagesAsRead($request->sender_id, $request->receiver_id));
+});
+
+// Get unread message count
+$router->respond('GET', '/messages/unread/[i:user_id]', function($request) use ($messageController) {
+    echo json_encode($messageController->getUnreadCount($request->user_id));
+});
+
+// Update user online status
+$router->respond('PUT', '/messages/status/[i:user_id]', function($request) use ($messageController) {
+    // Get posted data
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    // Check required fields
+    if(isset($data['is_online'])) {
+        echo json_encode($messageController->updateUserStatus($request->user_id, $data['is_online']));
+    } else {
+        echo json_encode([
+            "status" => "error",
+            "message" => "Missing is_online field"
+        ]);
+    }
+});
+
+// Get user online status
+$router->respond('GET', '/messages/status/[i:user_id]', function($request) use ($messageController) {
+    echo json_encode($messageController->getUserStatus($request->user_id));
 });
 
 // Dispatch the router

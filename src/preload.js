@@ -794,4 +794,77 @@ contextBridge.exposeInMainWorld('api', {
       }
     }
   },
+
+  // Message API
+  message: {
+    // Get conversation between two users
+    getConversation: async (user1Id, user2Id) => {
+      return makeRequest(`${API_BASE_URL}/messages/conversation/${user1Id}/${user2Id}`);
+    },
+    
+    // Get recent conversations for a user
+    getRecentConversations: async (userId) => {
+      return makeRequest(`${API_BASE_URL}/messages/conversations/${userId}`);
+    },
+    
+    // Send a message
+    sendMessage: async (messageData) => {
+      return makeRequest(`${API_BASE_URL}/messages`, 'POST', messageData);
+    },
+    
+    // Send a message with attachments
+    sendMessageWithAttachments: async (formData) => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/messages/with-attachments`, {
+          method: 'POST',
+          body: formData, // FormData object with message data and files
+        });
+        
+        if (!response.ok) {
+          let errorMessage;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+          } catch (e) {
+            errorMessage = `HTTP error! status: ${response.status}`;
+          }
+          throw new Error(errorMessage);
+        }
+        
+        const data = await response.json();
+        
+        return {
+          success: data.status === 'success' || data.success === true,
+          data: data.data || null,
+          message: data.message
+        };
+      } catch (error) {
+        return { 
+          success: false, 
+          message: error.message, 
+          data: null 
+        };
+      }
+    },
+    
+    // Mark messages as read
+    markAsRead: async (senderId, receiverId) => {
+      return makeRequest(`${API_BASE_URL}/messages/read/${senderId}/${receiverId}`, 'PUT');
+    },
+    
+    // Get unread message count
+    getUnreadCount: async (userId) => {
+      return makeRequest(`${API_BASE_URL}/messages/unread/${userId}`);
+    },
+    
+    // Update user online status
+    updateUserStatus: async (userId, isOnline) => {
+      return makeRequest(`${API_BASE_URL}/messages/status/${userId}`, 'PUT', { is_online: isOnline });
+    },
+    
+    // Get user online status
+    getUserStatus: async (userId) => {
+      return makeRequest(`${API_BASE_URL}/messages/status/${userId}`);
+    }
+  },
 });

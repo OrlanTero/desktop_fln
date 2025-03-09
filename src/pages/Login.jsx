@@ -10,8 +10,10 @@ import {
   CircularProgress
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { useAuth } from '../contexts/AuthContext';
 
-const Login = ({ onLogin }) => {
+const Login = () => {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -30,13 +32,9 @@ const Login = ({ onLogin }) => {
     }
 
     try {
-      // Call the login API
-      const response = await window.api.user.login({ email, password });
-      
-      if (response.success) {
-        onLogin(response.data);
-      } else {
-        setError(response.message || 'Login failed');
+      const result = await login(email, password);
+      if (!result.success) {
+        setError(result.message || 'Login failed');
       }
     } catch (err) {
       console.error('Login error:', err);
