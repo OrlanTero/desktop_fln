@@ -26,7 +26,15 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Avatar,
+  FormControl,
+  InputLabel,
+  Select,
+  Grid,
+  TablePagination,
+  LinearProgress,
+
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -41,13 +49,23 @@ import PauseCircleIcon from '@mui/icons-material/PauseCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import Navigation from '../components/Navigation';
 import { format } from 'date-fns';
+import Layout from '../components/Layout';
+import LogoutIcon from '@mui/icons-material/Logout';
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import {
+  Send as SendIcon,
+  FilterList as FilterIcon,
+  Task as TaskIcon,
+  Timeline as TimelineIcon,
+} from '@mui/icons-material';
+
 
 const Projects = ({ user, onLogout }) => {
   const navigate = useNavigate();
   
   // State
   const [projects, setProjects] = useState([]);
-  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -65,23 +83,83 @@ const Projects = ({ user, onLogout }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuProject, setMenuProject] = useState(null);
   
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    client: '',
+    dateRange: '',
+    progressRange: '',
+  });
+  
+  // Fetch clients from API
+  const fetchClients = async () => {
+    try {
+      const response = await window.api.client.getAll();
+      if (response && response.success) {
+        setClients(response.data || []);
+      } else {
+        setError('Failed to load clients: ' + (response?.message || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error('Error in fetchClients:', err);
+      setError('Error loading clients: ' + (err?.message || 'Unknown error'));
+    }
+  };
+  
   // Fetch projects on component mount
   useEffect(() => {
     fetchProjects();
+    fetchClients();
   }, []);
   
-  // Filter projects when search term changes
-  useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredProjects(projects);
-    } else {
-      const filtered = projects.filter(project => 
-        project.project_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.client_name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredProjects(filtered);
-    }
-  }, [searchTerm, projects]);
+  // Filter projects based on search and filter criteria
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = filters.search === '' || 
+      project.project_name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      project.client_name.toLowerCase().includes(filters.search.toLowerCase());
+    
+    const matchesStatus = filters.status === '' || project.status === filters.status;
+    
+    const matchesClient = filters.client === '' || project.client_id === filters.client;
+    
+    const matchesDateRange = filters.dateRange === '' || (() => {
+      const projectDate = new Date(project.created_at);
+      const today = new Date();
+      switch (filters.dateRange) {
+        case 'today':
+          return projectDate.toDateString() === today.toDateString();
+        case 'week':
+          const weekAgo = new Date(today.setDate(today.getDate() - 7));
+          return projectDate >= weekAgo;
+        case 'month':
+          const monthAgo = new Date(today.setMonth(today.getMonth() - 1));
+          return projectDate >= monthAgo;
+        default:
+          return true;
+      }
+    })();
+
+    const matchesProgress = filters.progressRange === '' || (() => {
+      const progress = (project.completed_tasks / project.total_tasks) * 100;
+      switch (filters.progressRange) {
+        case 'not-started':
+          return progress === 0;
+        case 'in-progress':
+          return progress > 0 && progress < 100;
+        case 'completed':
+          return progress === 100;
+        default:
+          return true;
+      }
+    })();
+    
+    return matchesSearch && matchesStatus && matchesClient && matchesDateRange && matchesProgress;
+  });
   
   // Fetch projects from API
   const fetchProjects = async () => {
@@ -98,7 +176,6 @@ const Projects = ({ user, onLogout }) => {
       const response = await window.api.project.getAll();
       if (response && response.success) {
         setProjects(response.data || []);
-        setFilteredProjects(response.data || []);
       } else {
         setError('Failed to load projects: ' + (response?.message || 'Unknown error'));
       }
@@ -256,11 +333,11 @@ const Projects = ({ user, onLogout }) => {
     switch (normalizedStatus) {
       case 'NOT STARTED':
       case 'PENDING':
-        return 'default';
-      case 'IN PROGRESS':
-        return 'primary';
-      case 'ON HOLD':
         return 'warning';
+      case 'IN PROGRESS':
+        return 'info';
+      case 'ON HOLD':
+        return 'default';
       case 'COMPLETED':
         return 'success';
       case 'CANCELLED':
@@ -303,6 +380,88 @@ const Projects = ({ user, onLogout }) => {
     }
   };
   
+  // Get paginated data
+  const paginatedProjects = filteredProjects.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  // Handle page change
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setPage(0); // Reset to first page when filters change
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      status: '',
+      client: '',
+      dateRange: '',
+      progressRange: '',
+    });
+    setPage(0);
+  };
+  
+  const handleLogout = () => {
+    handleMenuClose();
+    if (onLogout) onLogout();
+    navigate('/login');
+  };
+
+  // User menu component
+  const userMenu = (
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <Typography variant="body1" sx={{ mr: 2 }}>
+        {user?.name || 'User'}
+      </Typography>
+      <Avatar
+        onClick={handleMenuOpen}
+        sx={{ cursor: 'pointer' }}
+        src={user?.photo_url}
+        alt={user?.name || 'User'}
+      >
+        {!user?.photo_url && <AccountCircle />}
+      </Avatar>
+      <Menu
+        id="menu-appbar"
+        anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        keepMounted
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleLogout}>
+          <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
+          Logout
+        </MenuItem>
+      </Menu>
+    </Box>
+  );
+  
   if (loading && projects.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -312,145 +471,222 @@ const Projects = ({ user, onLogout }) => {
   }
   
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Box sx={{ width: 240, flexShrink: 0 }}>
-        <Navigation user={user} onLogout={onLogout} />
-      </Box>
-      
-      <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto', height: '100%' }}>
-        <Typography variant="h4" gutterBottom>
-          Projects
-        </Typography>
-        
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+    <Layout title="Projects" userMenu={userMenu}>
+      <Box sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5">Projects</Typography>
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
-            onClick={handleCreateProject}
+            onClick={() => handleOpenDialog('add')}
           >
-            Create New Project
+            Create Project
           </Button>
         </Box>
-        
+
+        {/* Filters */}
         <Box sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Search projects by name or client..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search projects..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  name="status"
+                  value={filters.status}
+                  onChange={handleFilterChange}
+                  label="Status"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="PENDING">Pending</MenuItem>
+                  <MenuItem value="IN PROGRESS">In Progress</MenuItem>
+                  <MenuItem value="ON HOLD">On Hold</MenuItem>
+                  <MenuItem value="COMPLETED">Completed</MenuItem>
+                  <MenuItem value="CANCELLED">Cancelled</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Client</InputLabel>
+                <Select
+                  name="client"
+                  value={filters.client}
+                  onChange={handleFilterChange}
+                  label="Client"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  {clients.map((client) => (
+                    <MenuItem key={client.client_id} value={client.client_id}>
+                      {client.client_name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Progress</InputLabel>
+                <Select
+                  name="progressRange"
+                  value={filters.progressRange}
+                  onChange={handleFilterChange}
+                  label="Progress"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="not-started">Not Started</MenuItem>
+                  <MenuItem value="in-progress">In Progress</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Date Range</InputLabel>
+                <Select
+                  name="dateRange"
+                  value={filters.dateRange}
+                  onChange={handleFilterChange}
+                  label="Date Range"
+                >
+                  <MenuItem value="">All Time</MenuItem>
+                  <MenuItem value="today">Today</MenuItem>
+                  <MenuItem value="week">Last 7 Days</MenuItem>
+                  <MenuItem value="month">Last 30 Days</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={1}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleResetFilters}
+                startIcon={<FilterIcon />}
+              >
+                Reset
+              </Button>
+            </Grid>
+          </Grid>
         </Box>
-        
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Project Name</TableCell>
+                <TableCell>Client</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Progress</TableCell>
+                <TableCell>Start Date</TableCell>
+                <TableCell>Due Date</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading ? (
                 <TableRow>
-                  <TableCell>Project Name</TableCell>
-                  <TableCell>Client</TableCell>
-                  <TableCell>Start Date</TableCell>
-                  <TableCell>End Date</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Total Amount</TableCell>
-                  <TableCell align="right">Paid Amount</TableCell>
-                  <TableCell>Payment Status</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell colSpan={7} align="center">
+                    Loading...
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredProjects.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} align="center">
-                      {loading ? 'Loading projects...' : 'No projects found'}
+              ) : paginatedProjects.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    No projects found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedProjects.map((project) => (
+                  <TableRow key={project.project_id}>
+                    <TableCell>{project.project_name}</TableCell>
+                    <TableCell>{project.client_name}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={project.status}
+                        color={getStatusColor(project.status)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={(project.completed_tasks / project.total_tasks) * 100}
+                          sx={{ flexGrow: 1 }}
+                        />
+                        <Typography variant="body2">
+                          {Math.round((project.completed_tasks / project.total_tasks) * 100)}%
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{new Date(project.start_date).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(project.due_date).toLocaleDateString()}</TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleViewTasks(project.project_id)}
+                      >
+                        <TaskIcon />
+                      </IconButton>
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleViewTimeline(project.project_id)}
+                      >
+                        <TimelineIcon />
+                      </IconButton>
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleOpenDialog('edit', project)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      {project.status !== 'COMPLETED' && project.status !== 'CANCELLED' && (
+                        <IconButton
+                          color="error"
+                          onClick={() => handleOpenDialog('delete', project)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      )}
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredProjects.map((project) => {
-                    const paymentStatus = getPaymentStatus(project);
-                    
-                    return (
-                      <TableRow key={project.id || project.project_id}>
-                        <TableCell>{project.project_name}</TableCell>
-                        <TableCell>{project.client_name}</TableCell>
-                        <TableCell>{formatDate(project.start_date)}</TableCell>
-                        <TableCell>{formatDate(project.end_date)}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={project.status} 
-                            color={getStatusColor(project.status)} 
-                            size="small" 
-                          />
-                        </TableCell>
-                        <TableCell align="right">${parseFloat(project.total_amount || 0).toFixed(2)}</TableCell>
-                        <TableCell align="right">${parseFloat(project.paid_amount || 0).toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={paymentStatus} 
-                            color={getPaymentStatusColor(paymentStatus)} 
-                            size="small" 
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            color="primary"
-                            onClick={() => handleViewProject(project.id || project.project_id)}
-                            title="View Project"
-                          >
-                            <VisibilityIcon />
-                          </IconButton>
-                          <IconButton
-                            color="secondary"
-                            onClick={() => handleEditProject(project.id || project.project_id)}
-                            title="Edit Project"
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          {project.status?.toUpperCase() === 'PENDING' && (
-                            <IconButton
-                              color="success"
-                              onClick={() => handleStatusClick(project, 'IN PROGRESS')}
-                              title="Start Project"
-                            >
-                              <AssignmentIcon />
-                            </IconButton>
-                          )}
-                          <IconButton
-                            color="default"
-                            onClick={(e) => handleMenuOpen(e, project)}
-                            title="More Actions"
-                          >
-                            <MoreVertIcon />
-                          </IconButton>
-                          <IconButton
-                            color="error"
-                            onClick={() => handleDeleteClick(project)}
-                            title="Delete Project"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-        
+                ))
+              )}
+            </TableBody>
+          </Table>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={filteredProjects.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        </TableContainer>
+
         {/* Actions Menu */}
         <Menu
           anchorEl={anchorEl}
@@ -612,7 +848,7 @@ const Projects = ({ user, onLogout }) => {
           </Alert>
         </Snackbar>
       </Box>
-    </Box>
+    </Layout>
   );
 };
 

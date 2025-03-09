@@ -22,14 +22,25 @@ import {
   Alert,
   CircularProgress,
   TextField,
-  InputAdornment
+  InputAdornment,
+  Avatar,
+  Menu,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  Grid,
+  TablePagination,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import EngineeringIcon from '@mui/icons-material/Engineering';
-import SearchIcon from '@mui/icons-material/Search';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Visibility as ViewIcon,
+  Send as SendIcon,
+  Transform as ConvertIcon,
+  FilterList as FilterIcon,
+} from '@mui/icons-material';
 import Layout from '../components/Layout';
 import { format } from 'date-fns';
 
@@ -38,34 +49,115 @@ const Proposals = ({ user, onLogout }) => {
   
   // State
   const [proposals, setProposals] = useState([]);
-  const [filteredProposals, setFilteredProposals] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    client: '',
+    dateRange: '',
+  });
   
   // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
   
+  // Fetch clients from API
+  const fetchClients = async () => {
+    try {
+      const response = await window.api.client.getAll();
+      if (response && response.success) {
+        setClients(response.data || []);
+      } else {
+        setError('Failed to load clients: ' + (response?.message || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error('Error in fetchClients:', err);
+      setError('Error loading clients: ' + (err?.message || 'Unknown error'));
+    }
+  };
+  
   // Fetch proposals on component mount
   useEffect(() => {
     fetchProposals();
+    fetchClients();
   }, []);
   
-  // Filter proposals when search term changes
-  useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredProposals(proposals);
-    } else {
-      const filtered = proposals.filter(proposal => 
-        proposal.proposal_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        proposal.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        proposal.proposal_reference.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredProposals(filtered);
-    }
-  }, [searchTerm, proposals]);
+  // Filter proposals based on search and filter criteria
+  const filteredProposals = proposals.filter(proposal => {
+    const matchesSearch = filters.search === '' || 
+      proposal.proposal_reference.toLowerCase().includes(filters.search.toLowerCase()) ||
+      proposal.client_name.toLowerCase().includes(filters.search.toLowerCase());
+    
+    const matchesStatus = filters.status === '' || proposal.status === filters.status;
+    
+    const matchesClient = filters.client === '' || proposal.client_id === filters.client;
+    
+    const matchesDateRange = filters.dateRange === '' || (() => {
+      const proposalDate = new Date(proposal.created_at);
+      const today = new Date();
+      switch (filters.dateRange) {
+        case 'today':
+          return proposalDate.toDateString() === today.toDateString();
+        case 'week':
+          const weekAgo = new Date(today.setDate(today.getDate() - 7));
+          return proposalDate >= weekAgo;
+        case 'month':
+          const monthAgo = new Date(today.setMonth(today.getMonth() - 1));
+          return proposalDate >= monthAgo;
+        default:
+          return true;
+      }
+    })();
+    
+    return matchesSearch && matchesStatus && matchesClient && matchesDateRange;
+  });
+
+  // Get paginated data
+  const paginatedProposals = filteredProposals.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  // Handle page change
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setPage(0); // Reset to first page when filters change
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      status: '',
+      client: '',
+      dateRange: '',
+    });
+    setPage(0);
+  };
   
   // Fetch proposals from API
   const fetchProposals = async () => {
@@ -83,7 +175,6 @@ const Proposals = ({ user, onLogout }) => {
 
       if (response && response.success) {
         setProposals(response.data || []);
-        setFilteredProposals(response.data || []);
       } else {
         setError('Failed to load proposals: ' + (response?.message || 'Unknown error'));
       }
@@ -163,14 +254,16 @@ const Proposals = ({ user, onLogout }) => {
   // Get status chip color
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Draft':
+      case 'DRAFT':
         return 'default';
-      case 'Sent':
-        return 'primary';
-      case 'Accepted':
+      case 'SENT':
+        return 'info';
+      case 'ACCEPTED':
         return 'success';
-      case 'Rejected':
+      case 'REJECTED':
         return 'error';
+      case 'CONVERTED':
+        return 'primary';
       default:
         return 'default';
     }
@@ -197,111 +290,203 @@ const Proposals = ({ user, onLogout }) => {
   return (
     <Layout user={user} onLogout={onLogout}>
       <Box sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Proposals
-        </Typography>
-        
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5">Proposals</Typography>
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
             onClick={handleCreateProposal}
           >
-            Create New Proposal
+            Create Proposal
           </Button>
         </Box>
-        
+
+        {/* Filters */}
         <Box sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Search proposals by name, client, or reference..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search proposals..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <FilterIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  name="status"
+                  value={filters.status}
+                  onChange={handleFilterChange}
+                  label="Status"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="DRAFT">Draft</MenuItem>
+                  <MenuItem value="SENT">Sent</MenuItem>
+                  <MenuItem value="ACCEPTED">Accepted</MenuItem>
+                  <MenuItem value="REJECTED">Rejected</MenuItem>
+                  <MenuItem value="CONVERTED">Converted</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Client</InputLabel>
+                <Select
+                  name="client"
+                  value={filters.client}
+                  onChange={handleFilterChange}
+                  label="Client"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  {clients.map((client) => (
+                    <MenuItem key={client.client_id} value={client.client_id}>
+                      {client.client_name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Date Range</InputLabel>
+                <Select
+                  name="dateRange"
+                  value={filters.dateRange}
+                  onChange={handleFilterChange}
+                  label="Date Range"
+                >
+                  <MenuItem value="">All Time</MenuItem>
+                  <MenuItem value="today">Today</MenuItem>
+                  <MenuItem value="week">Last 7 Days</MenuItem>
+                  <MenuItem value="month">Last 30 Days</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleResetFilters}
+                startIcon={<FilterIcon />}
+              >
+                Reset
+              </Button>
+            </Grid>
+          </Grid>
         </Box>
-        
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Reference</TableCell>
-                <TableCell>Proposal Name</TableCell>
                 <TableCell>Client</TableCell>
-                <TableCell>Project Name</TableCell>
-                <TableCell>Valid Until</TableCell>
-                <TableCell align="right">Total Amount</TableCell>
+                <TableCell>Total Amount</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell>Created At</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredProposals.length === 0 ? (
+              {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">
-                    {loading ? 'Loading proposals...' : 'No proposals found'}
+                  <TableCell colSpan={6} align="center">
+                    Loading...
+                  </TableCell>
+                </TableRow>
+              ) : paginatedProposals.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    No proposals found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProposals.map((proposal) => (
+                paginatedProposals.map((proposal) => (
                   <TableRow key={proposal.proposal_id}>
                     <TableCell>{proposal.proposal_reference}</TableCell>
-                    <TableCell>{proposal.proposal_name}</TableCell>
                     <TableCell>{proposal.client_name}</TableCell>
-                    <TableCell>{proposal.project_name}</TableCell>
-                    <TableCell>{formatDate(proposal.valid_until)}</TableCell>
-                    <TableCell align="right">${parseFloat(proposal.total_amount).toFixed(2)}</TableCell>
                     <TableCell>
-                      <Chip 
-                        label={proposal.status} 
-                        color={getStatusColor(proposal.status)} 
-                        size="small" 
+                      ${parseFloat(proposal.total_amount || 0).toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={proposal.status}
+                        color={getStatusColor(proposal.status)}
+                        size="small"
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell>{new Date(proposal.created_at).toLocaleString()}</TableCell>
+                    <TableCell align="right">
                       <IconButton
                         color="primary"
                         onClick={() => handleViewProposal(proposal.proposal_id)}
-                        title="View Proposal"
                       >
-                        <VisibilityIcon />
+                        <ViewIcon />
                       </IconButton>
-                      <IconButton
-                        color="secondary"
-                        onClick={() => handleEditProposal(proposal.proposal_id)}
-                        title="Edit Proposal"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        color="success"
-                        onClick={() => handleConvertClick(proposal)}
-                        title="Convert to Project"
-                      disabled={  proposal.status.toLowerCase() !== 'accepted'}
-                      >
-                        <EngineeringIcon />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDeleteClick(proposal)}
-                        title="Delete Proposal"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                      {proposal.status === 'DRAFT' && (
+                        <>
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleEditProposal(proposal.proposal_id)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleSendProposal(proposal.proposal_id)}
+                          >
+                            <SendIcon />
+                          </IconButton>
+                        </>
+                      )}
+                      {proposal.status === 'ACCEPTED' && (
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleConvertClick(proposal)}
+                        >
+                          <ConvertIcon />
+                        </IconButton>
+                      )}
+                      {proposal.status === 'DRAFT' && (
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDeleteClick(proposal)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={filteredProposals.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
         </TableContainer>
         
         {/* Delete Confirmation Dialog */}

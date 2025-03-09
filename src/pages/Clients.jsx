@@ -27,6 +27,8 @@ import {
   InputLabel,
   Select,
   Grid,
+  TablePagination,
+  InputAdornment,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -34,6 +36,8 @@ import {
   Delete as DeleteIcon,
   AccountCircle,
   ExitToApp as LogoutIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
 } from '@mui/icons-material';
 import Layout from '../components/Layout';
 
@@ -43,8 +47,21 @@ const Clients = ({ user, onLogout }) => {
   const [clientTypes, setClientTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: '',
+    clientType: '',
+    status: '',
+  });
+  
+  // Dialog states
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogType, setDialogType] = useState('add'); // 'add', 'edit', 'delete'
+  const [dialogType, setDialogType] = useState('add');
   const [currentClient, setCurrentClient] = useState(null);
   const [formData, setFormData] = useState({
     client_name: '',
@@ -60,17 +77,79 @@ const Clients = ({ user, onLogout }) => {
     client_type_id: '',
     status: 'active',
   });
+  
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success',
   });
+  
   const [anchorEl, setAnchorEl] = useState(null);
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
 
   useEffect(() => {
     fetchClients();
     fetchClientTypes();
   }, []);
+
+  // Filter clients based on search and filter criteria
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = filters.search === '' || 
+      client.client_name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      client.company.toLowerCase().includes(filters.search.toLowerCase()) ||
+      client.email_address.toLowerCase().includes(filters.search.toLowerCase());
+      
+    const matchesClientType = filters.clientType === '' || client.client_type_id === filters.clientType;
+    const matchesStatus = filters.status === '' || client.status === filters.status;
+    
+    return matchesSearch && matchesClientType && matchesStatus;
+  });
+
+  // Get paginated data
+  const paginatedClients = filteredClients.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  // Handle page change
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setPage(0); // Reset to first page when filters change
+  };
+
+  // Handle filter menu
+  const handleFilterMenuOpen = (event) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterMenuClose = () => {
+    setFilterAnchorEl(null);
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      clientType: '',
+      status: '',
+    });
+    setPage(0);
+  };
 
   const fetchClients = async () => {
     setLoading(true);
@@ -269,6 +348,71 @@ const Clients = ({ user, onLogout }) => {
           </Button>
         </Box>
 
+        {/* Filters */}
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search clients..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth>
+                <InputLabel>Client Type</InputLabel>
+                <Select
+                  name="clientType"
+                  value={filters.clientType}
+                  onChange={handleFilterChange}
+                  label="Client Type"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  {clientTypes.map((type) => (
+                    <MenuItem key={type.type_id} value={type.type_id}>
+                      {type.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  name="status"
+                  value={filters.status}
+                  onChange={handleFilterChange}
+                  label="Status"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleResetFilters}
+                startIcon={<FilterIcon />}
+              >
+                Reset
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -280,10 +424,10 @@ const Clients = ({ user, onLogout }) => {
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
-                <TableCell>Client Name</TableCell>
+                <TableCell>Name</TableCell>
                 <TableCell>Company</TableCell>
                 <TableCell>Email</TableCell>
-                <TableCell>Client Type</TableCell>
+                <TableCell>Type</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
@@ -295,14 +439,14 @@ const Clients = ({ user, onLogout }) => {
                     Loading...
                   </TableCell>
                 </TableRow>
-              ) : clients.length === 0 ? (
+              ) : paginatedClients.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
                     No clients found
                   </TableCell>
                 </TableRow>
               ) : (
-                clients.map((client) => (
+                paginatedClients.map((client) => (
                   <TableRow key={client.client_id}>
                     <TableCell>{client.client_id}</TableCell>
                     <TableCell>{client.client_name}</TableCell>
@@ -342,6 +486,15 @@ const Clients = ({ user, onLogout }) => {
               )}
             </TableBody>
           </Table>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={filteredClients.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
         </TableContainer>
 
         {/* Add/Edit Client Dialog */}

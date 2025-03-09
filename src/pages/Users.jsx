@@ -23,6 +23,12 @@ import {
   Avatar,
   Menu,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  Grid,
+  TablePagination,
+  InputAdornment,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -30,6 +36,8 @@ import {
   Delete as DeleteIcon,
   AccountCircle,
   ExitToApp as LogoutIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
 } from '@mui/icons-material';
 import Layout from '../components/Layout';
 
@@ -38,8 +46,20 @@ const Users = ({ user, onLogout }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: '',
+    role: '',
+  });
+  
+  // Dialog states
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogType, setDialogType] = useState('add'); // 'add', 'edit', 'delete'
+  const [dialogType, setDialogType] = useState('add');
   const [currentUser, setCurrentUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -47,16 +67,65 @@ const Users = ({ user, onLogout }) => {
     password: '',
     role: 'employee',
   });
+  
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success',
   });
+  
   const [anchorEl, setAnchorEl] = useState(null);
 
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // Filter users based on search and filter criteria
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = filters.search === '' || 
+      user.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      user.email.toLowerCase().includes(filters.search.toLowerCase());
+      
+    const matchesRole = filters.role === '' || user.role === filters.role;
+    
+    return matchesSearch && matchesRole;
+  });
+
+  // Get paginated data
+  const paginatedUsers = filteredUsers.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  // Handle page change
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setPage(0); // Reset to first page when filters change
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      role: '',
+    });
+    setPage(0);
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -220,6 +289,55 @@ const Users = ({ user, onLogout }) => {
           </Button>
         </Box>
 
+        {/* Filters */}
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search users..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth>
+                <InputLabel>Role</InputLabel>
+                <Select
+                  name="role"
+                  value={filters.role}
+                  onChange={handleFilterChange}
+                  label="Role"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
+                  <MenuItem value="manager">Manager</MenuItem>
+                  <MenuItem value="employee">Employee</MenuItem>
+                  <MenuItem value="liaison">Liaison</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleResetFilters}
+                startIcon={<FilterIcon />}
+              >
+                Reset
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -244,14 +362,14 @@ const Users = ({ user, onLogout }) => {
                     Loading...
                   </TableCell>
                 </TableRow>
-              ) : users.length === 0 ? (
+              ) : paginatedUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center">
                     No users found
                   </TableCell>
                 </TableRow>
               ) : (
-                users.map((user) => (
+                paginatedUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>{user.id}</TableCell>
                     <TableCell>{user.name}</TableCell>
@@ -276,6 +394,15 @@ const Users = ({ user, onLogout }) => {
               )}
             </TableBody>
           </Table>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={filteredUsers.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
         </TableContainer>
 
         {/* Add/Edit User Dialog */}

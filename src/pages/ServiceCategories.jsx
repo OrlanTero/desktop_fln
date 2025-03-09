@@ -26,6 +26,9 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Grid,
+  TablePagination,
+  InputAdornment,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -33,6 +36,8 @@ import {
   Delete as DeleteIcon,
   AccountCircle,
   ExitToApp as LogoutIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
 } from '@mui/icons-material';
 import Layout from '../components/Layout';
 
@@ -41,24 +46,81 @@ const ServiceCategories = ({ user, onLogout }) => {
   const [serviceCategories, setServiceCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: '',
+  });
+  
+  // Dialog states
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogType, setDialogType] = useState('add'); // 'add', 'edit', 'delete'
+  const [dialogType, setDialogType] = useState('add');
   const [currentCategory, setCurrentCategory] = useState(null);
   const [formData, setFormData] = useState({
     service_category_name: '',
     priority_number: 0,
     description: '',
   });
+  
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success',
   });
+  
   const [anchorEl, setAnchorEl] = useState(null);
 
   useEffect(() => {
     fetchServiceCategories();
   }, []);
+
+  // Filter service categories based on search
+  const filteredCategories = serviceCategories.filter(category => {
+    const matchesSearch = filters.search === '' || 
+      category.service_category_name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      (category.description && category.description.toLowerCase().includes(filters.search.toLowerCase()));
+    
+    return matchesSearch;
+  });
+
+  // Get paginated data
+  const paginatedCategories = filteredCategories.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  // Handle page change
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setPage(0); // Reset to first page when filters change
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+    });
+    setPage(0);
+  };
 
   const fetchServiceCategories = async () => {
     setLoading(true);
@@ -230,6 +292,38 @@ const ServiceCategories = ({ user, onLogout }) => {
           </Button>
         </Box>
 
+        {/* Filters */}
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={10}>
+              <TextField
+                fullWidth
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search service categories..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleResetFilters}
+                startIcon={<FilterIcon />}
+              >
+                Reset
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -256,30 +350,22 @@ const ServiceCategories = ({ user, onLogout }) => {
                     Loading...
                   </TableCell>
                 </TableRow>
-              ) : serviceCategories.length === 0 ? (
+              ) : paginatedCategories.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
                     No service categories found
                   </TableCell>
                 </TableRow>
               ) : (
-                serviceCategories.map((category) => (
+                paginatedCategories.map((category) => (
                   <TableRow key={category.service_category_id}>
                     <TableCell>{category.service_category_id}</TableCell>
                     <TableCell>{category.service_category_name}</TableCell>
                     <TableCell>{category.priority_number}</TableCell>
                     <TableCell>{category.description}</TableCell>
-                    <TableCell>{category.added_by_name || 'N/A'}</TableCell>
+                    <TableCell>{category.added_by_name}</TableCell>
                     <TableCell>{new Date(category.created_at).toLocaleString()}</TableCell>
                     <TableCell align="right">
-                      <Button
-                        size="small"
-                        color="primary"
-                        onClick={() => handleViewServices(category.service_category_id)}
-                        sx={{ mr: 1 }}
-                      >
-                        View Services
-                      </Button>
                       <IconButton
                         color="primary"
                         onClick={() => handleOpenDialog('edit', category)}
@@ -298,6 +384,15 @@ const ServiceCategories = ({ user, onLogout }) => {
               )}
             </TableBody>
           </Table>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={filteredCategories.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
         </TableContainer>
 
         {/* Add/Edit Service Category Dialog */}

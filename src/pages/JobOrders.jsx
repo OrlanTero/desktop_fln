@@ -27,7 +27,8 @@ import {
   Alert,
   CircularProgress,
   LinearProgress,
-  Divider
+  Divider,
+  InputAdornment
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -40,7 +41,9 @@ import {
   Assignment as AssignmentIcon,
   AttachFile as AttachFileIcon,
   ThumbUp as ThumbUpIcon,
-  ThumbDown as ThumbDownIcon
+  ThumbDown as ThumbDownIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
 } from '@mui/icons-material';
 import Navigation from '../components/Navigation';
 import { format } from 'date-fns';
@@ -89,6 +92,14 @@ const JobOrders = ({ user, onLogout }) => {
   const [submissionLoading, setSubmissionLoading] = useState(false);
   const [approveRejectDialogOpen, setApproveRejectDialogOpen] = useState(false);
   const [approveRejectAction, setApproveRejectAction] = useState('');
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    liaison: '',
+    dateRange: '',
+  });
   
   // Fetch projects and services on component mount
   useEffect(() => {
@@ -651,6 +662,75 @@ const JobOrders = ({ user, onLogout }) => {
     };
   };
   
+  // Sort and filter job orders
+  const getFilteredAndSortedJobOrders = (jobOrders) => {
+    // First, filter the job orders
+    const filtered = jobOrders.filter(job => {
+      const matchesSearch = filters.search === '' || 
+        job.description.toLowerCase().includes(filters.search.toLowerCase()) ||
+        job.service_name?.toLowerCase().includes(filters.search.toLowerCase());
+      
+      const matchesStatus = filters.status === '' || job.status === filters.status;
+      
+      const matchesLiaison = filters.liaison === '' || job.liaison_id === filters.liaison;
+      
+      const matchesDateRange = filters.dateRange === '' || (() => {
+        const jobDate = new Date(job.created_at);
+        const today = new Date();
+        switch (filters.dateRange) {
+          case 'today':
+            return jobDate.toDateString() === today.toDateString();
+          case 'week':
+            const weekAgo = new Date(today.setDate(today.getDate() - 7));
+            return jobDate >= weekAgo;
+          case 'month':
+            const monthAgo = new Date(today.setMonth(today.getMonth() - 1));
+            return jobDate >= monthAgo;
+          default:
+            return true;
+        }
+      })();
+      
+      return matchesSearch && matchesStatus && matchesLiaison && matchesDateRange;
+    });
+
+    // Then, sort by status priority
+    return filtered.sort((a, b) => {
+      const statusPriority = {
+        'PENDING': 0,
+        'IN_PROGRESS': 1,
+        'ON_HOLD': 2,
+        'CANCELLED': 3,
+        'COMPLETED': 4
+      };
+      
+      return (statusPriority[a.status] || 0) - (statusPriority[b.status] || 0);
+    });
+  };
+
+  // Get filtered and sorted job orders
+  const filteredUnassignedJobOrders = getFilteredAndSortedJobOrders(unassignedJobOrders);
+  const filteredAssignedJobOrders = getFilteredAndSortedJobOrders(assignedJobOrders);
+
+  // Handle filter changes
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      status: '',
+      liaison: '',
+      dateRange: '',
+    });
+  };
+  
   if (loading && projects.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -755,6 +835,90 @@ const JobOrders = ({ user, onLogout }) => {
           </Grid>
         </Box>
         
+        {/* Filters */}
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search job orders..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  name="status"
+                  value={filters.status}
+                  onChange={handleFilterChange}
+                  label="Status"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="PENDING">Pending</MenuItem>
+                  <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+                  <MenuItem value="ON_HOLD">On Hold</MenuItem>
+                  <MenuItem value="COMPLETED">Completed</MenuItem>
+                  <MenuItem value="CANCELLED">Cancelled</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Liaison</InputLabel>
+                <Select
+                  name="liaison"
+                  value={filters.liaison}
+                  onChange={handleFilterChange}
+                  label="Liaison"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  {liaisons.map((liaison) => (
+                    <MenuItem key={liaison.id} value={liaison.id}>
+                      {liaison.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Date Range</InputLabel>
+                <Select
+                  name="dateRange"
+                  value={filters.dateRange}
+                  onChange={handleFilterChange}
+                  label="Date Range"
+                >
+                  <MenuItem value="">All Time</MenuItem>
+                  <MenuItem value="today">Today</MenuItem>
+                  <MenuItem value="week">Last 7 Days</MenuItem>
+                  <MenuItem value="month">Last 30 Days</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleResetFilters}
+                startIcon={<FilterIcon />}
+              >
+                Reset
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+        
         {projects.length === 0 ? (
           <Paper sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="h6">No projects available</Typography>
@@ -804,8 +968,8 @@ const JobOrders = ({ user, onLogout }) => {
                   </Typography>
                 </Box>
                 
-                {(!unassignedJobOrders || unassignedJobOrders.length === 0) && 
-                 (!assignedJobOrders || assignedJobOrders.length === 0) ? (
+                {(!filteredUnassignedJobOrders || filteredUnassignedJobOrders.length === 0) && 
+                 (!filteredAssignedJobOrders || filteredAssignedJobOrders.length === 0) ? (
                   <Paper sx={{ p: 3, textAlign: 'center' }}>
                     <Typography variant="h6">No job orders found</Typography>
                     <Typography variant="body2" color="textSecondary">
@@ -828,13 +992,13 @@ const JobOrders = ({ user, onLogout }) => {
                         Unassigned Job Orders
                       </Typography>
                       
-                      {!unassignedJobOrders || unassignedJobOrders.length === 0 ? (
+                      {!filteredUnassignedJobOrders || filteredUnassignedJobOrders.length === 0 ? (
                         <Paper sx={{ p: 3, textAlign: 'center' }}>
                           <Typography variant="body1">No unassigned job orders found</Typography>
                         </Paper>
                       ) : (
                         <Grid container spacing={3}>
-                          {unassignedJobOrders.map((jobOrder) => (
+                          {filteredUnassignedJobOrders.map((jobOrder) => (
                             <Grid item xs={12} sm={6} md={4} key={jobOrder.id}>
                               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                                 <CardContent sx={{ flexGrow: 1 }}>
@@ -900,13 +1064,13 @@ const JobOrders = ({ user, onLogout }) => {
                         Assigned Job Orders
                       </Typography>
                       
-                      {!assignedJobOrders || assignedJobOrders.length === 0 ? (
+                      {!filteredAssignedJobOrders || filteredAssignedJobOrders.length === 0 ? (
                         <Paper sx={{ p: 3, textAlign: 'center' }}>
                           <Typography variant="body1">No assigned job orders found</Typography>
                         </Paper>
                       ) : (
                         <Grid container spacing={3}>
-                          {assignedJobOrders.map((jobOrder) => (
+                          {filteredAssignedJobOrders.map((jobOrder) => (
                             <Grid item xs={12} sm={6} md={4} key={jobOrder.id}>
                               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                                 <CardContent sx={{ flexGrow: 1 }}>

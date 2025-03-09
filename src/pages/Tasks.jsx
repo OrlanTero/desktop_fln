@@ -25,7 +25,8 @@ import {
   Alert,
   CircularProgress,
   Divider,
-  FormHelperText
+  FormHelperText,
+  InputAdornment
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -38,7 +39,9 @@ import {
   Visibility as VisibilityIcon,
   AttachFile as AttachFileIcon,
   ThumbUp as ThumbUpIcon,
-  ThumbDown as ThumbDownIcon
+  ThumbDown as ThumbDownIcon,
+  Search as SearchIcon,
+  Filter as FilterIcon
 } from '@mui/icons-material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -86,6 +89,15 @@ const Tasks = ({ user, onLogout }) => {
   const [submissionLoading, setSubmissionLoading] = useState(false);
   const [approveRejectDialogOpen, setApproveRejectDialogOpen] = useState(false);
   const [approveRejectAction, setApproveRejectAction] = useState('');
+  
+  // Add filter state
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    liaison: '',
+    service: '',
+    dateRange: '',
+  });
   
   // Fetch tasks, liaisons, services, and service categories on component mount
   useEffect(() => {
@@ -562,16 +574,86 @@ const Tasks = ({ user, onLogout }) => {
     };
   };
 
-  return (
-    <Box sx={{ display: 'flex' }}>
-      <Navigation drawerWidth={240} />
+  // Add getFilteredAndSortedTasks function
+  const getFilteredAndSortedTasks = () => {
+    // First, filter the tasks
+    const filtered = tasks.filter(task => {
+      const matchesSearch = filters.search === '' || 
+        task.description.toLowerCase().includes(filters.search.toLowerCase()) ||
+        getServiceName(task.service_id).toLowerCase().includes(filters.search.toLowerCase());
       
-      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+      const matchesStatus = filters.status === '' || task.status === filters.status;
+      
+      const matchesLiaison = filters.liaison === '' || task.liaison_id === filters.liaison;
+      
+      const matchesService = filters.service === '' || task.service_id === filters.service;
+      
+      const matchesDateRange = filters.dateRange === '' || (() => {
+        const taskDate = new Date(task.created_at);
+        const today = new Date();
+        switch (filters.dateRange) {
+          case 'today':
+            return taskDate.toDateString() === today.toDateString();
+          case 'week':
+            const weekAgo = new Date(today.setDate(today.getDate() - 7));
+            return taskDate >= weekAgo;
+          case 'month':
+            const monthAgo = new Date(today.setMonth(today.getMonth() - 1));
+            return taskDate >= monthAgo;
+          default:
+            return true;
+        }
+      })();
+      
+      return matchesSearch && matchesStatus && matchesLiaison && matchesService && matchesDateRange;
+    });
+
+    // Then, sort by status priority
+    return filtered.sort((a, b) => {
+      const statusPriority = {
+        'PENDING': 0,
+        'IN_PROGRESS': 1,
+        'ON_HOLD': 2,
+        'CANCELLED': 3,
+        'COMPLETED': 4
+      };
+      
+      return (statusPriority[a.status] || 0) - (statusPriority[b.status] || 0);
+    });
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      status: '',
+      liaison: '',
+      service: '',
+      dateRange: '',
+    });
+  };
+
+  return (
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <Box sx={{ width: 240, flexShrink: 0 }}>
+        <Navigation user={user} onLogout={onLogout} />
+      </Box>
+      
+      <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto', height: '100%' }}>
         <Typography variant="h4" gutterBottom>
           Tasks
         </Typography>
         
-        {/* Status Summary Cards */}
+        {/* Add status count cards */}
         <Box sx={{ mb: 3 }}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={2}>
@@ -588,8 +670,14 @@ const Tasks = ({ user, onLogout }) => {
             </Grid>
             <Grid item xs={12} sm={6} md={2}>
               <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e3f2fd' }}>
-                <Typography variant="h6" color="info.main">In Progress</Typography>
+                <Typography variant="h6" color="primary.main">In Progress</Typography>
                 <Typography variant="h4">{calculateStatusCounts().inProgress}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff8e1' }}>
+                <Typography variant="h6" color="warning.dark">On Hold</Typography>
+                <Typography variant="h4">{calculateStatusCounts().onHold}</Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6} md={2}>
@@ -604,11 +692,107 @@ const Tasks = ({ user, onLogout }) => {
                 <Typography variant="h4">{calculateStatusCounts().cancelled}</Typography>
               </Paper>
             </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e3f2fd' }}>
-                <Typography variant="h6" color="primary.main">Submitted</Typography>
-                <Typography variant="h4">{calculateStatusCounts().submitted}</Typography>
-              </Paper>
+          </Grid>
+        </Box>
+        
+        {/* Add filter controls */}
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search tasks..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  name="status"
+                  value={filters.status}
+                  onChange={handleFilterChange}
+                  label="Status"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="PENDING">Pending</MenuItem>
+                  <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+                  <MenuItem value="ON_HOLD">On Hold</MenuItem>
+                  <MenuItem value="COMPLETED">Completed</MenuItem>
+                  <MenuItem value="CANCELLED">Cancelled</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Liaison</InputLabel>
+                <Select
+                  name="liaison"
+                  value={filters.liaison}
+                  onChange={handleFilterChange}
+                  label="Liaison"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  {liaisons.map((liaison) => (
+                    <MenuItem key={liaison.id} value={liaison.id}>
+                      {liaison.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Service</InputLabel>
+                <Select
+                  name="service"
+                  value={filters.service}
+                  onChange={handleFilterChange}
+                  label="Service"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  {services.map((service) => (
+                    <MenuItem key={service.id} value={service.id}>
+                      {service.service_name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Date Range</InputLabel>
+                <Select
+                  name="dateRange"
+                  value={filters.dateRange}
+                  onChange={handleFilterChange}
+                  label="Date Range"
+                >
+                  <MenuItem value="">All Time</MenuItem>
+                  <MenuItem value="today">Today</MenuItem>
+                  <MenuItem value="week">Last 7 Days</MenuItem>
+                  <MenuItem value="month">Last 30 Days</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={1}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleResetFilters}
+                startIcon={<FilterIcon />}
+              >
+                Reset
+              </Button>
             </Grid>
           </Grid>
         </Box>
@@ -630,123 +814,115 @@ const Tasks = ({ user, onLogout }) => {
           </Box>
         ) : (
           <Grid container spacing={3}>
-            {tasks.length === 0 ? (
-              <Grid item xs={12}>
-                <Paper sx={{ p: 3, textAlign: 'center' }}>
-                  <Typography variant="body1">No tasks found. Create a new task to get started.</Typography>
-                </Paper>
-              </Grid>
-            ) : (
-              tasks.map((task) => (
-                <Grid item xs={12} sm={6} md={4} key={task.id}>
-                  <Card>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                        <Typography variant="h6" component="div" sx={{ mb: 1 }}>
-                          {task.description.length > 50 ? `${task.description.substring(0, 50)}...` : task.description}
+            {getFilteredAndSortedTasks().map((task) => (
+              <Grid item xs={12} sm={6} md={4} key={task.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Typography variant="h6" component="div" sx={{ mb: 1 }}>
+                        {task.description.length > 50 ? `${task.description.substring(0, 50)}...` : task.description}
+                      </Typography>
+                      <Chip
+                        label={task.status}
+                        color={getStatusColor(task.status).color}
+                        icon={getStatusColor(task.status).icon}
+                        size="small"
+                      />
+                    </Box>
+                    
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Liaison:</strong> {task.liaison_name}
+                    </Typography>
+                    
+                    {task.service_id && (
+                      <>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          <strong>Service:</strong> {task.service_name}
                         </Typography>
-                        <Chip
-                          label={task.status}
-                          color={getStatusColor(task.status).color}
-                          icon={getStatusColor(task.status).icon}
-                          size="small"
-                        />
-                      </Box>
-                      
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        <strong>Liaison:</strong> {task.liaison_name}
-                      </Typography>
-                      
-                      {task.service_id && (
-                        <>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            <strong>Service:</strong> {task.service_name}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            <strong>Category:</strong> {task.service_category_name}
-                          </Typography>
-                        </>
-                      )}
-                      
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        <strong>Due Date:</strong> {formatDate(task.due_date)}
-                      </Typography>
-                      
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Created:</strong> {formatDate(task.created_at)}
-                      </Typography>
-                    </CardContent>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          <strong>Category:</strong> {task.service_category_name}
+                        </Typography>
+                      </>
+                    )}
                     
-                    <Divider />
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Due Date:</strong> {formatDate(task.due_date)}
+                    </Typography>
                     
-                    <CardActions>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Created:</strong> {formatDate(task.created_at)}
+                    </Typography>
+                  </CardContent>
+                  
+                  <Divider />
+                  
+                  <CardActions>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => handleEditDialogOpen(task)}
+                      title="Edit"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleDeleteDialogOpen(task)}
+                      title="Delete"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                    
+                    {/* Add View button for SUBMITTED tasks */}
+                    {task.status === 'SUBMITTED' && (
                       <IconButton
                         size="small"
-                        color="primary"
-                        onClick={() => handleEditDialogOpen(task)}
-                        title="Edit"
+                        color="info"
+                        onClick={() => handleViewSubmissionDialogOpen(task)}
+                        title="View Submission"
                       >
-                        <EditIcon />
+                        <VisibilityIcon />
                       </IconButton>
-                      
+                    )}
+                    
+                    {task.status !== 'COMPLETED' && task.status !== 'SUBMITTED' && (
+                      <IconButton
+                        size="small"
+                        color="success"
+                        onClick={() => handleStatusDialogOpen(task, 'COMPLETED')}
+                        title="Mark as Completed"
+                      >
+                        <CheckCircleIcon />
+                      </IconButton>
+                    )}
+                    
+                    {task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED' && task.status !== 'SUBMITTED' && (
+                      <IconButton
+                        size="small"
+                        color="info"
+                        onClick={() => handleStatusDialogOpen(task, 'IN_PROGRESS')}
+                        title="Mark as In Progress"
+                      >
+                        <AssignmentIcon />
+                      </IconButton>
+                    )}
+                    
+                    {task.status !== 'CANCELLED' && (
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => handleDeleteDialogOpen(task)}
-                        title="Delete"
+                        onClick={() => handleStatusDialogOpen(task, 'CANCELLED')}
+                        title="Cancel Task"
                       >
-                        <DeleteIcon />
+                        <CancelIcon />
                       </IconButton>
-                      
-                      {/* Add View button for SUBMITTED tasks */}
-                      {task.status === 'SUBMITTED' && (
-                        <IconButton
-                          size="small"
-                          color="info"
-                          onClick={() => handleViewSubmissionDialogOpen(task)}
-                          title="View Submission"
-                        >
-                          <VisibilityIcon />
-                        </IconButton>
-                      )}
-                      
-                      {task.status !== 'COMPLETED' && task.status !== 'SUBMITTED' && (
-                        <IconButton
-                          size="small"
-                          color="success"
-                          onClick={() => handleStatusDialogOpen(task, 'COMPLETED')}
-                          title="Mark as Completed"
-                        >
-                          <CheckCircleIcon />
-                        </IconButton>
-                      )}
-                      
-                      {task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED' && task.status !== 'SUBMITTED' && (
-                        <IconButton
-                          size="small"
-                          color="info"
-                          onClick={() => handleStatusDialogOpen(task, 'IN_PROGRESS')}
-                          title="Mark as In Progress"
-                        >
-                          <AssignmentIcon />
-                        </IconButton>
-                      )}
-                      
-                      {task.status !== 'CANCELLED' && (
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleStatusDialogOpen(task, 'CANCELLED')}
-                          title="Cancel Task"
-                        >
-                          <CancelIcon />
-                        </IconButton>
-                      )}
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))
-            )}
+                    )}
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
           </Grid>
         )}
         

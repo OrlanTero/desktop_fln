@@ -32,6 +32,8 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  TablePagination,
+  InputAdornment,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -40,6 +42,8 @@ import {
   AccountCircle,
   ExitToApp as LogoutIcon,
   Assignment as RequirementIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
 } from '@mui/icons-material';
 import Layout from '../components/Layout';
 
@@ -53,8 +57,21 @@ const Services = ({ user, onLogout }) => {
   const [serviceCategories, setServiceCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    search: '',
+    priceRange: '',
+    timeline: '',
+  });
+  
+  // Dialog states
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogType, setDialogType] = useState('add'); // 'add', 'edit', 'delete', 'requirements'
+  const [dialogType, setDialogType] = useState('add');
   const [currentService, setCurrentService] = useState(null);
   const [formData, setFormData] = useState({
     service_name: '',
@@ -64,12 +81,14 @@ const Services = ({ user, onLogout }) => {
     remarks: '',
     requirements: [],
   });
+  
   const [newRequirement, setNewRequirement] = useState('');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success',
   });
+  
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(categoryIdFromUrl || '');
 
@@ -84,6 +103,60 @@ const Services = ({ user, onLogout }) => {
       fetchAllServices();
     }
   }, [selectedCategoryId]);
+
+  // Filter services based on search and filter criteria
+  const filteredServices = services.filter(service => {
+    const matchesSearch = filters.search === '' || 
+      service.service_name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      (service.remarks && service.remarks.toLowerCase().includes(filters.search.toLowerCase()));
+    
+    const matchesPriceRange = filters.priceRange === '' || 
+      (filters.priceRange === 'low' && service.price <= 1000) ||
+      (filters.priceRange === 'medium' && service.price > 1000 && service.price <= 5000) ||
+      (filters.priceRange === 'high' && service.price > 5000);
+    
+    const matchesTimeline = filters.timeline === '' || 
+      service.timeline.toLowerCase().includes(filters.timeline.toLowerCase());
+    
+    return matchesSearch && matchesPriceRange && matchesTimeline;
+  });
+
+  // Get paginated data
+  const paginatedServices = filteredServices.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  // Handle page change
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setPage(0); // Reset to first page when filters change
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      priceRange: '',
+      timeline: '',
+    });
+    setPage(0);
+  };
 
   const fetchServiceCategories = async () => {
     try {
@@ -321,26 +394,87 @@ const Services = ({ user, onLogout }) => {
           </Button>
         </Box>
 
+        {/* Category and Filters */}
         <Box sx={{ mb: 3 }}>
-          <FormControl fullWidth>
-            <InputLabel id="category-filter-label">Filter by Category</InputLabel>
-            <Select
-              labelId="category-filter-label"
-              id="category-filter"
-              value={selectedCategoryId}
-              label="Filter by Category"
-              onChange={handleCategoryChange}
-            >
-              <MenuItem value="">
-                <em>All Categories</em>
-              </MenuItem>
-              {serviceCategories.map((category) => (
-                <MenuItem key={category.service_category_id} value={category.service_category_id}>
-                  {category.service_category_name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={selectedCategoryId}
+                  onChange={handleCategoryChange}
+                  label="Category"
+                >
+                  <MenuItem value="">All Categories</MenuItem>
+                  {serviceCategories.map((category) => (
+                    <MenuItem key={category.service_category_id} value={category.service_category_id}>
+                      {category.service_category_name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search services..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Price Range</InputLabel>
+                <Select
+                  name="priceRange"
+                  value={filters.priceRange}
+                  onChange={handleFilterChange}
+                  label="Price Range"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="low">Low (≤ 1000)</MenuItem>
+                  <MenuItem value="medium">Medium (1001-5000)</MenuItem>
+                  <MenuItem value="high">High ({'>'}5000)</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth>
+                <InputLabel>Timeline</InputLabel>
+                <Select
+                  name="timeline"
+                  value={filters.timeline}
+                  onChange={handleFilterChange}
+                  label="Timeline"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="day">Daily</MenuItem>
+                  <MenuItem value="week">Weekly</MenuItem>
+                  <MenuItem value="month">Monthly</MenuItem>
+                  <MenuItem value="quarter">Quarterly</MenuItem>
+                  <MenuItem value="year">Yearly</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleResetFilters}
+                startIcon={<FilterIcon />}
+              >
+                Reset
+              </Button>
+            </Grid>
+          </Grid>
         </Box>
 
         {error && (
@@ -354,50 +488,50 @@ const Services = ({ user, onLogout }) => {
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
-                <TableCell>Service Name</TableCell>
+                <TableCell>Name</TableCell>
                 <TableCell>Category</TableCell>
                 <TableCell>Price</TableCell>
                 <TableCell>Timeline</TableCell>
                 <TableCell>Requirements</TableCell>
+                <TableCell>Remarks</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={8} align="center">
                     Loading...
                   </TableCell>
                 </TableRow>
-              ) : services.length === 0 ? (
+              ) : paginatedServices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={8} align="center">
                     No services found
                   </TableCell>
                 </TableRow>
               ) : (
-                services.map((service) => (
+                paginatedServices.map((service) => (
                   <TableRow key={service.service_id}>
                     <TableCell>{service.service_id}</TableCell>
                     <TableCell>{service.service_name}</TableCell>
                     <TableCell>{getCategoryName(service.service_category_id)}</TableCell>
-                    <TableCell>
-                      {service.price ? `$${parseFloat(service.price).toFixed(2)}` : 'N/A'}
-                    </TableCell>
-                    <TableCell>{service.timeline || 'N/A'}</TableCell>
+                    <TableCell>{service.price}</TableCell>
+                    <TableCell>{service.timeline}</TableCell>
                     <TableCell>
                       {service.requirements && service.requirements.length > 0 ? (
-                        <Chip 
-                          icon={<RequirementIcon />} 
-                          label={`${service.requirements.length} requirements`} 
-                          color="primary" 
-                          variant="outlined" 
+                        <Button
                           size="small"
-                        />
+                          startIcon={<RequirementIcon />}
+                          onClick={() => handleOpenDialog('requirements', service)}
+                        >
+                          View ({service.requirements.length})
+                        </Button>
                       ) : (
                         'None'
                       )}
                     </TableCell>
+                    <TableCell>{service.remarks}</TableCell>
                     <TableCell align="right">
                       <IconButton
                         color="primary"
@@ -417,6 +551,15 @@ const Services = ({ user, onLogout }) => {
               )}
             </TableBody>
           </Table>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={filteredServices.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
         </TableContainer>
 
         {/* Add/Edit Service Dialog */}
