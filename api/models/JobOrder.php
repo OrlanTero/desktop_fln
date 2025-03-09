@@ -156,4 +156,14 @@ class JobOrder {
 
         return $stmt;
     }
+
+    public function getById($jobOrderId) {
+        $query = "SELECT * FROM " . $this->table . " WHERE job_order_id = :job_order_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':job_order_id', $jobOrderId);
+        $stmt->execute();
+
+        return $stmt;
+    }
+    
 } 

@@ -58,6 +58,29 @@ class JobOrderController {
         ];
     }
 
+    public function getById($jobOrderId) {
+        $result = $this->jobOrder->getById($jobOrderId);
+        $jobOrder = $result->fetch(PDO::FETCH_ASSOC);
+
+        if ($jobOrder) {
+
+            $controller = new JobOrderSubmissionController($this->db);
+            $jobOrder['submission'] = $controller->getByJobOrderId($jobOrderId);
+            
+
+            return [
+                'success' => true,
+                'data' => $jobOrder
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Job order not found'
+        ];
+    }
+    
+
     public function getByService($serviceId, $proposalId) {
         $result = $this->jobOrder->getByService($serviceId, $proposalId);
         $jobOrders = $result->fetchAll(PDO::FETCH_ASSOC);
@@ -111,8 +134,7 @@ class JobOrderController {
         ];
     }
 
-    public function update($id, $request) {
-        $data = json_decode($request->body(), true);
+    public function update($id, $data) {
 
         if (!$data) {
             return [

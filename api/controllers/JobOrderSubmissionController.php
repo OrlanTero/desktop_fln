@@ -106,11 +106,11 @@ class JobOrderSubmissionController {
                 $jobOrderController = new JobOrderController($this->conn);
                 
                 // Update the job order status to Submitted
-                $jobOrderController->updateStatus($data->job_order_id, 'Submitted');
+                $jobOrderController->updateStatus($data->job_order_id, 'SUBMITTED');
                 
                 // Also update the assigned job order status
                 $assignedJobOrderController = new AssignedJobOrderController($this->conn);
-                $assignedJobOrderController->updateStatus($data->job_order_id, ['status' => 'Submitted']);
+                $assignedJobOrderController->updateStatus($data->job_order_id, ['status' => 'SUBMITTED']);
             }
 
             // Commit transaction

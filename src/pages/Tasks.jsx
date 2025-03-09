@@ -444,9 +444,19 @@ const Tasks = ({ user, onLogout }) => {
             submissionData.attachments = submissionData.attachments.map(attachment => {
               // Use the API method to get the full URL
               if (attachment.file_url) {
-                attachment.full_url = window.api.task.getAttachmentUrl(attachment.file_url);
+                // Ensure the URL is absolute
+                if (!attachment.file_url.startsWith('http')) {
+                  attachment.full_url = `http://localhost:4005${attachment.file_url.startsWith('/') ? '' : '/'}${attachment.file_url}`;
+                } else {
+                  attachment.full_url = attachment.file_url;
+                }
               } else if (attachment.file_path) {
-                attachment.full_url = window.api.task.getAttachmentUrl(attachment.file_path);
+                // Ensure the URL is absolute
+                if (!attachment.file_path.startsWith('http')) {
+                  attachment.full_url = `http://localhost:4005${attachment.file_path.startsWith('/') ? '' : '/'}${attachment.file_path}`;
+                } else {
+                  attachment.full_url = attachment.file_path;
+                }
               }
               return attachment;
             });
@@ -1061,7 +1071,101 @@ const Tasks = ({ user, onLogout }) => {
                                     size="small" 
                                     sx={{ mt: 1 }}
                                     onClick={() => {
-                                      window.api.utils.openExternal(imageUrl);
+                                      // Create a new browser window directly
+                                      const viewerWindow = window.open('', '_blank', 'width=800,height=600');
+                                      
+                                      if (viewerWindow) {
+                                        // Get the filename from the attachment or extract it from the URL
+                                        const filename = attachment.filename || imageUrl.split('/').pop() || 'Attachment';
+                                        console.log('Opening attachment in new window:', imageUrl, filename);
+                                        
+                                        // Write HTML content directly to the new window
+                                        viewerWindow.document.write(`
+                                          <!DOCTYPE html>
+                                          <html>
+                                            <head>
+                                              <title>${filename}</title>
+                                              <style>
+                                                body {
+                                                  margin: 0;
+                                                  padding: 0;
+                                                  background-color: #2c2c2c;
+                                                  display: flex;
+                                                  flex-direction: column;
+                                                  height: 100vh;
+                                                  font-family: Arial, sans-serif;
+                                                }
+                                                .image-container {
+                                                  flex: 1;
+                                                  display: flex;
+                                                  justify-content: center;
+                                                  align-items: center;
+                                                  overflow: auto;
+                                                }
+                                                img {
+                                                  max-width: 100%;
+                                                  max-height: 100%;
+                                                  object-fit: contain;
+                                                }
+                                                .toolbar {
+                                                  background-color: #333;
+                                                  color: white;
+                                                  padding: 10px;
+                                                  text-align: center;
+                                                }
+                                                button {
+                                                  background-color: #4CAF50;
+                                                  border: none;
+                                                  color: white;
+                                                  padding: 8px 16px;
+                                                  text-align: center;
+                                                  text-decoration: none;
+                                                  display: inline-block;
+                                                  font-size: 14px;
+                                                  margin: 4px 2px;
+                                                  cursor: pointer;
+                                                  border-radius: 4px;
+                                                }
+                                                .error-message {
+                                                  color: red;
+                                                  background-color: #ffeeee;
+                                                  padding: 20px;
+                                                  border-radius: 5px;
+                                                  margin: 20px;
+                                                  text-align: center;
+                                                  display: none;
+                                                }
+                                              </style>
+                                            </head>
+                                            <body>
+                                              <div class="image-container">
+                                                <img src="${imageUrl}" alt="${filename}" onerror="document.getElementById('error-message').style.display='block';">
+                                                <div id="error-message" class="error-message">
+                                                  <h3>Error Loading Image</h3>
+                                                  <p>The image could not be loaded. It might not exist or you might not have permission to view it.</p>
+                                                  <p>URL: ${imageUrl}</p>
+                                                </div>
+                                              </div>
+                                              <div class="toolbar">
+                                                <button onclick="window.print()">Print</button>
+                                                <button onclick="window.close()">Close</button>
+                                              </div>
+                                              <script>
+                                                // Add event listener to handle image load errors
+                                                document.querySelector('img').addEventListener('error', function() {
+                                                  document.getElementById('error-message').style.display = 'block';
+                                                  this.style.display = 'none';
+                                                });
+                                              </script>
+                                            </body>
+                                          </html>
+                                        `);
+                                        viewerWindow.document.close();
+                                      } else {
+                                        console.error('Failed to open new window');
+                                        // Fallback: try to open in the same window
+                                        window.open(imageUrl, '_blank');
+                                      }
                                     }}
                                   >
                                     View

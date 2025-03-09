@@ -703,6 +703,19 @@ $router->respond('GET', '/job-orders', function() use ($db) {
     echo json_encode($controller->getAll());
 });
 
+$router->respond('PUT', '/job-orders/[i:jobOrderId]', function($request) use ($db) {
+    $jobOrderId = $request->jobOrderId;
+    $data = json_decode(file_get_contents('php://input'), true);
+    $controller = new JobOrderController($db);
+    echo json_encode($controller->update($jobOrderId, $data));
+});
+
+$router->respond('GET', '/job-orders/[i:jobOrderId]', function($request) use ($db) {
+    $jobOrderId = $request->jobOrderId;
+    $controller = new JobOrderController($db);
+    echo json_encode($controller->getById($jobOrderId));
+});
+
 $router->respond('GET', '/job-orders/project/[i:projectId]', function($request) use ($db) {
     $projectId = $request->projectId;
     $controller = new JobOrderController($db);
@@ -741,6 +754,20 @@ $router->respond('GET', '/job-orders/assigned/project/[i:projectId]', function($
         ]);
     }
 });
+
+$router->respond('GET', '/job-orders/assigned/project/[i:projectId]/liaison/[i:liaisonId]', function($request) use ($assignedJobOrderController) {
+    
+    try {
+        $result = $assignedJobOrderController->getAssignedByProjectAndLiaison($request->projectId, $request->liaisonId);
+        echo json_encode($result);
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Error in assigned job orders endpoint: ' . $e->getMessage()
+        ]);
+    }
+});
+
 
 $router->respond('GET', '/job-orders/unassigned/project/[i:projectId]', function($request) use ($assignedJobOrderController) {
     try {

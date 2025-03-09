@@ -86,6 +86,27 @@ class AssignedJobOrderController {
         }
     }
 
+    // Get assigned job orders by project and liaison
+    public function getAssignedByProjectAndLiaison($project_id, $liaison_id) {
+        try {
+            $stmt = $this->assignedJobOrder->getByProjectAndLiaison($project_id, $liaison_id);
+            $assigned_orders = [];
+
+            while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                array_push($assigned_orders, $row);
+            }
+
+            return [
+                'success' => true,
+                'data' => $assigned_orders
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error getting assigned job orders: ' . $e->getMessage()
+            ];
+        }
+    }
     // Get unassigned job orders by project
     public function getUnassignedByProject($project_id) {
         try {

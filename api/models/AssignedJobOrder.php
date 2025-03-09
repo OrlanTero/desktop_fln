@@ -59,6 +59,25 @@ class AssignedJobOrder {
         return $stmt;
     }
 
+    // Get assignments by project ID and liaison ID
+    public function getByProjectAndLiaison($project_id, $liaison_id) {
+        $query = "SELECT jo.*, u.name as liaison_name, s.service_name as service_name
+                FROM job_orders jo
+                JOIN " . $this->table_name . " ajo ON jo.job_order_id = ajo.job_order_id
+                JOIN users u ON ajo.liaison_id = u.id
+                JOIN services s ON jo.service_id = s.service_id
+                WHERE jo.project_id = :project_id 
+                AND ajo.liaison_id = :liaison_id AND jo.is_assigned = 1";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":project_id", $project_id);
+        $stmt->bindParam(":liaison_id", $liaison_id);
+        $stmt->execute();
+
+        return $stmt;
+    }
+    
+
     // Get unassigned job orders by project ID
     public function getUnassignedByProject($project_id) {
         // Use the is_assigned column to find unassigned job orders

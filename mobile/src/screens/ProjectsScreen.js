@@ -105,16 +105,26 @@ const ProjectsScreen = ({ navigation }) => {
       // Create an array of promises for fetching job orders for each project
       const fetchPromises = projectsData.map(async (project) => {
         const projectId = project.id || project.project_id;
+        
         if (!projectId) return null;
         
-        console.log(`Preparing to fetch job orders for project ${projectId}`);
+        // Get liaison ID from user object
+        const liaisonId = user?.id;
+
+        if (!liaisonId) {
+          console.warn('No liaison ID found, cannot load assigned job orders');
+          return;
+        }
         
+
         try {
-          // Get all job orders for this project
-          const response = await apiService.jobOrders.getByProject(projectId);
+          // Get assigned job orders for this project
+
+          const response = await apiService.jobOrders.getAssignedByProjectAndLiaison(projectId, liaisonId);
           
           if (response && response.data && (response.data.success || response.data.status === 'success')) {
-            const jobOrders = response.data.data || [];
+            // Filter job orders for current liaison
+            const jobOrders = (response.data.data || []);
             
             // Count job orders by status
             const pending = jobOrders.filter(jo => 
@@ -141,7 +151,7 @@ const ProjectsScreen = ({ navigation }) => {
             };
           }
         } catch (err) {
-          console.error(`Error fetching job orders for project ${projectId}:`, err.message);
+          console.error(`Error fetching assigned job orders for project ${projectId}:`, err.message);
         }
         
         // Return default stats if there was an error or no valid response
@@ -169,10 +179,10 @@ const ProjectsScreen = ({ navigation }) => {
         }
       });
       
-      console.log('All job order stats loaded:', Object.keys(stats).length);
+      console.log('All assigned job order stats loaded:', Object.keys(stats).length);
       setProjectStats(stats);
     } catch (err) {
-      console.error('Error loading job order stats:', err.message);
+      console.error('Error loading assigned job order stats:', err.message);
     }
   };
 

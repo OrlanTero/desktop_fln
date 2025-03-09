@@ -74,6 +74,7 @@ const apiService = {
     update: (id, jobOrderData) => apiClient.put(`/job-orders/${id}`, jobOrderData),
     delete: (id) => apiClient.delete(`/job-orders/${id}`),
     assign: (assignmentData) => apiClient.post('/job-orders/assign', assignmentData),
+    getAssignedByProjectAndLiaison: (projectId, liaisonId) => apiClient.get(`/job-orders/assigned/project/${projectId}/liaison/${liaisonId}`),
     getAssignedByProject: (projectId) => apiClient.get(`/job-orders/assigned/project/${projectId}`),
     getUnassignedByProject: (projectId) => apiClient.get(`/job-orders/unassigned/project/${projectId}`),
     updateAssignedStatus: (id, statusData) => apiClient.put(`/job-orders/assigned/${id}/status`, statusData),

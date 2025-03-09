@@ -37,7 +37,10 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   PauseCircle as PauseCircleIcon,
-  Assignment as AssignmentIcon
+  Assignment as AssignmentIcon,
+  AttachFile as AttachFileIcon,
+  ThumbUp as ThumbUpIcon,
+  ThumbDown as ThumbDownIcon
 } from '@mui/icons-material';
 import Navigation from '../components/Navigation';
 import { format } from 'date-fns';
@@ -79,6 +82,13 @@ const JobOrders = ({ user, onLogout }) => {
   
   // Services state
   const [services, setServices] = useState([]);
+  
+  // Add new state variables for submission review
+  const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
+  const [submissionData, setSubmissionData] = useState(null);
+  const [submissionLoading, setSubmissionLoading] = useState(false);
+  const [approveRejectDialogOpen, setApproveRejectDialogOpen] = useState(false);
+  const [approveRejectAction, setApproveRejectAction] = useState('');
   
   // Fetch projects and services on component mount
   useEffect(() => {
@@ -406,6 +416,156 @@ const JobOrders = ({ user, onLogout }) => {
     }
   };
   
+  // Handle view submission dialog open
+  const handleViewSubmissionDialogOpen = async (jobOrder) => {
+    setSelectedJobOrder(jobOrder);
+    setSubmissionLoading(true);
+    setSubmissionDialogOpen(true);
+
+    
+    try {
+      // Get the job order details with submission data
+      const response = await window.api.jobOrders.getById(jobOrder.job_order_id);
+      
+      console.log('Job order details response:', response);
+      
+      if (response.success && response.data) {
+        // Check if there's submission data
+        if (response.data.submission) {
+          // Get the latest submission if it's an array
+          let submissionData;
+          if (Array.isArray(response.data.submission.data) && response.data.submission.data.length > 0) {
+            submissionData = response.data.submission.data[response.data.submission.data.length - 1];
+          } else {
+            submissionData = response.data.submission;
+          }
+          
+          // Parse expenses data if it's a JSON string
+          if (submissionData.expenses_data && typeof submissionData.expenses_data === 'string') {
+            try {
+              submissionData.expenses = JSON.parse(submissionData.expenses_data);
+            } catch (e) {
+              console.error('Error parsing expenses data:', e);
+              submissionData.expenses = [];
+            }
+          }
+          
+          // Process attachments to ensure URLs are properly formatted
+          if (submissionData.attachments && Array.isArray(submissionData.attachments)) {
+            submissionData.attachments = submissionData.attachments.map(attachment => {
+              // Use the API method to get the full URL
+              if (attachment.file_url) {
+                // Ensure the URL is absolute
+                if (!attachment.file_url.startsWith('http')) {
+                  attachment.full_url = `http://localhost:4005${attachment.file_url.startsWith('/') ? '' : '/'}${attachment.file_url}`;
+                } else {
+                  attachment.full_url = attachment.file_url;
+                }
+              } else if (attachment.file_path) {
+                // Ensure the URL is absolute
+                if (!attachment.file_path.startsWith('http')) {
+                  attachment.full_url = `http://localhost:4005${attachment.file_path.startsWith('/') ? '' : '/'}${attachment.file_path}`;
+                } else {
+                  attachment.full_url = attachment.file_path;
+                }
+              }
+              return attachment;
+            });
+          }
+          
+          setSubmissionData(submissionData);
+        } else {
+          setError('No submission data found for this job order.');
+        }
+      } else {
+        setError('Failed to fetch job order details: ' + (response.message || 'Unknown error'));
+      }
+    } catch (err) {
+      setError('Failed to fetch submission data. Please try again.');
+      console.error('Error fetching submission data:', err);
+    }
+    
+    setSubmissionLoading(false);
+  };
+  
+  // Handle submission dialog close
+  const handleSubmissionDialogClose = () => {
+    setSubmissionDialogOpen(false);
+    setSubmissionData(null);
+  };
+  
+  // Handle approve/reject dialog open
+  const handleApproveRejectDialogOpen = (action) => {
+    setApproveRejectAction(action);
+    setApproveRejectDialogOpen(true);
+  };
+  
+  // Handle approve/reject submission
+  const handleApproveRejectSubmission = async () => {
+    try {
+      if (!submissionData || !selectedJobOrder) {
+        setError('No submission data found.');
+        return;
+      }
+      
+      // Update job order status based on approval/rejection
+      let newStatus = selectedJobOrder.status; // Keep current status by default
+      
+      if (approveRejectAction === 'REJECT') {
+        // If rejected, set job order status back to IN PROGRESS
+        newStatus = 'IN PROGRESS';
+      } else if (approveRejectAction === 'APPROVE') {
+        // If approved, set to COMPLETED
+        newStatus = 'COMPLETED';
+      }
+      
+      // Update the job order status
+      const jobOrderResponse = await window.api.jobOrders.update(selectedJobOrder.job_order_id, { status: newStatus });
+      
+      console.log(jobOrderResponse)
+      if (jobOrderResponse.success) {
+        // If there's a submission ID, try to update its status too (if the API supports it)
+        if (submissionData.id) {
+          try {
+            // This is optional and depends on if your API supports this endpoint
+            await window.api.jobOrders.updateSubmissionStatus(
+              submissionData.id, 
+              approveRejectAction === 'APPROVE' ? 'APPROVED' : 'REJECTED'
+            );
+          } catch (err) {
+            console.log('Submission status update not supported or failed:', err);
+            // Continue anyway since we've already updated the job order status
+          }
+        }
+        
+        setApproveRejectDialogOpen(false);
+        setSubmissionDialogOpen(false);
+        setSuccess(`Submission ${approveRejectAction === 'APPROVE' ? 'approved' : 'rejected'} successfully`);
+        
+        // Refresh job orders
+        const projectId = projects[selectedProjectIndex]?.id;
+        if (projectId) {
+          fetchJobOrdersByProject(projectId);
+        }
+      } else {
+        setError('Failed to update job order status: ' + (jobOrderResponse.message || 'Unknown error'));
+      }
+    } catch (err) {
+      setError('Failed to process submission. Please try again.');
+      console.error('Error processing submission:', err);
+    }
+  };
+  
+  // Calculate total expenses
+  const calculateTotalExpenses = (expenses) => {
+    if (!expenses || !Array.isArray(expenses) || expenses.length === 0) return 0;
+    
+    return expenses.reduce((total, expense) => {
+      const amount = parseFloat(expense.amount);
+      return total + (isNaN(amount) ? 0 : amount);
+    }, 0).toFixed(2);
+  };
+  
   // Get status chip color
   const getStatusColor = (status) => {
     const normalizedStatus = status ? status.toUpperCase() : '';
@@ -421,6 +581,8 @@ const JobOrders = ({ user, onLogout }) => {
         return 'success';
       case 'CANCELLED':
         return 'error';
+      case 'SUBMITTED':
+        return 'info';
       default:
         return 'default';
     }
@@ -668,7 +830,20 @@ const JobOrders = ({ user, onLogout }) => {
                                   >
                                     <EditIcon />
                                   </IconButton>
-                                  {jobOrder.status !== 'COMPLETED' && (
+                                  
+                                  {/* Add View button for SUBMITTED job orders */}
+                                  {jobOrder.status === 'SUBMITTED' && (
+                                    <IconButton
+                                      size="small"
+                                      color="info"
+                                      onClick={() => handleViewSubmissionDialogOpen(jobOrder)}
+                                      title="View Submission"
+                                    >
+                                      <VisibilityIcon />
+                                    </IconButton>
+                                  )}
+                                  
+                                  {jobOrder.status !== 'COMPLETED' && jobOrder.status !== 'SUBMITTED' && (
                                     <IconButton
                                       size="small"
                                       color="success"
@@ -678,6 +853,7 @@ const JobOrders = ({ user, onLogout }) => {
                                       <CheckCircleIcon />
                                     </IconButton>
                                   )}
+                                  
                                   {jobOrder.status !== 'ON HOLD' && (
                                     <IconButton
                                       size="small"
@@ -1039,6 +1215,307 @@ const JobOrders = ({ user, onLogout }) => {
               disabled={loading || !formData.liaison_id || liaisons.length === 0}
             >
               {loading ? <CircularProgress size={24} /> : 'Assign'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+        
+        {/* Submission View Dialog */}
+        <Dialog 
+          open={submissionDialogOpen} 
+          onClose={handleSubmissionDialogClose}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            Job Order Submission Details
+            <IconButton
+              aria-label="close"
+              onClick={handleSubmissionDialogClose}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <CancelIcon />
+            </IconButton>
+          </DialogTitle>
+          
+          <DialogContent dividers>
+            {submissionLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress />
+              </Box>
+            ) : submissionData ? (
+              <Box>
+                {/* Job Order Info */}
+                <Typography variant="h6" gutterBottom>
+                  Job Order Information
+                </Typography>
+                <Paper sx={{ p: 2, mb: 3 }}>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Service:</strong> {getServiceName(selectedJobOrder?.service_id)}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Description:</strong> {selectedJobOrder?.description}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Status:</strong> {selectedJobOrder?.status}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Assigned to:</strong> {selectedJobOrder?.liaison_name || 'Unknown'}
+                  </Typography>
+                  <Typography variant="body1">
+                    <strong>Due Date:</strong> {formatDate(selectedJobOrder?.due_date)}
+                  </Typography>
+                </Paper>
+                
+                {/* Notes */}
+                <Typography variant="h6" gutterBottom>
+                  Notes
+                </Typography>
+                <Paper sx={{ p: 2, mb: 3 }}>
+                  <Typography variant="body1">
+                    {submissionData.notes || 'No notes provided.'}
+                  </Typography>
+                </Paper>
+                
+                {/* Expenses */}
+                <Typography variant="h6" gutterBottom>
+                  Expenses
+                </Typography>
+                <Paper sx={{ p: 2, mb: 3 }}>
+                  {submissionData.expenses && Array.isArray(submissionData.expenses) && submissionData.expenses.length > 0 ? (
+                    <>
+                      <Box sx={{ mb: 2 }}>
+                        {submissionData.expenses.map((expense, index) => (
+                          <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="body1">{expense.description}</Typography>
+                            <Typography variant="body1">${parseFloat(expense.amount || 0).toFixed(2)}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                      <Divider />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                        <Typography variant="h6">Total</Typography>
+                        <Typography variant="h6">${calculateTotalExpenses(submissionData.expenses)}</Typography>
+                      </Box>
+                    </>
+                  ) : (
+                    <Typography variant="body1">No expenses reported.</Typography>
+                  )}
+                </Paper>
+                
+                {/* Attachments */}
+                <Typography variant="h6" gutterBottom>
+                  Attachments
+                </Typography>
+                <Paper sx={{ p: 2 }}>
+                  {submissionData.attachments && Array.isArray(submissionData.attachments) && submissionData.attachments.length > 0 ? (
+                    <Grid container spacing={2}>
+                      {submissionData.attachments.map((attachment, index) => {
+                        // Use the full_url property that was set in handleViewSubmissionDialogOpen
+                        const imageUrl = attachment.full_url || '';
+                        
+                        return (
+                          <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Card>
+                              <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                  <AttachFileIcon sx={{ mr: 1 }} />
+                                  <Typography variant="body1" noWrap>
+                                    {attachment.filename || attachment.file_path || 'Attachment'}
+                                  </Typography>
+                                </Box>
+                                
+                                {attachment.file_type && attachment.file_type.startsWith('image/') && imageUrl && (
+                                  <Box sx={{ mt: 1, mb: 1 }}>
+                                    <img 
+                                      src={imageUrl} 
+                                      alt={attachment.filename || 'Image attachment'}
+                                      style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'contain' }}
+                                      onError={(e) => {
+                                        console.error('Image failed to load:', imageUrl);
+                                        e.target.style.display = 'none';
+                                      }}
+                                    />
+                                  </Box>
+                                )}
+                                
+                                {imageUrl && (
+                                  <Button 
+                                    variant="outlined" 
+                                    size="small" 
+                                    sx={{ mt: 1 }}
+                                    onClick={() => {
+                                      // Create a new browser window directly
+                                      const viewerWindow = window.open('', '_blank', 'width=800,height=600');
+                                      
+                                      if (viewerWindow) {
+                                        // Get the filename from the attachment or extract it from the URL
+                                        const filename = attachment.filename || imageUrl.split('/').pop() || 'Attachment';
+                                        console.log('Opening attachment in new window:', imageUrl, filename);
+                                        
+                                        // Write HTML content directly to the new window
+                                        viewerWindow.document.write(`
+                                          <!DOCTYPE html>
+                                          <html>
+                                            <head>
+                                              <title>${filename}</title>
+                                              <style>
+                                                body {
+                                                  margin: 0;
+                                                  padding: 0;
+                                                  background-color: #2c2c2c;
+                                                  display: flex;
+                                                  flex-direction: column;
+                                                  height: 100vh;
+                                                  font-family: Arial, sans-serif;
+                                                }
+                                                .image-container {
+                                                  flex: 1;
+                                                  display: flex;
+                                                  justify-content: center;
+                                                  align-items: center;
+                                                  overflow: auto;
+                                                }
+                                                img {
+                                                  max-width: 100%;
+                                                  max-height: 100%;
+                                                  object-fit: contain;
+                                                }
+                                                .toolbar {
+                                                  background-color: #333;
+                                                  color: white;
+                                                  padding: 10px;
+                                                  text-align: center;
+                                                }
+                                                button {
+                                                  background-color: #4CAF50;
+                                                  border: none;
+                                                  color: white;
+                                                  padding: 8px 16px;
+                                                  text-align: center;
+                                                  text-decoration: none;
+                                                  display: inline-block;
+                                                  font-size: 14px;
+                                                  margin: 4px 2px;
+                                                  cursor: pointer;
+                                                  border-radius: 4px;
+                                                }
+                                                .error-message {
+                                                  color: red;
+                                                  background-color: #ffeeee;
+                                                  padding: 20px;
+                                                  border-radius: 5px;
+                                                  margin: 20px;
+                                                  text-align: center;
+                                                  display: none;
+                                                }
+                                              </style>
+                                            </head>
+                                            <body>
+                                              <div class="image-container">
+                                                <img src="${imageUrl}" alt="${filename}" onerror="document.getElementById('error-message').style.display='block';">
+                                                <div id="error-message" class="error-message">
+                                                  <h3>Error Loading Image</h3>
+                                                  <p>The image could not be loaded. It might not exist or you might not have permission to view it.</p>
+                                                  <p>URL: ${imageUrl}</p>
+                                                </div>
+                                              </div>
+                                              <div class="toolbar">
+                                                <button onclick="window.print()">Print</button>
+                                                <button onclick="window.close()">Close</button>
+                                              </div>
+                                              <script>
+                                                // Add event listener to handle image load errors
+                                                document.querySelector('img').addEventListener('error', function() {
+                                                  document.getElementById('error-message').style.display = 'block';
+                                                  this.style.display = 'none';
+                                                });
+                                              </script>
+                                            </body>
+                                          </html>
+                                        `);
+                                        viewerWindow.document.close();
+                                      } else {
+                                        console.error('Failed to open new window');
+                                        // Fallback: try to open in the same window
+                                        window.open(imageUrl, '_blank');
+                                      }
+                                    }}
+                                  >
+                                    View
+                                  </Button>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+                  ) : (
+                    <Typography variant="body1">No attachments provided.</Typography>
+                  )}
+                </Paper>
+              </Box>
+            ) : (
+              <Typography variant="body1">No submission data available.</Typography>
+            )}
+          </DialogContent>
+          
+          <DialogActions sx={{ justifyContent: 'space-between', p: 2 }}>
+            <Button 
+              onClick={handleSubmissionDialogClose} 
+              variant="outlined"
+            >
+              Close
+            </Button>
+            
+            <Box>
+              <Button 
+                onClick={() => handleApproveRejectDialogOpen('REJECT')} 
+                variant="contained" 
+                color="error"
+                startIcon={<ThumbDownIcon />}
+                sx={{ mr: 1 }}
+              >
+                Reject
+              </Button>
+              
+              <Button 
+                onClick={() => handleApproveRejectDialogOpen('APPROVE')} 
+                variant="contained" 
+                color="success"
+                startIcon={<ThumbUpIcon />}
+              >
+                Approve
+              </Button>
+            </Box>
+          </DialogActions>
+        </Dialog>
+        
+        {/* Approve/Reject Confirmation Dialog */}
+        <Dialog open={approveRejectDialogOpen} onClose={() => setApproveRejectDialogOpen(false)}>
+          <DialogTitle>
+            {approveRejectAction === 'APPROVE' ? 'Approve Submission' : 'Reject Submission'}
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              {approveRejectAction === 'APPROVE' 
+                ? 'Are you sure you want to approve this submission?' 
+                : 'Are you sure you want to reject this submission? This will change the job order status back to IN_PROGRESS.'}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setApproveRejectDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleApproveRejectSubmission} 
+              variant="contained" 
+              color={approveRejectAction === 'APPROVE' ? 'success' : 'error'}
+            >
+              Confirm
             </Button>
           </DialogActions>
         </Dialog>

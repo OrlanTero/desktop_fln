@@ -660,6 +660,43 @@ contextBridge.exposeInMainWorld('api', {
         console.error('Error assigning job order:', error);
         return { success: false, message: error.message };
       }
+    },
+    
+    // Get job order by ID with submission data
+    getById: async (id) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders/${id}`);
+      } catch (error) {
+        console.error('Error fetching job order details:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Get submissions for a job order
+    getSubmissions: async (jobOrderId) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders/${jobOrderId}/submissions`);
+      } catch (error) {
+        console.error('Error fetching job order submissions:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Update submission status
+    updateSubmissionStatus: async (submissionId, status) => {
+      try {
+        return await makeRequest(`${API_BASE_URL}/job-orders/submissions/${submissionId}/status`, 'PUT', { status });
+      } catch (error) {
+        console.error('Error updating submission status:', error);
+        return { success: false, message: error.message };
+      }
+    },
+    
+    // Get attachment URL
+    getAttachmentUrl: (path) => {
+      if (!path) return '';
+      if (path.startsWith('http')) return path;
+      return `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
     }
   },
 
@@ -726,8 +763,35 @@ contextBridge.exposeInMainWorld('api', {
     openExternal: (url) => {
       if (!url) return;
       
+      console.log('Sending open-external IPC message:', url);
       // Use the Electron shell to open the URL in the default browser
       ipcRenderer.send('open-external', url);
+    },
+    
+    // Load attachment in the app
+    loadAttachment: (url, filename) => {
+      if (!url) {
+        console.error('No URL provided for attachment');
+        return;
+      }
+      
+      console.log('Sending load-attachment IPC message:', url, filename);
+      
+      // Use a direct approach to send the IPC message
+      try {
+        ipcRenderer.send('load-attachment', { url, filename });
+        console.log('IPC message sent successfully');
+      } catch (error) {
+        console.error('Error sending IPC message:', error);
+        
+        // Fallback: try to open in external browser
+        try {
+          window.open(url, '_blank');
+          console.log('Fallback: opened in browser');
+        } catch (browserError) {
+          console.error('Error opening in browser:', browserError);
+        }
+      }
     }
   },
 });
