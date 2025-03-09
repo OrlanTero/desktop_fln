@@ -15,6 +15,7 @@ import JobOrderSubmissionScreen from '../screens/JobOrderSubmissionScreen';
 import TaskSubmissionScreen from '../screens/TaskSubmissionScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import UserListScreen from '../screens/UserListScreen';
+import ProfileEditScreen from '../screens/ProfileEditScreen';
 
 // Create stacks
 const AuthStack = createStackNavigator();
@@ -96,6 +97,14 @@ const AppNavigator = () => (
     <AppStack.Screen 
       name="UserList" 
       component={UserListScreen}
+      options={{
+        headerShown: false,
+        animationEnabled: true,
+      }}
+    />
+    <AppStack.Screen 
+      name="ProfileEdit" 
+      component={ProfileEditScreen}
       options={{
         headerShown: false,
         animationEnabled: true,

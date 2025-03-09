@@ -44,15 +44,11 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const navigateToEditProfile = () => {
-    // Navigate to edit profile screen when implemented
-    // navigation.navigate('EditProfile');
-    Alert.alert('Coming Soon', 'Edit profile feature is coming soon!');
+    navigation.navigate('ProfileEdit', { activeTab: 'profile' });
   };
 
   const navigateToChangePassword = () => {
-    // Navigate to change password screen when implemented
-    // navigation.navigate('ChangePassword');
-    Alert.alert('Coming Soon', 'Change password feature is coming soon!');
+    navigation.navigate('ProfileEdit', { activeTab: 'password' });
   };
 
   const navigateToHelp = () => {

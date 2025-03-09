@@ -46,6 +46,21 @@ const apiService = {
           console.error(`Error updating user ${id}:`, error);
           return { data: { status: 'error', message: 'Failed to update user' } };
         }),
+    uploadPhoto: (id, formData) => {
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+      return apiClient.post(`/users/${id}/photo`, formData, config)
+        .then(response => ({
+          data: response.data
+        }))
+        .catch(error => {
+          console.error(`Error uploading photo for user ${id}:`, error);
+          return { data: { status: 'error', message: 'Failed to upload photo' } };
+        });
+    },
     updatePassword: (id, passwordData) => 
       apiClient.put(`/users/${id}/password`, passwordData)
         .then(response => ({
@@ -53,7 +68,7 @@ const apiService = {
         }))
         .catch(error => {
           console.error(`Error updating password for user ${id}:`, error);
-          return { data: { status: 'error', message: 'Failed to update password' } };
+          return { data: { status: 'error', message: 'Failed to update password', data: {} } };
         }),
     delete: (id) => 
       apiClient.delete(`/users/${id}`)
