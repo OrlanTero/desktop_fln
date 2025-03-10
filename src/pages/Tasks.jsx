@@ -644,7 +644,7 @@ const Tasks = ({ user, onLogout }) => {
   };
 
   return (
-    <Layout title="Tasks">
+    <Layout title="Tasks" showBreadcrumbs={false}>
       <PageHeader 
         title="Tasks" 
         subtitle="Manage and track all tasks assigned to liaisons"

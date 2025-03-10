@@ -734,7 +734,7 @@ const JobOrders = ({ user, onLogout }) => {
   
   if (loading && projects.length === 0) {
     return (
-      <Layout title="Job Orders">
+      <Layout title="Job Orders" showBreadcrumbs={false}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
           <CircularProgress />
         </Box>
@@ -743,13 +743,10 @@ const JobOrders = ({ user, onLogout }) => {
   }
   
   return (
-    <Layout title="Job Orders">
+    <Layout title="Job Orders" showBreadcrumbs={false}>
       <PageHeader 
         title="Job Orders" 
         subtitle="Manage and track all job orders across projects"
-        actionButtonText="Create Job Order"
-        actionButtonIcon={<AddIcon />}
-        actionButtonPath="#"
         actionButton={
           <Button
             variant="contained"

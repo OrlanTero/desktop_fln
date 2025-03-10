@@ -26,7 +26,7 @@ import { useAuth } from '../contexts/AuthContext';
 // Drawer width
 const drawerWidth = 280;
 
-const Layout = ({ children, title, breadcrumbs }) => {
+const Layout = ({ children, title, breadcrumbs, showBreadcrumbs = true }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -147,8 +147,8 @@ const Layout = ({ children, title, breadcrumbs }) => {
         
         <Fade in={true} timeout={500}>
           <Box sx={{ p: 3 }}>
-            {/* Breadcrumbs */}
-            {generateBreadcrumbs()}
+            {/* Breadcrumbs - only show if showBreadcrumbs is true */}
+            {showBreadcrumbs && generateBreadcrumbs()}
             
             {/* Page Content */}
             <Paper 

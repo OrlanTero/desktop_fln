@@ -81,7 +81,7 @@ const Dashboard = ({ user, onLogout }) => {
   };
 
   return (
-    <Layout title="Dashboard">
+    <Layout title="Dashboard" showBreadcrumbs={false}>
       <PageHeader 
         title="Dashboard" 
         subtitle="Welcome back! Here's an overview of your system."
