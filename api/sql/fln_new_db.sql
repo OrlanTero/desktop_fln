@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 05, 2025 at 07:53 PM
+-- Generation Time: Mar 10, 2025 at 02:18 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,6 +20,29 @@ SET time_zone = "+00:00";
 --
 -- Database: `fln_new_db`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `assigned_job_orders`
+--
+
+CREATE TABLE `assigned_job_orders` (
+  `id` int(11) NOT NULL,
+  `job_order_id` int(11) NOT NULL,
+  `liaison_id` int(11) NOT NULL,
+  `assigned_date` datetime DEFAULT current_timestamp(),
+  `status` enum('In Progress','Completed','On Hold') DEFAULT 'In Progress',
+  `notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `assigned_job_orders`
+--
+
+INSERT INTO `assigned_job_orders` (`id`, `job_order_id`, `liaison_id`, `assigned_date`, `status`, `notes`) VALUES
+(1, 4, 7, '2025-03-08 21:16:42', '', 'Assigned from job orders page'),
+(2, 5, 7, '2025-03-09 21:17:37', '', 'Assigned from job orders page');
 
 -- --------------------------------------------------------
 
@@ -142,6 +165,7 @@ CREATE TABLE `job_orders` (
   `project_id` int(11) DEFAULT NULL,
   `description` varchar(255) NOT NULL,
   `estimated_fee` decimal(10,2) DEFAULT 0.00,
+  `is_assigned` tinyint(1) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `status` varchar(255) NOT NULL
@@ -151,13 +175,134 @@ CREATE TABLE `job_orders` (
 -- Dumping data for table `job_orders`
 --
 
-INSERT INTO `job_orders` (`job_order_id`, `service_id`, `proposal_id`, `project_id`, `description`, `estimated_fee`, `created_at`, `updated_at`, `status`) VALUES
-(1, 10, 2, 0, 'Deliver', 5000.00, '2025-03-05 18:51:12', '2025-03-05 18:51:12', 'Pending'),
-(2, 10, 2, 0, 'Sign In', 1200.00, '2025-03-05 18:51:12', '2025-03-05 18:51:12', 'Pending'),
-(3, 8, 2, 0, 'Eat', 1000.00, '2025-03-05 18:51:13', '2025-03-05 18:51:13', 'Pending'),
-(4, 3, 2, 1, 'Deliver', 5000.00, '2025-03-05 18:52:41', '2025-03-05 18:52:41', 'Pending'),
-(5, 3, 2, 1, 'Sign In', 1200.00, '2025-03-05 18:52:41', '2025-03-05 18:52:41', 'Pending'),
-(6, 4, 2, 1, 'Eat', 1000.00, '2025-03-05 18:52:41', '2025-03-05 18:52:41', 'Pending');
+INSERT INTO `job_orders` (`job_order_id`, `service_id`, `proposal_id`, `project_id`, `description`, `estimated_fee`, `is_assigned`, `created_at`, `updated_at`, `status`) VALUES
+(1, 10, 2, 0, 'Deliver', 5000.00, 0, '2025-03-05 18:51:12', '2025-03-09 12:42:32', 'PENDING'),
+(2, 10, 2, 0, 'Sign In', 1200.00, 0, '2025-03-05 18:51:12', '2025-03-09 12:42:30', 'PENDING'),
+(3, 8, 2, 0, 'Eat', 1000.00, 0, '2025-03-05 18:51:13', '2025-03-09 12:42:27', 'PENDING'),
+(4, 3, 2, 1, '', 0.00, 1, '2025-03-05 18:52:41', '2025-03-09 13:13:00', 'COMPLETED'),
+(5, 3, 2, 1, 'Sign In', 1200.00, 1, '2025-03-05 18:52:41', '2025-03-09 13:19:24', 'SUBMITTED'),
+(6, 4, 2, 1, 'Eat', 1000.00, 0, '2025-03-05 18:52:41', '2025-03-09 12:42:33', 'PENDING');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `job_order_submissions`
+--
+
+CREATE TABLE `job_order_submissions` (
+  `id` int(11) NOT NULL,
+  `job_order_id` int(11) NOT NULL,
+  `liaison_id` int(11) NOT NULL,
+  `notes` text DEFAULT NULL,
+  `total_expenses` decimal(10,2) DEFAULT 0.00,
+  `status` enum('PENDING','SUBMITTED','APPROVED','REJECTED') DEFAULT 'PENDING',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `job_order_submissions`
+--
+
+INSERT INTO `job_order_submissions` (`id`, `job_order_id`, `liaison_id`, `notes`, `total_expenses`, `status`, `created_at`, `updated_at`) VALUES
+(1, 4, 7, '', 520.00, 'SUBMITTED', '2025-03-08 15:42:00', '2025-03-08 17:48:10'),
+(2, 5, 7, 'Yow ', 300.00, 'SUBMITTED', '2025-03-09 13:18:28', '2025-03-09 13:18:28');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `job_order_submission_attachments`
+--
+
+CREATE TABLE `job_order_submission_attachments` (
+  `id` int(11) NOT NULL,
+  `submission_id` int(11) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
+  `file_path` varchar(255) NOT NULL,
+  `file_type` varchar(50) NOT NULL,
+  `file_size` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `job_order_submission_attachments`
+--
+
+INSERT INTO `job_order_submission_attachments` (`id`, `submission_id`, `file_name`, `file_path`, `file_type`, `file_size`, `created_at`) VALUES
+(1, 1, 'image_1741448512312.jpg', 'uploads/job_orders/67cc65484795d_1741448520.jpg', 'image/jpeg', 158614, '2025-03-08 15:42:00'),
+(2, 1, 'Gatdog', 'manual_attachment', 'text/plain', 0, '2025-03-08 17:48:10'),
+(3, 2, 'image_1741526298845.jpg', 'uploads/job_orders/67cd952404618_1741526308.jpg', 'image/jpeg', 2969799, '2025-03-09 13:18:28');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `job_order_submission_expenses`
+--
+
+CREATE TABLE `job_order_submission_expenses` (
+  `id` int(11) NOT NULL,
+  `submission_id` int(11) NOT NULL,
+  `description` varchar(255) NOT NULL,
+  `amount` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `job_order_submission_expenses`
+--
+
+INSERT INTO `job_order_submission_expenses` (`id`, `submission_id`, `description`, `amount`, `created_at`) VALUES
+(6, 1, 'Expense', 500.00, '2025-03-08 17:48:10'),
+(7, 1, 'Shet', 20.00, '2025-03-08 17:48:10'),
+(8, 2, 'Hahaha', 300.00, '2025-03-09 13:18:28');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `messages`
+--
+
+CREATE TABLE `messages` (
+  `id` int(11) NOT NULL,
+  `sender_id` int(11) NOT NULL,
+  `receiver_id` int(11) NOT NULL,
+  `message` text NOT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `messages`
+--
+
+INSERT INTO `messages` (`id`, `sender_id`, `receiver_id`, `message`, `is_read`, `created_at`) VALUES
+(1, 7, 6, 'Hayo', 0, '2025-03-09 17:15:14'),
+(2, 7, 6, 'Hala', 0, '2025-03-09 17:15:25'),
+(3, 7, 6, '????', 0, '2025-03-09 17:15:29'),
+(4, 7, 5, 'shh', 0, '2025-03-09 17:16:09'),
+(5, 7, 5, '????', 0, '2025-03-09 17:19:49'),
+(6, 7, 5, '????', 0, '2025-03-09 17:22:26'),
+(7, 3, 7, 'luh', 1, '2025-03-09 17:56:22'),
+(8, 7, 3, 'Yey', 1, '2025-03-09 18:01:23'),
+(9, 3, 7, 'lets go', 1, '2025-03-09 18:01:33'),
+(10, 3, 7, 'shet', 1, '2025-03-09 18:01:39'),
+(11, 7, 3, 'Galing mo Naman be', 1, '2025-03-09 18:01:44');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `message_attachments`
+--
+
+CREATE TABLE `message_attachments` (
+  `id` int(11) NOT NULL,
+  `message_id` int(11) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
+  `file_path` varchar(255) NOT NULL,
+  `file_type` varchar(100) NOT NULL,
+  `file_size` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -177,7 +322,7 @@ CREATE TABLE `projects` (
   `end_date` date DEFAULT NULL,
   `description` text DEFAULT NULL,
   `priority` enum('LOW','MEDIUM','HIGH','URGENT') DEFAULT 'MEDIUM',
-  `status` enum('PENDING','IN_PROGRESS','COMPLETED','CANCELLED') DEFAULT 'PENDING',
+  `status` enum('PENDING','ON HOLD','IN PROGRESS','COMPLETED','CANCELLED') DEFAULT 'PENDING',
   `created_by` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -191,7 +336,7 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`project_id`, `proposal_id`, `client_id`, `project_name`, `project_start`, `project_end`, `attn_to`, `start_date`, `end_date`, `description`, `priority`, `status`, `created_by`, `created_at`, `updated_at`, `total_amount`, `paid_amount`, `notes`) VALUES
-(1, 2, 1, 'Project Jolibee', '0000-00-00', '0000-00-00', 'Daisy', '2025-03-07', '2025-03-22', '', 'MEDIUM', 'PENDING', NULL, '2025-03-05 18:52:40', '2025-03-05 18:52:40', 7500.00, 0.00, 'Accepted');
+(1, 2, 1, 'Project Jolibee', '0000-00-00', '0000-00-00', 'Daisy', '2025-03-07', '2025-03-22', '', 'MEDIUM', 'IN PROGRESS', NULL, '2025-03-05 18:52:40', '2025-03-08 06:23:56', 7500.00, 0.00, 'Accepted');
 
 -- --------------------------------------------------------
 
@@ -354,6 +499,107 @@ CREATE TABLE `service_requirements` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tasks`
+--
+
+CREATE TABLE `tasks` (
+  `id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `liaison_id` int(11) NOT NULL,
+  `service_id` int(11) DEFAULT NULL,
+  `service_category_id` int(11) DEFAULT NULL,
+  `due_date` date DEFAULT NULL,
+  `priority` enum('low','medium','high') DEFAULT 'medium',
+  `status` enum('PENDING','IN_PROGRESS','SUBMITTED','COMPLETED','CANCELLED') DEFAULT 'PENDING',
+  `created_by` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `tasks`
+--
+
+INSERT INTO `tasks` (`id`, `title`, `description`, `liaison_id`, `service_id`, `service_category_id`, `due_date`, `priority`, `status`, `created_by`, `created_at`, `updated_at`) VALUES
+(1, '', 'awdawwa', 7, 1, NULL, NULL, 'medium', 'PENDING', 0, '2025-03-09 03:10:27', '2025-03-09 03:10:27'),
+(2, '', 'aww', 7, NULL, NULL, NULL, 'medium', 'PENDING', 0, '2025-03-09 03:12:20', '2025-03-09 03:12:20'),
+(3, '', 'awdwadwa', 7, 6, NULL, '2025-03-27', 'medium', 'PENDING', 0, '2025-03-09 03:13:49', '2025-03-09 10:26:24'),
+(4, '', 'awdwadwa 2', 7, 6, NULL, '2025-03-27', 'medium', 'COMPLETED', 0, '2025-03-09 03:16:24', '2025-03-09 12:31:49');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_submissions`
+--
+
+CREATE TABLE `task_submissions` (
+  `id` int(11) NOT NULL,
+  `task_id` int(11) NOT NULL,
+  `liaison_id` int(11) NOT NULL,
+  `notes` text DEFAULT NULL,
+  `expenses_data` text DEFAULT NULL,
+  `status` enum('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `task_submissions`
+--
+
+INSERT INTO `task_submissions` (`id`, `task_id`, `liaison_id`, `notes`, `expenses_data`, `status`, `created_at`, `updated_at`) VALUES
+(1, 4, 7, 'Haha', NULL, 'PENDING', '2025-03-09 10:28:29', '2025-03-09 10:44:08');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_submission_attachments`
+--
+
+CREATE TABLE `task_submission_attachments` (
+  `id` int(11) NOT NULL,
+  `submission_id` int(11) NOT NULL,
+  `filename` varchar(255) NOT NULL,
+  `file_path` varchar(255) NOT NULL,
+  `file_type` varchar(100) DEFAULT NULL,
+  `file_size` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `task_submission_attachments`
+--
+
+INSERT INTO `task_submission_attachments` (`id`, `submission_id`, `filename`, `file_path`, `file_type`, `file_size`, `created_at`) VALUES
+(1, 1, '67cd6d4d49a28_image_1741516102466.jpg', 'uploads/job_orders/67cc65484795d_1741448520.jpg', 'image/jpeg', 154135, '2025-03-09 10:28:29');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_submission_expenses`
+--
+
+CREATE TABLE `task_submission_expenses` (
+  `id` int(11) NOT NULL,
+  `submission_id` int(11) NOT NULL,
+  `description` varchar(255) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `task_submission_expenses`
+--
+
+INSERT INTO `task_submission_expenses` (`id`, `submission_id`, `description`, `amount`, `created_at`, `updated_at`) VALUES
+(2, 1, 'Hatdog', 100.00, '2025-03-09 10:44:08', '2025-03-09 10:44:08'),
+(3, 1, 'Another', 300.00, '2025-03-09 10:44:08', '2025-03-09 10:44:08');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
@@ -375,11 +621,38 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `photo_url`, `created_at`, `updated_at`) VALUES
 (3, 'Administrator', 'jhonorlantero@gmail.com', '$2b$10$dSqJy/jEuNUrkWscVGJd0eGwE5ZH.LliCJxkre1x.oX9Tc7pgJyJi', 'Admin', NULL, '2025-02-28 18:18:41', '2025-02-28 18:19:08'),
 (5, 'Staff', 'staff@gmail.com', '$2b$10$a/QnceDlWnj6cQdWqj014e.mcnJHErp4avdWqU/lIRS2x.OnNfecm', 'Employee', NULL, '2025-03-01 05:57:43', '2025-03-01 05:57:43'),
-(6, 'bababa', 'ab@gmail.com', '$2y$10$f8Sf0zduFyipYRQ3mfgeUeTP2VClZJJkPvVR1kSSUHKGsfUIU5Kmm', 'Employee', '', '2025-03-02 02:28:26', '2025-03-02 02:28:26');
+(6, 'bababa', 'ab@gmail.com', '$2y$10$f8Sf0zduFyipYRQ3mfgeUeTP2VClZJJkPvVR1kSSUHKGsfUIU5Kmm', 'Employee', '', '2025-03-02 02:28:26', '2025-03-02 02:28:26'),
+(7, 'Orlan', 'orlan@gmail.com', '$2b$10$dSqJy/jEuNUrkWscVGJd0eGwE5ZH.LliCJxkre1x.oX9Tc7pgJyJi', 'liaison', NULL, '2025-03-05 19:19:09', '2025-03-08 05:13:37');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_chat_status`
+--
+
+CREATE TABLE `user_chat_status` (
+  `user_id` int(11) NOT NULL,
+  `is_online` tinyint(1) NOT NULL DEFAULT 0,
+  `last_active` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_chat_status`
+--
+
+INSERT INTO `user_chat_status` (`user_id`, `is_online`, `last_active`) VALUES
+(3, 1, '2025-03-09 17:56:54'),
+(7, 0, '2025-03-09 17:30:13');
 
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `assigned_job_orders`
+--
+ALTER TABLE `assigned_job_orders`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `clients`
@@ -418,6 +691,43 @@ ALTER TABLE `job_orders`
   ADD PRIMARY KEY (`job_order_id`),
   ADD KEY `fk_service` (`service_id`),
   ADD KEY `fk_proposals` (`proposal_id`);
+
+--
+-- Indexes for table `job_order_submissions`
+--
+ALTER TABLE `job_order_submissions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `job_order_id` (`job_order_id`),
+  ADD KEY `liaison_id` (`liaison_id`);
+
+--
+-- Indexes for table `job_order_submission_attachments`
+--
+ALTER TABLE `job_order_submission_attachments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `submission_id` (`submission_id`);
+
+--
+-- Indexes for table `job_order_submission_expenses`
+--
+ALTER TABLE `job_order_submission_expenses`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `submission_id` (`submission_id`);
+
+--
+-- Indexes for table `messages`
+--
+ALTER TABLE `messages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `sender_id` (`sender_id`),
+  ADD KEY `receiver_id` (`receiver_id`);
+
+--
+-- Indexes for table `message_attachments`
+--
+ALTER TABLE `message_attachments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `message_id` (`message_id`);
 
 --
 -- Indexes for table `projects`
@@ -466,6 +776,38 @@ ALTER TABLE `service_requirements`
   ADD KEY `service_id` (`service_id`);
 
 --
+-- Indexes for table `tasks`
+--
+ALTER TABLE `tasks`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `liaison_id` (`liaison_id`),
+  ADD KEY `service_id` (`service_id`),
+  ADD KEY `service_category_id` (`service_category_id`),
+  ADD KEY `created_by` (`created_by`);
+
+--
+-- Indexes for table `task_submissions`
+--
+ALTER TABLE `task_submissions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `task_id` (`task_id`),
+  ADD KEY `liaison_id` (`liaison_id`);
+
+--
+-- Indexes for table `task_submission_attachments`
+--
+ALTER TABLE `task_submission_attachments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `submission_id` (`submission_id`);
+
+--
+-- Indexes for table `task_submission_expenses`
+--
+ALTER TABLE `task_submission_expenses`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `submission_id` (`submission_id`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -473,8 +815,20 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `email` (`email`);
 
 --
+-- Indexes for table `user_chat_status`
+--
+ALTER TABLE `user_chat_status`
+  ADD PRIMARY KEY (`user_id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `assigned_job_orders`
+--
+ALTER TABLE `assigned_job_orders`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `clients`
@@ -505,6 +859,36 @@ ALTER TABLE `documents`
 --
 ALTER TABLE `job_orders`
   MODIFY `job_order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `job_order_submissions`
+--
+ALTER TABLE `job_order_submissions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `job_order_submission_attachments`
+--
+ALTER TABLE `job_order_submission_attachments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `job_order_submission_expenses`
+--
+ALTER TABLE `job_order_submission_expenses`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `messages`
+--
+ALTER TABLE `messages`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
+-- AUTO_INCREMENT for table `message_attachments`
+--
+ALTER TABLE `message_attachments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `projects`
@@ -543,10 +927,34 @@ ALTER TABLE `service_requirements`
   MODIFY `requirement_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `tasks`
+--
+ALTER TABLE `tasks`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `task_submissions`
+--
+ALTER TABLE `task_submissions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `task_submission_attachments`
+--
+ALTER TABLE `task_submission_attachments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `task_submission_expenses`
+--
+ALTER TABLE `task_submission_expenses`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- Constraints for dumped tables
@@ -563,6 +971,38 @@ ALTER TABLE `clients`
 --
 ALTER TABLE `documents`
   ADD CONSTRAINT `documents_ibfk_1` FOREIGN KEY (`proposal_id`) REFERENCES `proposals` (`proposal_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `job_order_submissions`
+--
+ALTER TABLE `job_order_submissions`
+  ADD CONSTRAINT `fk_submissions_job_order` FOREIGN KEY (`job_order_id`) REFERENCES `job_orders` (`job_order_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_submissions_liaison` FOREIGN KEY (`liaison_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `job_order_submission_attachments`
+--
+ALTER TABLE `job_order_submission_attachments`
+  ADD CONSTRAINT `fk_attachments_submission` FOREIGN KEY (`submission_id`) REFERENCES `job_order_submissions` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `job_order_submission_expenses`
+--
+ALTER TABLE `job_order_submission_expenses`
+  ADD CONSTRAINT `fk_expenses_submission` FOREIGN KEY (`submission_id`) REFERENCES `job_order_submissions` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `messages`
+--
+ALTER TABLE `messages`
+  ADD CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `message_attachments`
+--
+ALTER TABLE `message_attachments`
+  ADD CONSTRAINT `message_attachments_ibfk_1` FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `projects`
@@ -594,6 +1034,31 @@ ALTER TABLE `service_categories`
 --
 ALTER TABLE `service_requirements`
   ADD CONSTRAINT `service_requirements_ibfk_1` FOREIGN KEY (`service_id`) REFERENCES `services` (`service_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task_submissions`
+--
+ALTER TABLE `task_submissions`
+  ADD CONSTRAINT `task_submissions_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `task_submissions_ibfk_2` FOREIGN KEY (`liaison_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task_submission_attachments`
+--
+ALTER TABLE `task_submission_attachments`
+  ADD CONSTRAINT `task_submission_attachments_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `task_submissions` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task_submission_expenses`
+--
+ALTER TABLE `task_submission_expenses`
+  ADD CONSTRAINT `task_submission_expenses_ibfk_1` FOREIGN KEY (`submission_id`) REFERENCES `task_submissions` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `user_chat_status`
+--
+ALTER TABLE `user_chat_status`
+  ADD CONSTRAINT `user_chat_status_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

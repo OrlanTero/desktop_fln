@@ -172,7 +172,7 @@ const Navigation = () => {
     <NavigationContainer
       theme={{
         colors: {
-          primary: '#007BFF',
+          primary: '#842624',
           background: '#FFFFFF',
           card: '#FFFFFF',
           text: '#333333',

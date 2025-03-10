@@ -1131,7 +1131,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   addModalButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: '#842624',
   },
   addModalButtonText: {
     color: '#fff',

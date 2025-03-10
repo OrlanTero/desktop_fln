@@ -106,7 +106,7 @@ const MainScreen = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#007BFF']}
+            colors={['#842624']}
           />
         }
       >
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#007BFF',
+    color: '#842624',
   },
   statLabel: {
     fontSize: 14,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   actionButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: '#842624',
     borderRadius: 8,
     padding: 15,
     marginBottom: 10,

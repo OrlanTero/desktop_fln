@@ -155,7 +155,7 @@ const TasksScreen = ({ navigation }) => {
       case 'IN_PROGRESS':
         return {
           color: 'info',
-          icon: <MaterialIcons name="assignment" size={16} color="#007bff" />
+          icon: <MaterialIcons name="assignment" size={16} color="#264888" />
         };
       case 'COMPLETED':
         return {
@@ -170,7 +170,7 @@ const TasksScreen = ({ navigation }) => {
       case 'SUBMITTED':
         return {
           color: 'primary',
-          icon: <MaterialIcons name="assignment-turned-in" size={16} color="#007bff" />
+          icon: <MaterialIcons name="assignment-turned-in" size={16} color="#842624" />
         };
       default:
         return {
@@ -274,7 +274,7 @@ const TasksScreen = ({ navigation }) => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#007BFF']}
+              colors={['#842624']}
             />
           }
           ListEmptyComponent={
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: '#842624',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 5,

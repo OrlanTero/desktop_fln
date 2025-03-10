@@ -45,7 +45,8 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon,
 } from '@mui/icons-material';
-import Navigation from '../components/Navigation';
+import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 import { format } from 'date-fns';
 
 const JobOrders = ({ user, onLogout }) => {
@@ -733,192 +734,66 @@ const JobOrders = ({ user, onLogout }) => {
   
   if (loading && projects.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <CircularProgress />
-      </Box>
+      <Layout title="Job Orders">
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
+          <CircularProgress />
+        </Box>
+      </Layout>
     );
   }
   
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Box sx={{ width: 240, flexShrink: 0 }}>
-        <Navigation user={user} onLogout={onLogout} />
-      </Box>
-      
-      <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto', height: '100%' }}>
-        <Typography variant="h4" gutterBottom>
-          Job Orders
-        </Typography>
-        
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ flexGrow: 1, mr: 3 }}>
-            {/* Overall Progress */}
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="h6">Overall Progress</Typography>
-                <Typography variant="h6">{calculateOverallProgress()}%</Typography>
-              </Box>
-              <LinearProgress 
-                variant="determinate" 
-                value={calculateOverallProgress()} 
-                sx={{ 
-                  height: 10, 
-                  borderRadius: 5,
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#4CAF50'
-                  }
-                }}
-              />
-            </Box>
-            
-            {/* Days Remaining */}
-            {calculateDaysRemaining() !== null && (
-              <Typography variant="subtitle1" color={calculateDaysRemaining() < 0 ? 'error' : 'textSecondary'}>
-                {calculateDaysRemaining() < 0 
-                  ? `Overdue by ${Math.abs(calculateDaysRemaining())} days`
-                  : `${calculateDaysRemaining()} days remaining until next due date`
-                }
-              </Typography>
-            )}
-          </Box>
-          
+    <Layout title="Job Orders">
+      <PageHeader 
+        title="Job Orders" 
+        subtitle="Manage and track all job orders across projects"
+        actionButtonText="Create Job Order"
+        actionButtonIcon={<AddIcon />}
+        actionButtonPath="#"
+        actionButton={
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
             onClick={handleCreateDialogOpen}
           >
-            Add New Job Order
+            Create Job Order
           </Button>
-        </Box>
-        
-        {/* Add after the overall progress section and before the project tabs */}
+        }
+      />
+      
+      <Box>
+        {/* Overall Progress */}
         <Box sx={{ mb: 3 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'grey.100' }}>
-                <Typography variant="h6" color="textSecondary">Total</Typography>
-                <Typography variant="h4">{calculateStatusCounts().total}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff3e0' }}>
-                <Typography variant="h6" color="warning.main">Pending</Typography>
-                <Typography variant="h4">{calculateStatusCounts().pending}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e3f2fd' }}>
-                <Typography variant="h6" color="primary.main">In Progress</Typography>
-                <Typography variant="h4">{calculateStatusCounts().inProgress}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff8e1' }}>
-                <Typography variant="h6" color="warning.dark">On Hold</Typography>
-                <Typography variant="h4">{calculateStatusCounts().onHold}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e8f5e9' }}>
-                <Typography variant="h6" color="success.main">Completed</Typography>
-                <Typography variant="h4">{calculateStatusCounts().completed}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#ffebee' }}>
-                <Typography variant="h6" color="error.main">Cancelled</Typography>
-                <Typography variant="h4">{calculateStatusCounts().cancelled}</Typography>
-              </Paper>
-            </Grid>
-          </Grid>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="h6">Overall Progress</Typography>
+            <Typography variant="h6">{calculateOverallProgress()}%</Typography>
+          </Box>
+          <LinearProgress 
+            variant="determinate" 
+            value={calculateOverallProgress()} 
+            sx={{ 
+              height: 10, 
+              borderRadius: 5,
+              backgroundColor: 'rgba(0, 0, 0, 0.1)',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: '#4CAF50'
+              }
+            }}
+          />
         </Box>
         
-        {/* Filters */}
-        <Box sx={{ mb: 3 }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={3}>
-              <TextField
-                fullWidth
-                name="search"
-                value={filters.search}
-                onChange={handleFilterChange}
-                placeholder="Search job orders..."
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  name="status"
-                  value={filters.status}
-                  onChange={handleFilterChange}
-                  label="Status"
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="PENDING">Pending</MenuItem>
-                  <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-                  <MenuItem value="ON_HOLD">On Hold</MenuItem>
-                  <MenuItem value="COMPLETED">Completed</MenuItem>
-                  <MenuItem value="CANCELLED">Cancelled</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <FormControl fullWidth>
-                <InputLabel>Liaison</InputLabel>
-                <Select
-                  name="liaison"
-                  value={filters.liaison}
-                  onChange={handleFilterChange}
-                  label="Liaison"
-                >
-                  <MenuItem value="">All</MenuItem>
-                  {liaisons.map((liaison) => (
-                    <MenuItem key={liaison.id} value={liaison.id}>
-                      {liaison.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <FormControl fullWidth>
-                <InputLabel>Date Range</InputLabel>
-                <Select
-                  name="dateRange"
-                  value={filters.dateRange}
-                  onChange={handleFilterChange}
-                  label="Date Range"
-                >
-                  <MenuItem value="">All Time</MenuItem>
-                  <MenuItem value="today">Today</MenuItem>
-                  <MenuItem value="week">Last 7 Days</MenuItem>
-                  <MenuItem value="month">Last 30 Days</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={handleResetFilters}
-                startIcon={<FilterIcon />}
-              >
-                Reset
-              </Button>
-            </Grid>
-          </Grid>
-        </Box>
-        
+        {/* Days Remaining */}
+        {calculateDaysRemaining() !== null && (
+          <Typography variant="subtitle1" color={calculateDaysRemaining() < 0 ? 'error' : 'textSecondary'} sx={{ mb: 3 }}>
+            {calculateDaysRemaining() < 0 
+              ? `Overdue by ${Math.abs(calculateDaysRemaining())} days`
+              : `${calculateDaysRemaining()} days remaining until next due date`
+            }
+          </Typography>
+        )}
+
+        {/* Rest of the existing content */}
         {projects.length === 0 ? (
           <Paper sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="h6">No projects available</Typography>
@@ -1815,7 +1690,7 @@ const JobOrders = ({ user, onLogout }) => {
           </Alert>
         </Snackbar>
       </Box>
-    </Box>
+    </Layout>
   );
 };
 

@@ -46,7 +46,8 @@ import {
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { format } from 'date-fns';
-import Navigation from '../components/Navigation';
+import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 
 const Tasks = ({ user, onLogout }) => {
   const navigate = useNavigate();
@@ -643,849 +644,843 @@ const Tasks = ({ user, onLogout }) => {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Box sx={{ width: 240, flexShrink: 0 }}>
-        <Navigation user={user} onLogout={onLogout} />
-      </Box>
-      
-      <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto', height: '100%' }}>
-        <Typography variant="h4" gutterBottom>
-          Tasks
-        </Typography>
-        
-        {/* Add status count cards */}
-        <Box sx={{ mb: 3 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'grey.100' }}>
-                <Typography variant="h6" color="textSecondary">Total</Typography>
-                <Typography variant="h4">{calculateStatusCounts().total}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff3e0' }}>
-                <Typography variant="h6" color="warning.main">Pending</Typography>
-                <Typography variant="h4">{calculateStatusCounts().pending}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e3f2fd' }}>
-                <Typography variant="h6" color="primary.main">In Progress</Typography>
-                <Typography variant="h4">{calculateStatusCounts().inProgress}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff8e1' }}>
-                <Typography variant="h6" color="warning.dark">On Hold</Typography>
-                <Typography variant="h4">{calculateStatusCounts().onHold}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e8f5e9' }}>
-                <Typography variant="h6" color="success.main">Completed</Typography>
-                <Typography variant="h4">{calculateStatusCounts().completed}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#ffebee' }}>
-                <Typography variant="h6" color="error.main">Cancelled</Typography>
-                <Typography variant="h4">{calculateStatusCounts().cancelled}</Typography>
-              </Paper>
-            </Grid>
-          </Grid>
-        </Box>
-        
-        {/* Add filter controls */}
-        <Box sx={{ mb: 3 }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={3}>
-              <TextField
-                fullWidth
-                name="search"
-                value={filters.search}
-                onChange={handleFilterChange}
-                placeholder="Search tasks..."
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  name="status"
-                  value={filters.status}
-                  onChange={handleFilterChange}
-                  label="Status"
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="PENDING">Pending</MenuItem>
-                  <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-                  <MenuItem value="ON_HOLD">On Hold</MenuItem>
-                  <MenuItem value="COMPLETED">Completed</MenuItem>
-                  <MenuItem value="CANCELLED">Cancelled</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <FormControl fullWidth>
-                <InputLabel>Liaison</InputLabel>
-                <Select
-                  name="liaison"
-                  value={filters.liaison}
-                  onChange={handleFilterChange}
-                  label="Liaison"
-                >
-                  <MenuItem value="">All</MenuItem>
-                  {liaisons.map((liaison) => (
-                    <MenuItem key={liaison.id} value={liaison.id}>
-                      {liaison.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <FormControl fullWidth>
-                <InputLabel>Service</InputLabel>
-                <Select
-                  name="service"
-                  value={filters.service}
-                  onChange={handleFilterChange}
-                  label="Service"
-                >
-                  <MenuItem value="">All</MenuItem>
-                  {services.map((service) => (
-                    <MenuItem key={service.id} value={service.id}>
-                      {service.service_name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <FormControl fullWidth>
-                <InputLabel>Date Range</InputLabel>
-                <Select
-                  name="dateRange"
-                  value={filters.dateRange}
-                  onChange={handleFilterChange}
-                  label="Date Range"
-                >
-                  <MenuItem value="">All Time</MenuItem>
-                  <MenuItem value="today">Today</MenuItem>
-                  <MenuItem value="week">Last 7 Days</MenuItem>
-                  <MenuItem value="month">Last 30 Days</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={1}>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={handleResetFilters}
-                startIcon={<FilterIcon />}
-              >
-                Reset
-              </Button>
-            </Grid>
-          </Grid>
-        </Box>
-        
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+    <Layout title="Tasks">
+      <PageHeader 
+        title="Tasks" 
+        subtitle="Manage and track all tasks assigned to liaisons"
+        actionButton={
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
             onClick={handleCreateDialogOpen}
           >
-            Add New Task
+            Create Task
           </Button>
+        }
+      />
+      
+      {/* Status count cards */}
+      <Box sx={{ mb: 3 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={2}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'grey.100', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <Typography variant="h6" color="textSecondary">Total</Typography>
+              <Typography variant="h4">{calculateStatusCounts().total}</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff3e0', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <Typography variant="h6" color="warning.main">Pending</Typography>
+              <Typography variant="h4">{calculateStatusCounts().pending}</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e3f2fd', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <Typography variant="h6" color="primary.main">In Progress</Typography>
+              <Typography variant="h4">{calculateStatusCounts().inProgress}</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff8e1', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <Typography variant="h6" color="warning.dark">On Hold</Typography>
+              <Typography variant="h4">{calculateStatusCounts().onHold}</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e8f5e9', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <Typography variant="h6" color="success.main">Completed</Typography>
+              <Typography variant="h4">{calculateStatusCounts().completed}</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#ffebee', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <Typography variant="h6" color="error.main">Cancelled</Typography>
+              <Typography variant="h4">{calculateStatusCounts().cancelled}</Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+      
+      {/* Add filter controls */}
+      <Box sx={{ mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={3}>
+            <TextField
+              fullWidth
+              name="search"
+              value={filters.search}
+              onChange={handleFilterChange}
+              placeholder="Search tasks..."
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                name="status"
+                value={filters.status}
+                onChange={handleFilterChange}
+                label="Status"
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="PENDING">Pending</MenuItem>
+                <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+                <MenuItem value="ON_HOLD">On Hold</MenuItem>
+                <MenuItem value="COMPLETED">Completed</MenuItem>
+                <MenuItem value="CANCELLED">Cancelled</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <FormControl fullWidth>
+              <InputLabel>Liaison</InputLabel>
+              <Select
+                name="liaison"
+                value={filters.liaison}
+                onChange={handleFilterChange}
+                label="Liaison"
+              >
+                <MenuItem value="">All</MenuItem>
+                {liaisons.map((liaison) => (
+                  <MenuItem key={liaison.id} value={liaison.id}>
+                    {liaison.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <FormControl fullWidth>
+              <InputLabel>Service</InputLabel>
+              <Select
+                name="service"
+                value={filters.service}
+                onChange={handleFilterChange}
+                label="Service"
+              >
+                <MenuItem value="">All</MenuItem>
+                {services.map((service) => (
+                  <MenuItem key={service.id} value={service.id}>
+                    {service.service_name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <FormControl fullWidth>
+              <InputLabel>Date Range</InputLabel>
+              <Select
+                name="dateRange"
+                value={filters.dateRange}
+                onChange={handleFilterChange}
+                label="Date Range"
+              >
+                <MenuItem value="">All Time</MenuItem>
+                <MenuItem value="today">Today</MenuItem>
+                <MenuItem value="week">Last 7 Days</MenuItem>
+                <MenuItem value="month">Last 30 Days</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={1}>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={handleResetFilters}
+              startIcon={<FilterIcon />}
+            >
+              Reset
+            </Button>
+          </Grid>
+        </Grid>
+      </Box>
+      
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <CircularProgress />
         </Box>
-        
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <Grid container spacing={3}>
-            {getFilteredAndSortedTasks().map((task) => (
-              <Grid item xs={12} sm={6} md={4} key={task.id}>
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Typography variant="h6" component="div" sx={{ mb: 1 }}>
-                        {task.description.length > 50 ? `${task.description.substring(0, 50)}...` : task.description}
+      ) : (
+        <Grid container spacing={3}>
+          {getFilteredAndSortedTasks().map((task) => (
+            <Grid item xs={12} sm={6} md={4} key={task.id}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Typography variant="h6" component="div" sx={{ mb: 1 }}>
+                      {task.description.length > 50 ? `${task.description.substring(0, 50)}...` : task.description}
+                    </Typography>
+                    <Chip
+                      label={task.status}
+                      color={getStatusColor(task.status).color}
+                      icon={getStatusColor(task.status).icon}
+                      size="small"
+                    />
+                  </Box>
+                  
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <strong>Liaison:</strong> {task.liaison_name}
+                  </Typography>
+                  
+                  {task.service_id && (
+                    <>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Service:</strong> {task.service_name}
                       </Typography>
-                      <Chip
-                        label={task.status}
-                        color={getStatusColor(task.status).color}
-                        icon={getStatusColor(task.status).icon}
-                        size="small"
-                      />
-                    </Box>
-                    
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      <strong>Liaison:</strong> {task.liaison_name}
-                    </Typography>
-                    
-                    {task.service_id && (
-                      <>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          <strong>Service:</strong> {task.service_name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          <strong>Category:</strong> {task.service_category_name}
-                        </Typography>
-                      </>
-                    )}
-                    
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      <strong>Due Date:</strong> {formatDate(task.due_date)}
-                    </Typography>
-                    
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Created:</strong> {formatDate(task.created_at)}
-                    </Typography>
-                  </CardContent>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Category:</strong> {task.service_category_name}
+                      </Typography>
+                    </>
+                  )}
                   
-                  <Divider />
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <strong>Due Date:</strong> {formatDate(task.due_date)}
+                  </Typography>
                   
-                  <CardActions>
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Created:</strong> {formatDate(task.created_at)}
+                  </Typography>
+                </CardContent>
+                
+                <Divider />
+                
+                <CardActions>
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    onClick={() => handleEditDialogOpen(task)}
+                    title="Edit"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => handleDeleteDialogOpen(task)}
+                    title="Delete"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                  
+                  {/* Add View button for SUBMITTED tasks */}
+                  {task.status === 'SUBMITTED' && (
                     <IconButton
                       size="small"
-                      color="primary"
-                      onClick={() => handleEditDialogOpen(task)}
-                      title="Edit"
+                      color="info"
+                      onClick={() => handleViewSubmissionDialogOpen(task)}
+                      title="View Submission"
                     >
-                      <EditIcon />
+                      <VisibilityIcon />
                     </IconButton>
-                    
+                  )}
+                  
+                  {task.status !== 'COMPLETED' && task.status !== 'SUBMITTED' && (
+                    <IconButton
+                      size="small"
+                      color="success"
+                      onClick={() => handleStatusDialogOpen(task, 'COMPLETED')}
+                      title="Mark as Completed"
+                    >
+                      <CheckCircleIcon />
+                    </IconButton>
+                  )}
+                  
+                  {task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED' && task.status !== 'SUBMITTED' && (
+                    <IconButton
+                      size="small"
+                      color="info"
+                      onClick={() => handleStatusDialogOpen(task, 'IN_PROGRESS')}
+                      title="Mark as In Progress"
+                    >
+                      <AssignmentIcon />
+                    </IconButton>
+                  )}
+                  
+                  {task.status !== 'CANCELLED' && (
                     <IconButton
                       size="small"
                       color="error"
-                      onClick={() => handleDeleteDialogOpen(task)}
-                      title="Delete"
+                      onClick={() => handleStatusDialogOpen(task, 'CANCELLED')}
+                      title="Cancel Task"
                     >
-                      <DeleteIcon />
+                      <CancelIcon />
                     </IconButton>
-                    
-                    {/* Add View button for SUBMITTED tasks */}
-                    {task.status === 'SUBMITTED' && (
-                      <IconButton
-                        size="small"
-                        color="info"
-                        onClick={() => handleViewSubmissionDialogOpen(task)}
-                        title="View Submission"
-                      >
-                        <VisibilityIcon />
-                      </IconButton>
-                    )}
-                    
-                    {task.status !== 'COMPLETED' && task.status !== 'SUBMITTED' && (
-                      <IconButton
-                        size="small"
-                        color="success"
-                        onClick={() => handleStatusDialogOpen(task, 'COMPLETED')}
-                        title="Mark as Completed"
-                      >
-                        <CheckCircleIcon />
-                      </IconButton>
-                    )}
-                    
-                    {task.status !== 'IN_PROGRESS' && task.status !== 'COMPLETED' && task.status !== 'SUBMITTED' && (
-                      <IconButton
-                        size="small"
-                        color="info"
-                        onClick={() => handleStatusDialogOpen(task, 'IN_PROGRESS')}
-                        title="Mark as In Progress"
-                      >
-                        <AssignmentIcon />
-                      </IconButton>
-                    )}
-                    
-                    {task.status !== 'CANCELLED' && (
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleStatusDialogOpen(task, 'CANCELLED')}
-                        title="Cancel Task"
-                      >
-                        <CancelIcon />
-                      </IconButton>
-                    )}
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        )}
-        
-        {/* Create Task Dialog */}
-        <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Create New Task</DialogTitle>
-          <DialogContent>
-            <Box sx={{ mt: 2 }}>
-              <FormControl fullWidth sx={{ mb: 2 }} error={!!formErrors.liaison_id}>
-                <InputLabel id="liaison-label">Liaison</InputLabel>
-                <Select
-                  labelId="liaison-label"
-                  id="liaison_id"
-                  name="liaison_id"
-                  value={formData.liaison_id}
-                  onChange={handleInputChange}
-                  label="Liaison"
-                >
-                  {liaisons.map((liaison) => (
-                    <MenuItem key={liaison.id} value={liaison.id}>
-                      {liaison.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {formErrors.liaison_id && <FormHelperText>{formErrors.liaison_id}</FormHelperText>}
-              </FormControl>
-              
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="service-label">Service (Optional)</InputLabel>
-                <Select
-                  labelId="service-label"
-                  id="service_id"
-                  name="service_id"
-                  value={formData.service_id}
-                  onChange={handleInputChange}
-                  label="Service (Optional)"
-                >
-                  <MenuItem value="">
-                    <em>None</em>
-                  </MenuItem>
-                  {serviceCategories.map((category) => [
-                    <MenuItem key={`category-${category.service_category_id}`} disabled divider>
-                      {category.service_category_name}
-                    </MenuItem>,
-                    ...services
-                      .filter((service) => service.service_category_id === category.service_category_id)
-                      .map((service) => (
-                        <MenuItem key={service.service_id} value={service.service_id}>
-                          &nbsp;&nbsp;{service.service_name}
-                        </MenuItem>
-                      ))
-                  ])}
-                </Select>
-              </FormControl>
-              
-              <TextField
-                fullWidth
-                margin="normal"
-                id="description"
-                name="description"
-                label="Description"
-                multiline
-                rows={4}
-                value={formData.description}
-                onChange={handleInputChange}
-                error={!!formErrors.description}
-                helperText={formErrors.description}
-                sx={{ mb: 2 }}
-              />
-              
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="status-label">Status</InputLabel>
-                <Select
-                  labelId="status-label"
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  label="Status"
-                >
-                  <MenuItem value="PENDING">Pending</MenuItem>
-                  <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-                  <MenuItem value="COMPLETED">Completed</MenuItem>
-                  <MenuItem value="CANCELLED">Cancelled</MenuItem>
-                </Select>
-              </FormControl>
-              
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker
-                  label="Due Date (Optional)"
-                  value={formData.due_date ? new Date(formData.due_date) : null}
-                  onChange={handleDateChange}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      variant: 'outlined'
-                    }
-                  }}
-                />
-              </LocalizationProvider>
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateTask} variant="contained" color="primary">
-              Create
-            </Button>
-          </DialogActions>
-        </Dialog>
-        
-        {/* Edit Task Dialog */}
-        <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Edit Task</DialogTitle>
-          <DialogContent>
-            <Box sx={{ mt: 2 }}>
-              <FormControl fullWidth sx={{ mb: 2 }} error={!!formErrors.liaison_id}>
-                <InputLabel id="edit-liaison-label">Liaison</InputLabel>
-                <Select
-                  labelId="edit-liaison-label"
-                  id="edit_liaison_id"
-                  name="liaison_id"
-                  value={formData.liaison_id}
-                  onChange={handleInputChange}
-                  label="Liaison"
-                >
-                  {liaisons.map((liaison) => (
-                    <MenuItem key={liaison.id} value={liaison.id}>
-                      {liaison.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {formErrors.liaison_id && <FormHelperText>{formErrors.liaison_id}</FormHelperText>}
-              </FormControl>
-              
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="edit-service-label">Service (Optional)</InputLabel>
-                <Select
-                  labelId="edit-service-label"
-                  id="edit_service_id"
-                  name="service_id"
-                  value={formData.service_id}
-                  onChange={handleInputChange}
-                  label="Service (Optional)"
-                >
-                  <MenuItem value="">
-                    <em>None</em>
-                  </MenuItem>
-                  {serviceCategories.map((category) => [
-                    <MenuItem key={`category-${category.service_category_id}`} disabled divider>
-                      {category.service_category_name}
-                    </MenuItem>,
-                    ...services
-                      .filter((service) => service.service_category_id === category.service_category_id)
-                      .map((service) => (
-                        <MenuItem key={service.service_id} value={service.service_id}>
-                          &nbsp;&nbsp;{service.service_name}
-                        </MenuItem>
-                      ))
-                  ])}
-                </Select>
-              </FormControl>
-              
-              <TextField
-                fullWidth
-                margin="normal"
-                id="edit_description"
-                name="description"
-                label="Description"
-                multiline
-                rows={4}
-                value={formData.description}
-                onChange={handleInputChange}
-                error={!!formErrors.description}
-                helperText={formErrors.description}
-                sx={{ mb: 2 }}
-              />
-              
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="edit-status-label">Status</InputLabel>
-                <Select
-                  labelId="edit-status-label"
-                  id="edit_status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  label="Status"
-                >
-                  <MenuItem value="PENDING">Pending</MenuItem>
-                  <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-                  <MenuItem value="COMPLETED">Completed</MenuItem>
-                  <MenuItem value="CANCELLED">Cancelled</MenuItem>
-                </Select>
-              </FormControl>
-              
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker
-                  label="Due Date (Optional)"
-                  value={formData.due_date ? new Date(formData.due_date) : null}
-                  onChange={handleDateChange}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      variant: 'outlined'
-                    }
-                  }}
-                />
-              </LocalizationProvider>
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleEditTask} variant="contained" color="primary">
-              Update
-            </Button>
-          </DialogActions>
-        </Dialog>
-        
-        {/* Delete Task Dialog */}
-        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-          <DialogTitle>Delete Task</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Are you sure you want to delete this task? This action cannot be undone.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleDeleteTask} variant="contained" color="error">
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
-        
-        {/* Status Change Dialog */}
-        <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)}>
-          <DialogTitle>Change Task Status</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Are you sure you want to change the status of this task to {newStatus.replace('_', ' ')}?
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleStatusChange} variant="contained" color="primary">
-              Confirm
-            </Button>
-          </DialogActions>
-        </Dialog>
-        
-        {/* Submission View Dialog */}
-        <Dialog 
-          open={submissionDialogOpen} 
-          onClose={handleSubmissionDialogClose}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>
-            Task Submission Details
-            <IconButton
-              aria-label="close"
-              onClick={handleSubmissionDialogClose}
-              sx={{
-                position: 'absolute',
-                right: 8,
-                top: 8,
-                color: (theme) => theme.palette.grey[500],
-              }}
-            >
-              <CancelIcon />
-            </IconButton>
-          </DialogTitle>
-          
-          <DialogContent dividers>
-            {submissionLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                <CircularProgress />
-              </Box>
-            ) : submissionData ? (
-              <Box>
-                {/* Task Info */}
-                <Typography variant="h6" gutterBottom>
-                  Task Information
-                </Typography>
-                <Paper sx={{ p: 2, mb: 3 }}>
-                  <Typography variant="body1" gutterBottom>
-                    <strong>Description:</strong> {selectedTask?.description}
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    <strong>Status:</strong> {selectedTask?.status}
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    <strong>Liaison:</strong> {selectedTask?.liaison_name}
-                  </Typography>
-                  <Typography variant="body1">
-                    <strong>Due Date:</strong> {formatDate(selectedTask?.due_date)}
-                  </Typography>
-                </Paper>
-                
-                {/* Notes */}
-                <Typography variant="h6" gutterBottom>
-                  Notes
-                </Typography>
-                <Paper sx={{ p: 2, mb: 3 }}>
-                  <Typography variant="body1">
-                    {submissionData.notes || 'No notes provided.'}
-                  </Typography>
-                </Paper>
-                
-                {/* Expenses */}
-                <Typography variant="h6" gutterBottom>
-                  Expenses
-                </Typography>
-                <Paper sx={{ p: 2, mb: 3 }}>
-                  {submissionData.expenses && Array.isArray(submissionData.expenses) && submissionData.expenses.length > 0 ? (
-                    <>
-                      <Box sx={{ mb: 2 }}>
-                        {submissionData.expenses.map((expense, index) => (
-                          <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                            <Typography variant="body1">{expense.description}</Typography>
-                            <Typography variant="body1">${parseFloat(expense.amount || 0).toFixed(2)}</Typography>
-                          </Box>
-                        ))}
-                      </Box>
-                      <Divider />
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                        <Typography variant="h6">Total</Typography>
-                        <Typography variant="h6">${calculateTotalExpenses(submissionData.expenses)}</Typography>
-                      </Box>
-                    </>
-                  ) : (
-                    <Typography variant="body1">No expenses reported.</Typography>
                   )}
-                </Paper>
-                
-                {/* Attachments */}
-                <Typography variant="h6" gutterBottom>
-                  Attachments
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+      
+      {/* Create Task Dialog */}
+      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Create New Task</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <FormControl fullWidth sx={{ mb: 2 }} error={!!formErrors.liaison_id}>
+              <InputLabel id="liaison-label">Liaison</InputLabel>
+              <Select
+                labelId="liaison-label"
+                id="liaison_id"
+                name="liaison_id"
+                value={formData.liaison_id}
+                onChange={handleInputChange}
+                label="Liaison"
+              >
+                {liaisons.map((liaison) => (
+                  <MenuItem key={liaison.id} value={liaison.id}>
+                    {liaison.name}
+                  </MenuItem>
+                ))}
+              </Select>
+              {formErrors.liaison_id && <FormHelperText>{formErrors.liaison_id}</FormHelperText>}
+            </FormControl>
+            
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="service-label">Service (Optional)</InputLabel>
+              <Select
+                labelId="service-label"
+                id="service_id"
+                name="service_id"
+                value={formData.service_id}
+                onChange={handleInputChange}
+                label="Service (Optional)"
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {serviceCategories.map((category) => [
+                  <MenuItem key={`category-${category.service_category_id}`} disabled divider>
+                    {category.service_category_name}
+                  </MenuItem>,
+                  ...services
+                    .filter((service) => service.service_category_id === category.service_category_id)
+                    .map((service) => (
+                      <MenuItem key={service.service_id} value={service.service_id}>
+                        &nbsp;&nbsp;{service.service_name}
+                      </MenuItem>
+                    ))
+                ])}
+              </Select>
+            </FormControl>
+            
+            <TextField
+              fullWidth
+              margin="normal"
+              id="description"
+              name="description"
+              label="Description"
+              multiline
+              rows={4}
+              value={formData.description}
+              onChange={handleInputChange}
+              error={!!formErrors.description}
+              helperText={formErrors.description}
+              sx={{ mb: 2 }}
+            />
+            
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="status-label">Status</InputLabel>
+              <Select
+                labelId="status-label"
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                label="Status"
+              >
+                <MenuItem value="PENDING">Pending</MenuItem>
+                <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+                <MenuItem value="COMPLETED">Completed</MenuItem>
+                <MenuItem value="CANCELLED">Cancelled</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="Due Date (Optional)"
+                value={formData.due_date ? new Date(formData.due_date) : null}
+                onChange={handleDateChange}
+                renderInput={(params) => <TextField {...params} fullWidth />}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    variant: 'outlined'
+                  }
+                }}
+              />
+            </LocalizationProvider>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleCreateTask} variant="contained" color="primary">
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Edit Task Dialog */}
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Task</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <FormControl fullWidth sx={{ mb: 2 }} error={!!formErrors.liaison_id}>
+              <InputLabel id="edit-liaison-label">Liaison</InputLabel>
+              <Select
+                labelId="edit-liaison-label"
+                id="edit_liaison_id"
+                name="liaison_id"
+                value={formData.liaison_id}
+                onChange={handleInputChange}
+                label="Liaison"
+              >
+                {liaisons.map((liaison) => (
+                  <MenuItem key={liaison.id} value={liaison.id}>
+                    {liaison.name}
+                  </MenuItem>
+                ))}
+              </Select>
+              {formErrors.liaison_id && <FormHelperText>{formErrors.liaison_id}</FormHelperText>}
+            </FormControl>
+            
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="edit-service-label">Service (Optional)</InputLabel>
+              <Select
+                labelId="edit-service-label"
+                id="edit_service_id"
+                name="service_id"
+                value={formData.service_id}
+                onChange={handleInputChange}
+                label="Service (Optional)"
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {serviceCategories.map((category) => [
+                  <MenuItem key={`category-${category.service_category_id}`} disabled divider>
+                    {category.service_category_name}
+                  </MenuItem>,
+                  ...services
+                    .filter((service) => service.service_category_id === category.service_category_id)
+                    .map((service) => (
+                      <MenuItem key={service.service_id} value={service.service_id}>
+                        &nbsp;&nbsp;{service.service_name}
+                      </MenuItem>
+                    ))
+                ])}
+              </Select>
+            </FormControl>
+            
+            <TextField
+              fullWidth
+              margin="normal"
+              id="edit_description"
+              name="description"
+              label="Description"
+              multiline
+              rows={4}
+              value={formData.description}
+              onChange={handleInputChange}
+              error={!!formErrors.description}
+              helperText={formErrors.description}
+              sx={{ mb: 2 }}
+            />
+            
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="edit-status-label">Status</InputLabel>
+              <Select
+                labelId="edit-status-label"
+                id="edit_status"
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                label="Status"
+              >
+                <MenuItem value="PENDING">Pending</MenuItem>
+                <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+                <MenuItem value="COMPLETED">Completed</MenuItem>
+                <MenuItem value="CANCELLED">Cancelled</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="Due Date (Optional)"
+                value={formData.due_date ? new Date(formData.due_date) : null}
+                onChange={handleDateChange}
+                renderInput={(params) => <TextField {...params} fullWidth />}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    variant: 'outlined'
+                  }
+                }}
+              />
+            </LocalizationProvider>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleEditTask} variant="contained" color="primary">
+            Update
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Delete Task Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Delete Task</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this task? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleDeleteTask} variant="contained" color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Status Change Dialog */}
+      <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)}>
+        <DialogTitle>Change Task Status</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to change the status of this task to {newStatus.replace('_', ' ')}?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleStatusChange} variant="contained" color="primary">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Submission View Dialog */}
+      <Dialog 
+        open={submissionDialogOpen} 
+        onClose={handleSubmissionDialogClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Task Submission Details
+          <IconButton
+            aria-label="close"
+            onClick={handleSubmissionDialogClose}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CancelIcon />
+          </IconButton>
+        </DialogTitle>
+        
+        <DialogContent dividers>
+          {submissionLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : submissionData ? (
+            <Box>
+              {/* Task Info */}
+              <Typography variant="h6" gutterBottom>
+                Task Information
+              </Typography>
+              <Paper sx={{ p: 2, mb: 3 }}>
+                <Typography variant="body1" gutterBottom>
+                  <strong>Description:</strong> {selectedTask?.description}
                 </Typography>
-                <Paper sx={{ p: 2 }}>
-                  {submissionData.attachments && Array.isArray(submissionData.attachments) && submissionData.attachments.length > 0 ? (
-                    <Grid container spacing={2}>
-                      {submissionData.attachments.map((attachment, index) => {
-                        // Use the full_url property that was set in handleViewSubmissionDialogOpen
-                        const imageUrl = attachment.full_url || '';
-                        
-                        return (
-                          <Grid item xs={12} sm={6} md={4} key={index}>
-                            <Card>
-                              <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                  <AttachFileIcon sx={{ mr: 1 }} />
-                                  <Typography variant="body1" noWrap>
-                                    {attachment.filename || attachment.file_path || 'Attachment'}
-                                  </Typography>
-                                </Box>
-                                
-                                {attachment.file_type && attachment.file_type.startsWith('image/') && imageUrl && (
-                                  <Box sx={{ mt: 1, mb: 1 }}>
-                                    <img 
-                                      src={imageUrl} 
-                                      alt={attachment.filename || 'Image attachment'}
-                                      style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'contain' }}
-                                      onError={(e) => {
-                                        console.error('Image failed to load:', imageUrl);
-                                        e.target.style.display = 'none';
-                                      }}
-                                    />
-                                  </Box>
-                                )}
-                                
-                                {imageUrl && (
-                                  <Button 
-                                    variant="outlined" 
-                                    size="small" 
-                                    sx={{ mt: 1 }}
-                                    onClick={() => {
-                                      // Create a new browser window directly
-                                      const viewerWindow = window.open('', '_blank', 'width=800,height=600');
-                                      
-                                      if (viewerWindow) {
-                                        // Get the filename from the attachment or extract it from the URL
-                                        const filename = attachment.filename || imageUrl.split('/').pop() || 'Attachment';
-                                        console.log('Opening attachment in new window:', imageUrl, filename);
-                                        
-                                        // Write HTML content directly to the new window
-                                        viewerWindow.document.write(`
-                                          <!DOCTYPE html>
-                                          <html>
-                                            <head>
-                                              <title>${filename}</title>
-                                              <style>
-                                                body {
-                                                  margin: 0;
-                                                  padding: 0;
-                                                  background-color: #2c2c2c;
-                                                  display: flex;
-                                                  flex-direction: column;
-                                                  height: 100vh;
-                                                  font-family: Arial, sans-serif;
-                                                }
-                                                .image-container {
-                                                  flex: 1;
-                                                  display: flex;
-                                                  justify-content: center;
-                                                  align-items: center;
-                                                  overflow: auto;
-                                                }
-                                                img {
-                                                  max-width: 100%;
-                                                  max-height: 100%;
-                                                  object-fit: contain;
-                                                }
-                                                .toolbar {
-                                                  background-color: #333;
-                                                  color: white;
-                                                  padding: 10px;
-                                                  text-align: center;
-                                                }
-                                                button {
-                                                  background-color: #4CAF50;
-                                                  border: none;
-                                                  color: white;
-                                                  padding: 8px 16px;
-                                                  text-align: center;
-                                                  text-decoration: none;
-                                                  display: inline-block;
-                                                  font-size: 14px;
-                                                  margin: 4px 2px;
-                                                  cursor: pointer;
-                                                  border-radius: 4px;
-                                                }
-                                                .error-message {
-                                                  color: red;
-                                                  background-color: #ffeeee;
-                                                  padding: 20px;
-                                                  border-radius: 5px;
-                                                  margin: 20px;
-                                                  text-align: center;
-                                                  display: none;
-                                                }
-                                              </style>
-                                            </head>
-                                            <body>
-                                              <div class="image-container">
-                                                <img src="${imageUrl}" alt="${filename}" onerror="document.getElementById('error-message').style.display='block';">
-                                                <div id="error-message" class="error-message">
-                                                  <h3>Error Loading Image</h3>
-                                                  <p>The image could not be loaded. It might not exist or you might not have permission to view it.</p>
-                                                  <p>URL: ${imageUrl}</p>
-                                                </div>
-                                              </div>
-                                              <div class="toolbar">
-                                                <button onclick="window.print()">Print</button>
-                                                <button onclick="window.close()">Close</button>
-                                              </div>
-                                              <script>
-                                                // Add event listener to handle image load errors
-                                                document.querySelector('img').addEventListener('error', function() {
-                                                  document.getElementById('error-message').style.display = 'block';
-                                                  this.style.display = 'none';
-                                                });
-                                              </script>
-                                            </body>
-                                          </html>
-                                        `);
-                                        viewerWindow.document.close();
-                                      } else {
-                                        console.error('Failed to open new window');
-                                        // Fallback: try to open in the same window
-                                        window.open(imageUrl, '_blank');
-                                      }
+                <Typography variant="body1" gutterBottom>
+                  <strong>Status:</strong> {selectedTask?.status}
+                </Typography>
+                <Typography variant="body1" gutterBottom>
+                  <strong>Liaison:</strong> {selectedTask?.liaison_name}
+                </Typography>
+                <Typography variant="body1">
+                  <strong>Due Date:</strong> {formatDate(selectedTask?.due_date)}
+                </Typography>
+              </Paper>
+              
+              {/* Notes */}
+              <Typography variant="h6" gutterBottom>
+                Notes
+              </Typography>
+              <Paper sx={{ p: 2, mb: 3 }}>
+                <Typography variant="body1">
+                  {submissionData.notes || 'No notes provided.'}
+                </Typography>
+              </Paper>
+              
+              {/* Expenses */}
+              <Typography variant="h6" gutterBottom>
+                Expenses
+              </Typography>
+              <Paper sx={{ p: 2, mb: 3 }}>
+                {submissionData.expenses && Array.isArray(submissionData.expenses) && submissionData.expenses.length > 0 ? (
+                  <>
+                    <Box sx={{ mb: 2 }}>
+                      {submissionData.expenses.map((expense, index) => (
+                        <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Typography variant="body1">{expense.description}</Typography>
+                          <Typography variant="body1">${parseFloat(expense.amount || 0).toFixed(2)}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                    <Divider />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                      <Typography variant="h6">Total</Typography>
+                      <Typography variant="h6">${calculateTotalExpenses(submissionData.expenses)}</Typography>
+                    </Box>
+                  </>
+                ) : (
+                  <Typography variant="body1">No expenses reported.</Typography>
+                )}
+              </Paper>
+              
+              {/* Attachments */}
+              <Typography variant="h6" gutterBottom>
+                Attachments
+              </Typography>
+              <Paper sx={{ p: 2 }}>
+                {submissionData.attachments && Array.isArray(submissionData.attachments) && submissionData.attachments.length > 0 ? (
+                  <Grid container spacing={2}>
+                    {submissionData.attachments.map((attachment, index) => {
+                      // Use the full_url property that was set in handleViewSubmissionDialogOpen
+                      const imageUrl = attachment.full_url || '';
+                      
+                      return (
+                        <Grid item xs={12} sm={6} md={4} key={index}>
+                          <Card>
+                            <CardContent>
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <AttachFileIcon sx={{ mr: 1 }} />
+                                <Typography variant="body1" noWrap>
+                                  {attachment.filename || attachment.file_path || 'Attachment'}
+                                </Typography>
+                              </Box>
+                              
+                              {attachment.file_type && attachment.file_type.startsWith('image/') && imageUrl && (
+                                <Box sx={{ mt: 1, mb: 1 }}>
+                                  <img 
+                                    src={imageUrl} 
+                                    alt={attachment.filename || 'Image attachment'}
+                                    style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'contain' }}
+                                    onError={(e) => {
+                                      console.error('Image failed to load:', imageUrl);
+                                      e.target.style.display = 'none';
                                     }}
-                                  >
-                                    View
-                                  </Button>
-                                )}
-                              </CardContent>
-                            </Card>
-                          </Grid>
-                        );
-                      })}
-                    </Grid>
-                  ) : (
-                    <Typography variant="body1">No attachments provided.</Typography>
-                  )}
-                </Paper>
-              </Box>
-            ) : (
-              <Typography variant="body1">No submission data available.</Typography>
-            )}
-          </DialogContent>
+                                  />
+                                </Box>
+                              )}
+                              
+                              {imageUrl && (
+                                <Button 
+                                  variant="outlined" 
+                                  size="small" 
+                                  sx={{ mt: 1 }}
+                                  onClick={() => {
+                                    // Create a new browser window directly
+                                    const viewerWindow = window.open('', '_blank', 'width=800,height=600');
+                                    
+                                    if (viewerWindow) {
+                                      // Get the filename from the attachment or extract it from the URL
+                                      const filename = attachment.filename || imageUrl.split('/').pop() || 'Attachment';
+                                      console.log('Opening attachment in new window:', imageUrl, filename);
+                                      
+                                      // Write HTML content directly to the new window
+                                      viewerWindow.document.write(`
+                                        <!DOCTYPE html>
+                                        <html>
+                                          <head>
+                                            <title>${filename}</title>
+                                            <style>
+                                              body {
+                                                margin: 0;
+                                                padding: 0;
+                                                background-color: #2c2c2c;
+                                                display: flex;
+                                                flex-direction: column;
+                                                height: 100vh;
+                                                font-family: Arial, sans-serif;
+                                              }
+                                              .image-container {
+                                                flex: 1;
+                                                display: flex;
+                                                justify-content: center;
+                                                align-items: center;
+                                                overflow: auto;
+                                              }
+                                              img {
+                                                max-width: 100%;
+                                                max-height: 100%;
+                                                object-fit: contain;
+                                              }
+                                              .toolbar {
+                                                background-color: #333;
+                                                color: white;
+                                                padding: 10px;
+                                                text-align: center;
+                                              }
+                                              button {
+                                                background-color: #4CAF50;
+                                                border: none;
+                                                color: white;
+                                                padding: 8px 16px;
+                                                text-align: center;
+                                                text-decoration: none;
+                                                display: inline-block;
+                                                font-size: 14px;
+                                                margin: 4px 2px;
+                                                cursor: pointer;
+                                                border-radius: 4px;
+                                              }
+                                              .error-message {
+                                                color: red;
+                                                background-color: #ffeeee;
+                                                padding: 20px;
+                                                border-radius: 5px;
+                                                margin: 20px;
+                                                text-align: center;
+                                                display: none;
+                                              }
+                                            </style>
+                                          </head>
+                                          <body>
+                                            <div class="image-container">
+                                              <img src="${imageUrl}" alt="${filename}" onerror="document.getElementById('error-message').style.display='block';">
+                                              <div id="error-message" class="error-message">
+                                                <h3>Error Loading Image</h3>
+                                                <p>The image could not be loaded. It might not exist or you might not have permission to view it.</p>
+                                                <p>URL: ${imageUrl}</p>
+                                              </div>
+                                            </div>
+                                            <div class="toolbar">
+                                              <button onclick="window.print()">Print</button>
+                                              <button onclick="window.close()">Close</button>
+                                            </div>
+                                            <script>
+                                              // Add event listener to handle image load errors
+                                              document.querySelector('img').addEventListener('error', function() {
+                                                document.getElementById('error-message').style.display = 'block';
+                                                this.style.display = 'none';
+                                              });
+                                            </script>
+                                          </body>
+                                        </html>
+                                      `);
+                                      viewerWindow.document.close();
+                                    } else {
+                                      console.error('Failed to open new window');
+                                      // Fallback: try to open in the same window
+                                      window.open(imageUrl, '_blank');
+                                    }
+                                  }}
+                                >
+                                  View
+                                </Button>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      );
+                    })}
+                  </Grid>
+                ) : (
+                  <Typography variant="body1">No attachments provided.</Typography>
+                )}
+              </Paper>
+            </Box>
+          ) : (
+            <Typography variant="body1">No submission data available.</Typography>
+          )}
+        </DialogContent>
+        
+        <DialogActions sx={{ justifyContent: 'space-between', p: 2 }}>
+          <Button 
+            onClick={handleSubmissionDialogClose} 
+            variant="outlined"
+          >
+            Close
+          </Button>
           
-          <DialogActions sx={{ justifyContent: 'space-between', p: 2 }}>
+          <Box>
             <Button 
-              onClick={handleSubmissionDialogClose} 
-              variant="outlined"
+              onClick={() => handleApproveRejectDialogOpen('REJECT')} 
+              variant="contained" 
+              color="error"
+              startIcon={<ThumbDownIcon />}
+              sx={{ mr: 1 }}
             >
-              Close
+              Reject
             </Button>
             
-            <Box>
-              <Button 
-                onClick={() => handleApproveRejectDialogOpen('REJECT')} 
-                variant="contained" 
-                color="error"
-                startIcon={<ThumbDownIcon />}
-                sx={{ mr: 1 }}
-              >
-                Reject
-              </Button>
-              
-              <Button 
-                onClick={() => handleApproveRejectDialogOpen('APPROVE')} 
-                variant="contained" 
-                color="success"
-                startIcon={<ThumbUpIcon />}
-              >
-                Approve
-              </Button>
-            </Box>
-          </DialogActions>
-        </Dialog>
-        
-        {/* Approve/Reject Confirmation Dialog */}
-        <Dialog open={approveRejectDialogOpen} onClose={() => setApproveRejectDialogOpen(false)}>
-          <DialogTitle>
-            {approveRejectAction === 'APPROVE' ? 'Approve Submission' : 'Reject Submission'}
-          </DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              {approveRejectAction === 'APPROVE' 
-                ? 'Are you sure you want to approve this submission?' 
-                : 'Are you sure you want to reject this submission? This will change the task status back to IN_PROGRESS.'}
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setApproveRejectDialogOpen(false)}>Cancel</Button>
             <Button 
-              onClick={handleApproveRejectSubmission} 
+              onClick={() => handleApproveRejectDialogOpen('APPROVE')} 
               variant="contained" 
-              color={approveRejectAction === 'APPROVE' ? 'success' : 'error'}
+              color="success"
+              startIcon={<ThumbUpIcon />}
             >
-              Confirm
+              Approve
             </Button>
-          </DialogActions>
-        </Dialog>
-        
-        {/* Snackbars for success and error messages */}
-        <Snackbar open={!!success} autoHideDuration={6000} onClose={handleSnackbarClose}>
-          <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
-            {success}
-          </Alert>
-        </Snackbar>
-        
-        <Snackbar open={!!error} autoHideDuration={6000} onClose={handleSnackbarClose}>
-          <Alert onClose={handleSnackbarClose} severity="error" sx={{ width: '100%' }}>
-            {error}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </Box>
+          </Box>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Approve/Reject Confirmation Dialog */}
+      <Dialog open={approveRejectDialogOpen} onClose={() => setApproveRejectDialogOpen(false)}>
+        <DialogTitle>
+          {approveRejectAction === 'APPROVE' ? 'Approve Submission' : 'Reject Submission'}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {approveRejectAction === 'APPROVE' 
+              ? 'Are you sure you want to approve this submission?' 
+              : 'Are you sure you want to reject this submission? This will change the task status back to IN_PROGRESS.'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setApproveRejectDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleApproveRejectSubmission} 
+            variant="contained" 
+            color={approveRejectAction === 'APPROVE' ? 'success' : 'error'}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Snackbars for success and error messages */}
+      <Snackbar open={!!success} autoHideDuration={6000} onClose={handleSnackbarClose}>
+        <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
+          {success}
+        </Alert>
+      </Snackbar>
+      
+      <Snackbar open={!!error} autoHideDuration={6000} onClose={handleSnackbarClose}>
+        <Alert onClose={handleSnackbarClose} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
+    </Layout>
   );
 };
 

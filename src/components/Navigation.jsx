@@ -14,6 +14,10 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
+  Avatar,
+  alpha,
+  Tooltip,
+  Badge,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -41,43 +45,47 @@ import {
   ExpandLess,
   ExpandMore,
   Transform as TransformIcon,
+  ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
+import { useAuth } from '../contexts/AuthContext';
+import mainLogo from "../../assets/images/logo.jpg";
 
-const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
+const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle, darkMode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { currentUser } = useAuth();
   
-  // State to track which menu items are expanded
-  const [expanded, setExpanded] = useState({
-    administrator: false,
-    services: false,
-    projectManager: false,
-    finance: false,
-    reports: false,
-  });
+  // Track expanded menu items
+  const [expanded, setExpanded] = useState({});
 
-  // Expand Project Manager section when on Proposals or Projects pages
+  // Initialize expanded state based on current path
   useEffect(() => {
-    const path = location.pathname;
-    if (path.includes('/proposals') || path.includes('/projects') || path.includes('/job-orders')) {
-      setExpanded(prev => ({
-        ...prev,
-        projectManager: true
-      }));
+    const pathParts = location.pathname.split('/');
+    if (pathParts.length > 1) {
+      const mainPath = pathParts[1];
+      
+      // Find which menu item should be expanded based on current path
+      const menuItemToExpand = menuItems.find(item => 
+        item.children && item.children.some(child => 
+          child.path && child.path.startsWith(`/${mainPath}`)
+        )
+      );
+      
+      if (menuItemToExpand) {
+        setExpanded(prev => ({ ...prev, [menuItemToExpand.text]: true }));
+      }
     }
   }, [location.pathname]);
 
-  // Toggle expanded state for a menu item
   const handleExpandClick = (item) => {
-    setExpanded({
-      ...expanded,
-      [item]: !expanded[item],
-    });
+    setExpanded(prev => ({
+      ...prev,
+      [item.text]: !prev[item.text]
+    }));
   };
 
-  // Handle navigation
   const handleNavigation = (path) => {
     navigate(path);
     if (isMobile) {
@@ -85,12 +93,11 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
     }
   };
 
-  // Check if a path is active
   const isActive = (path) => {
-    return location.pathname === path;
+    if (!path) return false;
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
-  // Menu items structure
   const menuItems = [
     {
       text: 'Dashboard',
@@ -200,11 +207,6 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
           icon: <BinIcon />,
           path: '/bin',
         },
-        {
-          text: 'Back Up',
-          icon: <BackUpIcon />,
-          path: '/backup',
-        },
       ],
     },
     {
@@ -215,71 +217,249 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
   ];
 
   const drawer = (
-    <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          FLN Services
-        </Typography>
+    <>
+      <Toolbar 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'flex-start',
+          py: 2,
+          px: 2,
+          bgcolor: darkMode ? 'background.paper' : alpha(theme.palette.primary.main, 0.03),
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mb: 2 }}>
+          <Box
+            component="img"
+            src={mainLogo}
+            alt="Logo"
+            sx={{
+              width: 40,
+              height: 40,
+              mr: 1.5,
+              borderRadius: 1,
+              boxShadow: '0 2px 10px 0 rgba(0,0,0,0.1)',
+              objectFit: 'contain'
+            }}
+          />
+          <Box>
+            <Typography variant="subtitle1" fontWeight="bold" noWrap>
+              FLN Services
+            </Typography>
+            <Typography variant="caption" color="text.secondary" noWrap>
+              Corporation
+            </Typography>
+          </Box>
+        </Box>
+        
+        {currentUser && (
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              width: '100%',
+              p: 1.5,
+              borderRadius: 2,
+              bgcolor: darkMode ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.background.paper, 0.7),
+              boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)'
+            }}
+          >
+            <Avatar 
+              sx={{ 
+                width: 32, 
+                height: 32, 
+                mr: 1.5,
+                bgcolor: 'secondary.main',
+                fontSize: '0.875rem',
+                fontWeight: 'bold'
+              }}
+            >
+              {currentUser.name ? currentUser.name.charAt(0) : 'U'}
+            </Avatar>
+            <Box sx={{ overflow: 'hidden' }}>
+              <Typography variant="body2" fontWeight="medium" noWrap>
+                {currentUser.name || 'User'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {currentUser.role || 'Admin'}
+              </Typography>
+            </Box>
+          </Box>
+        )}
       </Toolbar>
+      
       <Divider />
-      <List>
-        {menuItems.map((item) => (
-          <React.Fragment key={item.text}>
-            {item.children ? (
-              // Parent item with children
-              <>
+      
+      <Box sx={{ overflow: 'auto', py: 1 }}>
+        <List component="nav" disablePadding>
+          {menuItems.map((item) => (
+            <React.Fragment key={item.text}>
+              {item.children ? (
+                <>
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      onClick={() => handleExpandClick(item)}
+                      sx={{
+                        py: 1.2,
+                        px: 2,
+                        borderRadius: 0,
+                        '&:hover': {
+                          bgcolor: darkMode ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.main, 0.04),
+                        },
+                      }}
+                    >
+                      <ListItemIcon 
+                        sx={{ 
+                          minWidth: 40,
+                          color: expanded[item.text] ? 'primary.main' : 'text.secondary'
+                        }}
+                      >
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary={item.text} 
+                        primaryTypographyProps={{ 
+                          fontWeight: expanded[item.text] ? 'medium' : 'regular',
+                          color: expanded[item.text] ? 'primary.main' : 'text.primary'
+                        }}
+                      />
+                      {expanded[item.text] ? <ExpandLess color="primary" /> : <ExpandMore />}
+                    </ListItemButton>
+                  </ListItem>
+                  <Collapse in={expanded[item.text]} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                      {item.children.map((child) => {
+                        const active = isActive(child.path);
+                        return (
+                          <ListItem key={child.text} disablePadding>
+                            <ListItemButton
+                              onClick={() => handleNavigation(child.path)}
+                              selected={active}
+                              sx={{
+                                pl: 6,
+                                py: 1,
+                                borderRadius: 0,
+                                position: 'relative',
+                                '&.Mui-selected': {
+                                  bgcolor: darkMode ? alpha(theme.palette.primary.main, 0.15) : alpha(theme.palette.primary.main, 0.08),
+                                  '&:hover': {
+                                    bgcolor: darkMode ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.primary.main, 0.12),
+                                  },
+                                  '&::before': {
+                                    content: '""',
+                                    position: 'absolute',
+                                    left: 0,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    height: '60%',
+                                    width: 3,
+                                    bgcolor: 'primary.main',
+                                    borderTopRightRadius: 4,
+                                    borderBottomRightRadius: 4,
+                                  }
+                                },
+                                '&:hover': {
+                                  bgcolor: darkMode ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.main, 0.04),
+                                },
+                              }}
+                            >
+                              <ListItemIcon 
+                                sx={{ 
+                                  minWidth: 28,
+                                  color: active ? 'primary.main' : 'text.secondary',
+                                  fontSize: '1.25rem'
+                                }}
+                              >
+                                {active ? <ChevronRightIcon fontSize="inherit" /> : child.icon}
+                              </ListItemIcon>
+                              <ListItemText 
+                                primary={child.text} 
+                                primaryTypographyProps={{ 
+                                  fontSize: '0.875rem',
+                                  fontWeight: active ? 'medium' : 'regular',
+                                  color: active ? 'primary.main' : 'text.primary'
+                                }}
+                              />
+                            </ListItemButton>
+                          </ListItem>
+                        );
+                      })}
+                    </List>
+                  </Collapse>
+                </>
+              ) : (
                 <ListItem disablePadding>
                   <ListItemButton
-                    onClick={() => handleExpandClick(item.text.toLowerCase().replace(' ', ''))}
+                    onClick={() => handleNavigation(item.path)}
+                    selected={isActive(item.path)}
                     sx={{
-                      bgcolor: expanded[item.text.toLowerCase().replace(' ', '')] ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
+                      py: 1.2,
+                      px: 2,
+                      borderRadius: 0,
+                      position: 'relative',
+                      '&.Mui-selected': {
+                        bgcolor: darkMode ? alpha(theme.palette.primary.main, 0.15) : alpha(theme.palette.primary.main, 0.08),
+                        '&:hover': {
+                          bgcolor: darkMode ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.primary.main, 0.12),
+                        },
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          left: 0,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          height: '60%',
+                          width: 3,
+                          bgcolor: 'primary.main',
+                          borderTopRightRadius: 4,
+                          borderBottomRightRadius: 4,
+                        }
+                      },
+                      '&:hover': {
+                        bgcolor: darkMode ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.main, 0.04),
+                      },
                     }}
                   >
-                    <ListItemIcon>{item.icon}</ListItemIcon>
-                    <ListItemText primary={item.text} />
-                    {expanded[item.text.toLowerCase().replace(' ', '')] ? <ExpandLess /> : <ExpandMore />}
+                    <ListItemIcon 
+                      sx={{ 
+                        minWidth: 40,
+                        color: isActive(item.path) ? 'primary.main' : 'text.secondary'
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={item.text} 
+                      primaryTypographyProps={{ 
+                        fontWeight: isActive(item.path) ? 'medium' : 'regular',
+                        color: isActive(item.path) ? 'primary.main' : 'text.primary'
+                      }}
+                    />
                   </ListItemButton>
                 </ListItem>
-                <Collapse in={expanded[item.text.toLowerCase().replace(' ', '')]} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    {item.children.map((child) => (
-                      <ListItem key={child.text} disablePadding>
-                        <ListItemButton
-                          sx={{ pl: 4 }}
-                          onClick={() => handleNavigation(child.path)}
-                          selected={isActive(child.path)}
-                        >
-                          <ListItemIcon>{child.icon}</ListItemIcon>
-                          <ListItemText primary={child.text} />
-                        </ListItemButton>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Collapse>
-              </>
-            ) : (
-              // Single item without children
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => handleNavigation(item.path)}
-                  selected={isActive(item.path)}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            )}
-          </React.Fragment>
-        ))}
-      </List>
-    </div>
+              )}
+            </React.Fragment>
+          ))}
+        </List>
+      </Box>
+      
+      <Box sx={{ mt: 'auto', p: 2 }}>
+        <Divider sx={{ mb: 2 }} />
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
+          FLN Management System v1.0.0
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+          © {new Date().getFullYear()} FLN. All rights reserved.
+        </Typography>
+      </Box>
+    </>
   );
 
   return (
     <Box
       component="nav"
       sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
-      aria-label="navigation menu"
+      aria-label="mailbox folders"
     >
       {/* Mobile drawer */}
       <Drawer
@@ -287,11 +467,15 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
         open={mobileOpen}
         onClose={handleDrawerToggle}
         ModalProps={{
-          keepMounted: true, // Better open performance on mobile
+          keepMounted: true, // Better open performance on mobile.
         }}
         sx={{
           display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+          '& .MuiDrawer-paper': { 
+            boxSizing: 'border-box', 
+            width: drawerWidth,
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)'
+          },
         }}
       >
         {drawer}
@@ -302,7 +486,17 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
         variant="permanent"
         sx={{
           display: { xs: 'none', md: 'block' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+          '& .MuiDrawer-paper': { 
+            boxSizing: 'border-box', 
+            width: drawerWidth,
+            borderRight: '1px solid',
+            borderColor: 'divider',
+            boxShadow: 'none',
+            transition: 'box-shadow 0.3s ease-in-out',
+            '&:hover': {
+              boxShadow: '1px 0 8px rgba(0, 0, 0, 0.05)'
+            }
+          },
         }}
         open
       >
@@ -312,4 +506,4 @@ const Navigation = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
   );
 };
 
-export default Navigation; 
+export default Navigation;

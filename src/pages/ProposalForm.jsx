@@ -29,7 +29,8 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { format, parse } from 'date-fns';
-import Navigation from '../components/Navigation';
+import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 import Stepper from '@mui/material/Stepper';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
@@ -1006,90 +1007,82 @@ const ProposalForm = ({ user, onLogout }) => {
   
   if (loading && !isEditMode) {
     return (
-      <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-        <Box sx={{ width: 240, flexShrink: 0 }}>
-          <Navigation user={user} onLogout={onLogout} />
-        </Box>
-        <Box component="main" sx={{ flexGrow: 1, p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+      <Layout title={isEditMode ? 'Edit Proposal' : 'Create Proposal'}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
           <CircularProgress />
         </Box>
-      </Box>
+      </Layout>
     );
   }
   
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Box sx={{ width: 240, flexShrink: 0 }}>
-        <Navigation user={user} onLogout={onLogout} />
+    <Layout title={isEditMode ? 'Edit Proposal' : 'Create Proposal'}>
+      <PageHeader 
+        title={isEditMode ? 'Edit Proposal' : 'Create New Proposal'} 
+        subtitle="Create or edit a proposal for a client"
+      />
+      
+      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+        {steps.map((label) => (
+          <Step key={label}>
+            <StepLabel>{label}</StepLabel>
+          </Step>
+        ))}
+      </Stepper>
+      
+      {renderStepContent()}
+          
+      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
+        <Button
+          variant="outlined"
+          onClick={handleBack}
+          disabled={activeStep === 0 || loading}
+        >
+          Back
+        </Button>
+        
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleCancel}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          {activeStep === steps.length - 1 ? null : (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleNext}
+              disabled={loading || (activeStep === 0 && selectedServices.length === 0)}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Next'}
+            </Button>
+          )}
+        </Box>
       </Box>
       
-      <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto', height: '100%' }}>
-        <Typography variant="h4" gutterBottom>
-          {isEditMode ? 'Edit Proposal' : 'Create New Proposal'}
-        </Typography>
-        
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-        
-        {renderStepContent()}
-            
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
-              <Button
-                variant="outlined"
-                onClick={handleBack}
-            disabled={activeStep === 0 || loading}
-              >
-                Back
-              </Button>
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={handleCancel}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-            {activeStep === steps.length - 1 ? null : (
-                <Button
-                  variant="contained"
-                  color="primary"
-                onClick={handleNext}
-                disabled={loading || (activeStep === 0 && selectedServices.length === 0)}
-                >
-                {loading ? <CircularProgress size={24} /> : 'Next'}
-                </Button>
-            )}
-              </Box>
-            </Box>
-        
-        <Snackbar
-          open={Boolean(error)}
-          autoHideDuration={6000}
-          onClose={() => setError(null)}
-        >
-          <Alert onClose={() => setError(null)} severity="error">
-            {error}
-          </Alert>
-        </Snackbar>
-        
-        <Snackbar
-          open={Boolean(success)}
-          autoHideDuration={6000}
-          onClose={() => setSuccess(null)}
-        >
-          <Alert onClose={() => setSuccess(null)} severity="success">
-            {success}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </Box>
+      <Snackbar
+        open={Boolean(error)}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+      >
+        <Alert onClose={() => setError(null)} severity="error">
+          {error}
+        </Alert>
+      </Snackbar>
+      
+      <Snackbar
+        open={Boolean(success)}
+        autoHideDuration={6000}
+        onClose={() => setSuccess(null)}
+      >
+        <Alert onClose={() => setSuccess(null)} severity="success">
+          {success}
+        </Alert>
+      </Snackbar>
+    </Layout>
   );
 };
 

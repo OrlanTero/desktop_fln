@@ -261,7 +261,7 @@ const ProjectsScreen = ({ navigation }) => {
           )}
           
           {stats.inProgress > 0 && (
-            <View style={[styles.countBadge, { backgroundColor: '#007BFF' }]}>
+            <View style={[styles.countBadge, { backgroundColor: '#264888' }]}>
               <Text style={styles.countBadgeText}>{stats.inProgress} In Progress</Text>
             </View>
           )}
@@ -299,7 +299,7 @@ const ProjectsScreen = ({ navigation }) => {
     
     switch(status.toUpperCase()) {
       case 'IN PROGRESS':
-        return '#007BFF';
+        return '#264888';
       case 'COMPLETED':
         return '#28a745';
       case 'PENDING':
@@ -360,7 +360,7 @@ const ProjectsScreen = ({ navigation }) => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#007BFF']}
+              colors={['#842624']}
             />
           }
           ListEmptyComponent={

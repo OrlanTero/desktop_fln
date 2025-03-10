@@ -10,183 +10,329 @@ import {
   CardContent,
   CardActions,
   Divider,
-  Menu,
-  MenuItem,
   Avatar,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   People as PeopleIcon,
   Settings as SettingsIcon,
-  ExitToApp as LogoutIcon,
-  AccountCircle,
   Dashboard as DashboardIcon,
+  Refresh as RefreshIcon,
+  Add as AddIcon,
+  Business as BusinessIcon,
+  Description as DescriptionIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 
 const Dashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = useState(null);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
     adminUsers: 0,
+    totalClients: 0,
+    totalProposals: 0,
+    totalProjects: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch dashboard stats
-    const fetchStats = async () => {
-      try {
-        const users = await window.api.user.getAll();
-        if (users.success) {
-          const userData = users.data;
-          setStats({
-            totalUsers: userData.length,
-            activeUsers: userData.filter(u => u.role !== 'inactive').length,
-            adminUsers: userData.filter(u => u.role === 'admin').length,
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      }
-    };
-
-    fetchStats();
+    fetchDashboardData();
   }, []);
 
-  const handleMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleLogout = () => {
-    handleClose();
-    onLogout();
-    navigate('/login');
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Fetch users stats
+      const users = await window.api.user.getAll();
+      if (users.success) {
+        const userData = users.data;
+        
+        // Fetch other stats
+        const clients = await window.api.client.getAll();
+        const proposals = await window.api.proposal.getAll();
+        const projects = await window.api.project.getAll();
+        
+        setStats({
+          totalUsers: userData.length,
+          activeUsers: userData.filter(u => u.role !== 'inactive').length,
+          adminUsers: userData.filter(u => u.role === 'admin').length,
+          totalClients: clients.success ? clients.data.length : 0,
+          totalProposals: proposals.success ? proposals.data.length : 0,
+          totalProjects: projects.success ? projects.data.length : 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const navigateTo = (path) => {
     navigate(path);
   };
 
-  // User profile menu in the top right
-  const userMenu = (
-    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <Typography variant="body1" sx={{ mr: 2 }}>
-        {user?.name || 'User'}
-      </Typography>
-      <Avatar
-        onClick={handleMenu}
-        sx={{ cursor: 'pointer' }}
-        src={user?.photo_url}
-        alt={user?.name || 'User'}
-      >
-        {!user?.photo_url && <AccountCircle />}
-      </Avatar>
-      <Menu
-        id="menu-appbar"
-        anchorEl={anchorEl}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        keepMounted
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-      >
-        <MenuItem onClick={handleLogout}>
-          <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
-          Logout
-        </MenuItem>
-      </Menu>
-    </Box>
-  );
+  const refreshDashboard = () => {
+    fetchDashboardData();
+  };
 
   return (
-    <Layout title="Dashboard" userMenu={userMenu}>
-      <Box sx={{ p: 3 }}>
+    <Layout title="Dashboard">
+      <PageHeader 
+        title="Dashboard" 
+        subtitle="Welcome back! Here's an overview of your system."
+        actionButton={
+          <Tooltip title="Refresh Dashboard">
+            <IconButton 
+              color="primary" 
+              onClick={refreshDashboard}
+              sx={{ 
+                bgcolor: 'background.paper', 
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                '&:hover': { bgcolor: 'background.paper' }
+              }}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+        }
+      />
+      
+      <Box>
+        {/* Stats Overview */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <Paper
               sx={{
-                p: 2,
+                p: 3,
                 display: 'flex',
                 flexDirection: 'column',
                 height: 140,
-                bgcolor: 'primary.light',
-                color: 'white',
+                borderRadius: 3,
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'transform 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-5px)',
+                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.08)',
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '5px',
+                  backgroundColor: 'primary.main',
+                }
               }}
             >
-              <Typography variant="h6" gutterBottom>
-                Total Users
-              </Typography>
-              <Typography variant="h3" component="div" sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-                {stats.totalUsers}
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Total Users
+                  </Typography>
+                  <Typography variant="h4" fontWeight="bold">
+                    {stats.totalUsers}
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: 'primary.light', p: 1 }}>
+                  <PeopleIcon />
+                </Avatar>
+              </Box>
+              <Box sx={{ mt: 'auto' }}>
+                <Typography variant="body2" color="text.secondary">
+                  {stats.activeUsers} active users
+                </Typography>
+              </Box>
             </Paper>
           </Grid>
           
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <Paper
               sx={{
-                p: 2,
+                p: 3,
                 display: 'flex',
                 flexDirection: 'column',
                 height: 140,
-                bgcolor: 'success.light',
-                color: 'white',
+                borderRadius: 3,
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'transform 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-5px)',
+                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.08)',
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '5px',
+                  backgroundColor: 'secondary.main',
+                }
               }}
             >
-              <Typography variant="h6" gutterBottom>
-                Active Users
-              </Typography>
-              <Typography variant="h3" component="div" sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-                {stats.activeUsers}
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Total Clients
+                  </Typography>
+                  <Typography variant="h4" fontWeight="bold">
+                    {stats.totalClients}
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: 'secondary.light', p: 1 }}>
+                  <BusinessIcon />
+                </Avatar>
+              </Box>
+              <Box sx={{ mt: 'auto' }}>
+                <Button 
+                  size="small" 
+                  onClick={() => navigateTo('/clients')}
+                  sx={{ p: 0 }}
+                >
+                  View all clients
+                </Button>
+              </Box>
             </Paper>
           </Grid>
           
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <Paper
               sx={{
-                p: 2,
+                p: 3,
                 display: 'flex',
                 flexDirection: 'column',
                 height: 140,
-                bgcolor: 'warning.light',
-                color: 'white',
+                borderRadius: 3,
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'transform 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-5px)',
+                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.08)',
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '5px',
+                  backgroundColor: 'info.main',
+                }
               }}
             >
-              <Typography variant="h6" gutterBottom>
-                Admin Users
-              </Typography>
-              <Typography variant="h3" component="div" sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-                {stats.adminUsers}
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Total Proposals
+                  </Typography>
+                  <Typography variant="h4" fontWeight="bold">
+                    {stats.totalProposals}
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: 'info.light', p: 1 }}>
+                  <DescriptionIcon />
+                </Avatar>
+              </Box>
+              <Box sx={{ mt: 'auto' }}>
+                <Button 
+                  size="small" 
+                  onClick={() => navigateTo('/proposals')}
+                  sx={{ p: 0 }}
+                >
+                  View all proposals
+                </Button>
+              </Box>
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              sx={{
+                p: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                height: 140,
+                borderRadius: 3,
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'transform 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-5px)',
+                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.08)',
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '5px',
+                  backgroundColor: 'success.main',
+                }
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Total Projects
+                  </Typography>
+                  <Typography variant="h4" fontWeight="bold">
+                    {stats.totalProjects}
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: 'success.light', p: 1 }}>
+                  <AssignmentIcon />
+                </Avatar>
+              </Box>
+              <Box sx={{ mt: 'auto' }}>
+                <Button 
+                  size="small" 
+                  onClick={() => navigateTo('/projects')}
+                  sx={{ p: 0 }}
+                >
+                  View all projects
+                </Button>
+              </Box>
             </Paper>
           </Grid>
         </Grid>
-
-        <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
+        
+        {/* Quick Actions */}
+        <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
           Quick Actions
         </Typography>
         
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
-            <Card>
+            <Card sx={{ 
+              height: '100%',
+              transition: 'all 0.3s',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+              }
+            }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PeopleIcon color="primary" sx={{ fontSize: 40, mr: 2 }} />
-                  <Typography variant="h6">User Management</Typography>
+                  <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
+                    <AddIcon />
+                  </Avatar>
+                  <Typography variant="h6">New Client</Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary">
-                  Manage users, add new users, update user information, or remove users from the system.
+                  Add a new client to the system with contact details and preferences.
                 </Typography>
               </CardContent>
               <Divider />
@@ -194,57 +340,76 @@ const Dashboard = ({ user, onLogout }) => {
                 <Button 
                   size="small" 
                   color="primary" 
-                  onClick={() => navigateTo('/users')}
+                  onClick={() => navigateTo('/clients/new')}
+                  startIcon={<AddIcon />}
                 >
-                  Go to Users
+                  Add Client
                 </Button>
               </CardActions>
             </Card>
           </Grid>
           
           <Grid item xs={12} sm={6} md={4}>
-            <Card>
+            <Card sx={{ 
+              height: '100%',
+              transition: 'all 0.3s',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+              }
+            }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <DashboardIcon color="primary" sx={{ fontSize: 40, mr: 2 }} />
-                  <Typography variant="h6">Dashboard</Typography>
+                  <Avatar sx={{ bgcolor: 'secondary.main', mr: 2 }}>
+                    <DescriptionIcon />
+                  </Avatar>
+                  <Typography variant="h6">New Proposal</Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary">
-                  View system statistics, recent activities, and important metrics.
+                  Create a new proposal for a client with detailed service offerings and pricing.
                 </Typography>
               </CardContent>
               <Divider />
               <CardActions>
                 <Button 
                   size="small" 
-                  color="primary" 
-                  onClick={() => navigateTo('/dashboard')}
+                  color="secondary" 
+                  onClick={() => navigateTo('/proposals/new')}
+                  startIcon={<AddIcon />}
                 >
-                  Refresh Dashboard
+                  Create Proposal
                 </Button>
               </CardActions>
             </Card>
           </Grid>
           
           <Grid item xs={12} sm={6} md={4}>
-            <Card>
+            <Card sx={{ 
+              height: '100%',
+              transition: 'all 0.3s',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+              }
+            }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <SettingsIcon color="primary" sx={{ fontSize: 40, mr: 2 }} />
-                  <Typography variant="h6">Settings</Typography>
+                  <Avatar sx={{ bgcolor: 'info.main', mr: 2 }}>
+                    <AssignmentIcon />
+                  </Avatar>
+                  <Typography variant="h6">New Project</Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary">
-                  Configure application settings, manage preferences, and customize your experience.
+                  Start a new project from an approved proposal or create one from scratch.
                 </Typography>
               </CardContent>
               <Divider />
               <CardActions>
                 <Button 
                   size="small" 
-                  color="primary" 
-                  onClick={() => navigateTo('/settings')}
+                  color="info" 
+                  onClick={() => navigateTo('/projects/new')}
+                  startIcon={<AddIcon />}
                 >
-                  Go to Settings
+                  Start Project
                 </Button>
               </CardActions>
             </Card>
