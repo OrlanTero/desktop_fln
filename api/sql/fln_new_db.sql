@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 10, 2025 at 02:18 AM
+-- Generation Time: Mar 10, 2025 at 04:27 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -619,7 +619,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `photo_url`, `created_at`, `updated_at`) VALUES
-(3, 'Administrator', 'jhonorlantero@gmail.com', '$2b$10$dSqJy/jEuNUrkWscVGJd0eGwE5ZH.LliCJxkre1x.oX9Tc7pgJyJi', 'Admin', NULL, '2025-02-28 18:18:41', '2025-02-28 18:19:08'),
+(3, 'Orlan', 'admin@gmail.com', '$2b$10$dSqJy/jEuNUrkWscVGJd0eGwE5ZH.LliCJxkre1x.oX9Tc7pgJyJi', 'Admin', NULL, '2025-02-28 18:18:41', '2025-03-10 03:13:27'),
 (5, 'Staff', 'staff@gmail.com', '$2b$10$a/QnceDlWnj6cQdWqj014e.mcnJHErp4avdWqU/lIRS2x.OnNfecm', 'Employee', NULL, '2025-03-01 05:57:43', '2025-03-01 05:57:43'),
 (6, 'bababa', 'ab@gmail.com', '$2y$10$f8Sf0zduFyipYRQ3mfgeUeTP2VClZJJkPvVR1kSSUHKGsfUIU5Kmm', 'Employee', '', '2025-03-02 02:28:26', '2025-03-02 02:28:26'),
 (7, 'Orlan', 'orlan@gmail.com', '$2b$10$dSqJy/jEuNUrkWscVGJd0eGwE5ZH.LliCJxkre1x.oX9Tc7pgJyJi', 'liaison', NULL, '2025-03-05 19:19:09', '2025-03-08 05:13:37');
@@ -641,8 +641,36 @@ CREATE TABLE `user_chat_status` (
 --
 
 INSERT INTO `user_chat_status` (`user_id`, `is_online`, `last_active`) VALUES
-(3, 1, '2025-03-09 17:56:54'),
+(3, 0, '2025-03-10 02:35:52'),
 (7, 0, '2025-03-09 17:30:13');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_profiles`
+--
+
+CREATE TABLE `user_profiles` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `bio` text DEFAULT NULL,
+  `position` varchar(100) DEFAULT NULL,
+  `department` varchar(100) DEFAULT NULL,
+  `skills` text DEFAULT NULL,
+  `social_links` text DEFAULT NULL,
+  `preferences` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_profiles`
+--
+
+INSERT INTO `user_profiles` (`id`, `user_id`, `phone`, `address`, `bio`, `position`, `department`, `skills`, `social_links`, `preferences`, `created_at`, `updated_at`) VALUES
+(1, 3, '097515706123', NULL, 'Hatdog', 'Developer', NULL, NULL, NULL, NULL, '2025-03-10 03:13:27', '2025-03-10 03:25:34');
 
 --
 -- Indexes for dumped tables
@@ -821,6 +849,13 @@ ALTER TABLE `user_chat_status`
   ADD PRIMARY KEY (`user_id`);
 
 --
+-- Indexes for table `user_profiles`
+--
+ALTER TABLE `user_profiles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user_id` (`user_id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -957,6 +992,12 @@ ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
+-- AUTO_INCREMENT for table `user_profiles`
+--
+ALTER TABLE `user_profiles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- Constraints for dumped tables
 --
 
@@ -1059,6 +1100,12 @@ ALTER TABLE `task_submission_expenses`
 --
 ALTER TABLE `user_chat_status`
   ADD CONSTRAINT `user_chat_status_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `user_profiles`
+--
+ALTER TABLE `user_profiles`
+  ADD CONSTRAINT `fk_user_profiles_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
