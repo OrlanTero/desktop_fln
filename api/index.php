@@ -1,4 +1,9 @@
 <?php
+// Disable displaying errors, but log them
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+error_reporting(E_ALL);
+
 // Enable CORS for both HTTP and HTTPS
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
@@ -34,6 +39,7 @@ require_once 'controllers/AssignedJobOrderController.php';
 require_once 'controllers/JobOrderSubmissionController.php';
 require_once 'controllers/TaskController.php';
 require_once 'controllers/MessageController.php';
+require_once 'controllers/UserProfileController.php';
 
 // Add new includes
 require_once 'models/CompanyInfo.php';
@@ -43,6 +49,7 @@ require_once 'controllers/ProposalController.php';
 require_once 'models/JobOrderSubmission.php';
 require_once 'models/Task.php';
 require_once 'models/Message.php';
+require_once 'models/UserProfile.php';
 
 // Initialize Klein router
 $router = new \Klein\Klein();
@@ -68,6 +75,7 @@ $assignedJobOrderController = new AssignedJobOrderController($db);
 $jobOrderSubmissionController = new JobOrderSubmissionController($db);
 $taskController = new TaskController($db);
 $messageController = new MessageController($db);
+$userProfileController = new UserProfileController($db);
 
 // Test route to check if API is working
 $router->respond('GET', '/test', function() {
@@ -995,6 +1003,47 @@ $router->respond('PUT', '/messages/status/[i:user_id]', function($request) use (
 // Get user online status
 $router->respond('GET', '/messages/status/[i:user_id]', function($request) use ($messageController) {
     echo json_encode($messageController->getUserStatus($request->user_id));
+});
+
+// User Profile routes
+// Get user profile
+$router->respond('GET', '/user_profile/[i:id]', function($request) use ($userProfileController) {
+    echo json_encode($userProfileController->getProfile($request->id));
+});
+
+// Update user profile
+$router->respond('PUT', '/user_profile/[i:id]', function($request) use ($userProfileController) {
+    try {
+        $inputData = file_get_contents("php://input");
+        if (!$inputData) {
+            echo json_encode([
+                "success" => false,
+                "message" => "No input data provided"
+            ]);
+            return;
+        }
+        
+        $data = json_decode($inputData);
+        if (!$data) {
+            echo json_encode([
+                "success" => false,
+                "message" => "Invalid JSON input: " . json_last_error_msg()
+            ]);
+            return;
+        }
+        
+        echo json_encode($userProfileController->updateProfile($request->id, $data));
+    } catch (Exception $e) {
+        echo json_encode([
+            "success" => false,
+            "message" => "Server error: " . $e->getMessage()
+        ]);
+    }
+});
+
+// Upload profile photo
+$router->respond('POST', '/user_profile/[i:id]/photo', function($request) use ($userProfileController) {
+    echo json_encode($userProfileController->uploadPhoto($request->id, $_FILES['photo']));
 });
 
 // Dispatch the router

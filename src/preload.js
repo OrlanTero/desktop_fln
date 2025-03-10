@@ -9,6 +9,8 @@ const API_BASE_URL = 'http://localhost:4005';
 // Helper function for making API requests
 async function makeRequest(url, method = 'GET', body = null) {
   try {
+    console.log(`Making ${method} request to ${url}`, body);
+    
     const options = {
       method,
       headers: {
@@ -20,7 +22,6 @@ async function makeRequest(url, method = 'GET', body = null) {
       options.body = JSON.stringify(body);
     }
 
-    
     const response = await fetch(url, options);
     
     // Check if response is ok (status in the range 200-299)
@@ -40,21 +41,65 @@ async function makeRequest(url, method = 'GET', body = null) {
     let data;
     try {
       const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      if (!responseText.trim()) {
+        throw new Error('Empty response from server');
+      }
+      
       data = JSON.parse(responseText);
     } catch (e) {
-      throw new Error('Invalid JSON response from server');
+      console.error('JSON parse error:', e);
+      throw new Error('Invalid JSON response from server: ' + e.message);
     }
     
     return {
       success: data.status === 'success' || data.success === true,
       data: data.data || data.user || data.users || null,
-      message: data.message
+      message: data.message || '',
     };
   } catch (error) {
-    return { 
-      success: false, 
-      message: error.message, 
-      data: null 
+    console.error('API request error:', error);
+    return {
+      success: false,
+      data: null,
+      message: error.message,
+    };
+  }
+}
+
+// Helper function for uploading files
+async function uploadFile(url, formData) {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      let errorMessage;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+      } catch (e) {
+        errorMessage = `HTTP error! status: ${response.status}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    const data = await response.json();
+    
+    return {
+      success: data.success === true,
+      data: data.data || null,
+      message: data.message || '',
+    };
+  } catch (error) {
+    console.error('File upload error:', error);
+    return {
+      success: false,
+      data: null,
+      message: error.message,
     };
   }
 }
@@ -118,6 +163,104 @@ contextBridge.exposeInMainWorld('api', {
     // Login
     login: async (credentials) => {
       return makeRequest(`${API_BASE_URL}/login`, 'POST', credentials);
+    },
+  },
+
+  // User Profile API
+  userProfile: {
+    // Get user profile
+    getProfile: async (userId) => {
+      return makeRequest(`${API_BASE_URL}/user_profile/${userId}`);
+    },
+    
+    // Update user profile
+    updateProfile: async (userId, profileData) => {
+      try {
+        console.log(`Updating profile for user ${userId}:`, profileData);
+        
+        const response = await fetch(`${API_BASE_URL}/user_profile/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(profileData),
+        });
+        
+        if (!response.ok) {
+          let errorMessage;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+          } catch (e) {
+            errorMessage = `HTTP error! status: ${response.status}`;
+          }
+          throw new Error(errorMessage);
+        }
+        
+        const responseText = await response.text();
+        console.log('Profile update response text:', responseText);
+        
+        if (!responseText.trim()) {
+          return {
+            success: false,
+            message: 'Empty response from server',
+          };
+        }
+        
+        const data = JSON.parse(responseText);
+        
+        return {
+          success: data.success === true,
+          data: data.data || null,
+          message: data.message || '',
+        };
+      } catch (error) {
+        console.error('Profile update error:', error);
+        return {
+          success: false,
+          data: null,
+          message: error.message,
+        };
+      }
+    },
+    
+    // Upload profile photo
+    uploadPhoto: async (userId, photoFile) => {
+      const formData = new FormData();
+      formData.append('photo', photoFile);
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/user_profile/${userId}/photo`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          let errorMessage;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+          } catch (e) {
+            errorMessage = `HTTP error! status: ${response.status}`;
+          }
+          throw new Error(errorMessage);
+        }
+        
+        const data = await response.json();
+        
+        return {
+          success: data.success === true,
+          data: data.data || null,
+          message: data.message || '',
+        };
+      } catch (error) {
+        console.error('File upload error:', error);
+        return {
+          success: false,
+          data: null,
+          message: error.message,
+        };
+      }
     },
   },
 

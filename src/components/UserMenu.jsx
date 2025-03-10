@@ -113,6 +113,7 @@ const UserMenu = ({ darkMode, toggleDarkMode }) => {
           }}
         >
           <Avatar 
+            src={currentUser?.photo_url ? `http://localhost:4005${currentUser.photo_url}` : undefined}
             sx={{ 
               width: 40, 
               height: 40,
@@ -121,7 +122,7 @@ const UserMenu = ({ darkMode, toggleDarkMode }) => {
               border: '2px solid white'
             }}
           >
-            {getInitials(currentUser?.name)}
+            {!currentUser?.photo_url && getInitials(currentUser?.name)}
           </Avatar>
         </IconButton>
       </Tooltip>

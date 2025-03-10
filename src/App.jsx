@@ -21,6 +21,7 @@ import ProjectForm from './pages/ProjectForm';
 import ProjectView from './pages/ProjectView';
 import JobOrders from './pages/JobOrders';
 import Tasks from './pages/Tasks';
+import Profile from './pages/Profile';
 
 // Import components
 import SplashScreen from './components/SplashScreen';
@@ -442,6 +443,14 @@ const AppContent = () => {
         element={
           isAuthenticated() ? 
             <Tasks user={currentUser} onLogout={logout} /> : 
+            <Navigate to="/login" replace />
+        } 
+      />
+      <Route 
+        path="/profile" 
+        element={
+          isAuthenticated() ? 
+            <Profile /> : 
             <Navigate to="/login" replace />
         } 
       />
