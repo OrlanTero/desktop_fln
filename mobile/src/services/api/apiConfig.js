@@ -4,10 +4,12 @@ import { Platform } from 'react-native';
 // API configuration
 const API_CONFIG = {
   // Local development URL (for emulator/simulator)
-  LOCAL_URL: 'http://localhost:4005',
-  
+  LOCAL_URL: 'http://localhost:4006',
+
   // Ngrok tunnel URL (for physical devices)
-  NGROK_URL: 'https://8a4a-120-28-70-225.ngrok-free.app',
+  // NGROK_URL: 'https://a39f-120-28-70-225.ngrok-free.app',
+
+  NGROK_URL: 'https://fln.enutrition.site',
 };
 
 // Determine the base URL based on the platform and environment
@@ -16,7 +18,7 @@ const getBaseUrl = () => {
   if (Platform.OS === 'ios' || Platform.OS === 'android') {
     return API_CONFIG.NGROK_URL;
   }
-  
+
   // For development in emulator/simulator, use localhost
   return API_CONFIG.LOCAL_URL;
 };
@@ -27,25 +29,28 @@ const apiClient = axios.create({
   timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    Accept: 'application/json',
   },
 });
 
 // Add request interceptor to handle both HTTP and HTTPS
 apiClient.interceptors.request.use(
-  (config) => {
+  config => {
     // Get the current base URL
     const currentUrl = config.baseURL;
-    
+
     // If the URL is the ngrok URL, ensure it uses HTTPS
     if (currentUrl.includes('ngrok-free.app') && !currentUrl.startsWith('https')) {
       config.baseURL = currentUrl.replace('http://', 'https://');
     }
-    
-    console.log(`API Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`, config.data || '');
+
+    console.log(
+      `API Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`,
+      config.data || ''
+    );
     return config;
   },
-  (error) => {
+  error => {
     console.error('API Request Error:', error);
     return Promise.reject(error);
   }
@@ -53,12 +58,18 @@ apiClient.interceptors.request.use(
 
 // Add response interceptor for logging
 apiClient.interceptors.response.use(
-  (response) => {
-    console.log(`API Response [${response.status}] from ${response.config.url}:`, 
-      response.data ? (Array.isArray(response.data) ? `Array with ${response.data.length} items` : response.data) : 'No data');
+  response => {
+    console.log(
+      `API Response [${response.status}] from ${response.config.url}:`,
+      response.data
+        ? Array.isArray(response.data)
+          ? `Array with ${response.data.length} items`
+          : response.data
+        : 'No data'
+    );
     return response;
   },
-  (error) => {
+  error => {
     console.error('API Response Error:', error.message);
     if (error.response) {
       console.error(`Status: ${error.response.status}`, error.response.data);
@@ -76,4 +87,4 @@ export const switchApiUrl = (useNgrok = false) => {
   console.log(`API URL switched to: ${newBaseUrl}`);
 };
 
-export default apiClient; 
+export default apiClient;

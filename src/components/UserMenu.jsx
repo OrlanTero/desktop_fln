@@ -22,23 +22,24 @@ import {
   LightMode as LightModeIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
 const UserMenu = ({ darkMode, toggleDarkMode }) => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
-  
+
   // Mock notifications - in a real app, these would come from a context or API
   const notifications = [
     { id: 1, text: 'New task assigned', time: '10 min ago', read: false },
     { id: 2, text: 'Project status updated', time: '1 hour ago', read: false },
     { id: 3, text: 'Meeting scheduled for tomorrow', time: '3 hours ago', read: true },
   ];
-  
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const handleProfileMenuOpen = (event) => {
+  const handleProfileMenuOpen = event => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -46,7 +47,7 @@ const UserMenu = ({ darkMode, toggleDarkMode }) => {
     setAnchorEl(null);
   };
 
-  const handleNotificationMenuOpen = (event) => {
+  const handleNotificationMenuOpen = event => {
     setNotificationAnchorEl(event.currentTarget);
   };
 
@@ -63,7 +64,7 @@ const UserMenu = ({ darkMode, toggleDarkMode }) => {
     }
   };
 
-  const getInitials = (name) => {
+  const getInitials = name => {
     if (!name) return 'U';
     return name
       .split(' ')
@@ -76,23 +77,15 @@ const UserMenu = ({ darkMode, toggleDarkMode }) => {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
       {/* Theme Toggle */}
-      <Tooltip title={darkMode ? "Switch to light mode" : "Switch to dark mode"}>
-        <IconButton 
-          color="inherit" 
-          onClick={toggleDarkMode}
-          sx={{ mr: 1 }}
-        >
+      <Tooltip title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
+        <IconButton color="inherit" onClick={toggleDarkMode} sx={{ mr: 1 }}>
           {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
         </IconButton>
       </Tooltip>
-      
+
       {/* Notifications */}
       <Tooltip title="Notifications">
-        <IconButton
-          color="inherit"
-          onClick={handleNotificationMenuOpen}
-          sx={{ mr: 1 }}
-        >
+        <IconButton color="inherit" onClick={handleNotificationMenuOpen} sx={{ mr: 1 }}>
           <Badge badgeContent={unreadCount} color="error">
             <NotificationsIcon />
           </Badge>
@@ -104,22 +97,22 @@ const UserMenu = ({ darkMode, toggleDarkMode }) => {
         <IconButton
           onClick={handleProfileMenuOpen}
           size="small"
-          sx={{ 
+          sx={{
             ml: 1,
             transition: 'transform 0.2s',
             '&:hover': {
               transform: 'scale(1.1)',
-            }
+            },
           }}
         >
-          <Avatar 
-            src={currentUser?.photo_url ? `http://localhost:4005${currentUser.photo_url}` : undefined}
-            sx={{ 
-              width: 40, 
+          <Avatar
+            src={currentUser?.photo_url ? `${API_BASE_URL}${currentUser.photo_url}` : undefined}
+            sx={{
+              width: 40,
               height: 40,
               bgcolor: 'secondary.main',
               fontWeight: 'bold',
-              border: '2px solid white'
+              border: '2px solid white',
             }}
           >
             {!currentUser?.photo_url && getInitials(currentUser?.name)}
@@ -221,7 +214,15 @@ const UserMenu = ({ darkMode, toggleDarkMode }) => {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        <Box sx={{ px: 2, py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box
+          sx={{
+            px: 2,
+            py: 1.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <Typography variant="subtitle1" fontWeight="bold">
             Notifications
           </Typography>
@@ -239,16 +240,22 @@ const UserMenu = ({ darkMode, toggleDarkMode }) => {
             </Typography>
           </Box>
         ) : (
-          notifications.map((notification) => (
-            <MenuItem key={notification.id} sx={{ 
-              py: 1.5,
-              px: 2,
-              borderLeft: notification.read ? 'none' : '3px solid',
-              borderLeftColor: 'primary.main',
-              bgcolor: notification.read ? 'transparent' : 'action.hover'
-            }}>
+          notifications.map(notification => (
+            <MenuItem
+              key={notification.id}
+              sx={{
+                py: 1.5,
+                px: 2,
+                borderLeft: notification.read ? 'none' : '3px solid',
+                borderLeftColor: 'primary.main',
+                bgcolor: notification.read ? 'transparent' : 'action.hover',
+              }}
+            >
               <Box sx={{ width: '100%' }}>
-                <Typography variant="body2" sx={{ fontWeight: notification.read ? 'normal' : 'bold' }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: notification.read ? 'normal' : 'bold' }}
+                >
                   {notification.text}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -269,4 +276,4 @@ const UserMenu = ({ darkMode, toggleDarkMode }) => {
   );
 };
 
-export default UserMenu; 
+export default UserMenu;

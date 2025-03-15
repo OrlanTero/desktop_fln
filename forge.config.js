@@ -50,10 +50,10 @@ module.exports = {
             },
           ],
         },
-        devContentSecurityPolicy: "connect-src 'self' http://localhost:4005 ws: wss:; default-src 'self' 'unsafe-inline' data:",
         devServer: {
-          liveReload: true,
-          hot: true,
+          liveReload: false,
+          hot: false,
+          webSocketServer: false,
           headers: {
             'Access-Control-Allow-Origin': '*',
           },

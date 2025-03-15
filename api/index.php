@@ -9,7 +9,6 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Content-Type: application/json; charset=UTF-8");
-header("Content-Security-Policy: default-src 'self' data: blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' 'wasm-unsafe-eval' blob: data:; worker-src 'self' blob: data:; child-src 'self' blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src 'self' blob:; connect-src 'self' http://localhost:4005 ws: wss: data: blob:; object-src 'none'");
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -78,7 +77,7 @@ $messageController = new MessageController($db);
 $userProfileController = new UserProfileController($db);
 
 // Test route to check if API is working
-$router->respond('GET', '/test', function() {
+$router->respond('GET', '/test', function () {
     echo json_encode([
         "status" => "success",
         "message" => dirname(__DIR__)
@@ -86,8 +85,8 @@ $router->respond('GET', '/test', function() {
 });
 
 // Get database connection
-$router->respond('GET', '/db-test', function() use ($db) {
-    if($db) {
+$router->respond('GET', '/db-test', function () use ($db) {
+    if ($db) {
         echo json_encode([
             "status" => "success",
             "message" => "Database connection successful!"
@@ -102,27 +101,27 @@ $router->respond('GET', '/db-test', function() use ($db) {
 
 // User routes
 // Get all users
-$router->respond('GET', '/users', function() use ($userController) {
+$router->respond('GET', '/users', function () use ($userController) {
     echo json_encode($userController->getAll());
 });
 
 // Get all users by role
-$router->respond('GET', '/users/role/[s:role]', function($request) use ($userController) {
+$router->respond('GET', '/users/role/[s:role]', function ($request) use ($userController) {
     echo json_encode($userController->getAllByRole($request->role));
 });
 
 // Get user by ID
-$router->respond('GET', '/users/[i:id]', function($request) use ($userController) {
+$router->respond('GET', '/users/[i:id]', function ($request) use ($userController) {
     echo json_encode($userController->getById($request->id));
 });
 
 // Create user
-$router->respond('POST', '/users', function($request) use ($userController) {
+$router->respond('POST', '/users', function ($request) use ($userController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check required fields
-    if(
+    if (
         !empty($data['name']) &&
         !empty($data['email']) &&
         !empty($data['password'])
@@ -137,12 +136,12 @@ $router->respond('POST', '/users', function($request) use ($userController) {
 });
 
 // Update user
-$router->respond('PUT', '/users/[i:id]', function($request) use ($userController) {
+$router->respond('PUT', '/users/[i:id]', function ($request) use ($userController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check if data is not empty
-    if(!empty($data)) {
+    if (!empty($data)) {
         echo json_encode($userController->update($request->id, $data));
     } else {
         echo json_encode([
@@ -153,12 +152,12 @@ $router->respond('PUT', '/users/[i:id]', function($request) use ($userController
 });
 
 // Update password
-$router->respond('PUT', '/users/[i:id]/password', function($request) use ($userController) {
+$router->respond('PUT', '/users/[i:id]/password', function ($request) use ($userController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check if password is provided
-    if(!empty($data['password'])) {
+    if (!empty($data['password'])) {
         echo json_encode($userController->updatePassword($request->id, $data));
     } else {
         echo json_encode([
@@ -169,17 +168,17 @@ $router->respond('PUT', '/users/[i:id]/password', function($request) use ($userC
 });
 
 // Delete user
-$router->respond('DELETE', '/users/[i:id]', function($request) use ($userController) {
+$router->respond('DELETE', '/users/[i:id]', function ($request) use ($userController) {
     echo json_encode($userController->delete($request->id));
 });
 
 // Login user
-$router->respond('POST', '/login', function() use ($userController) {
+$router->respond('POST', '/login', function () use ($userController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check required fields
-    if(
+    if (
         !empty($data['email']) &&
         !empty($data['password'])
     ) {
@@ -194,22 +193,22 @@ $router->respond('POST', '/login', function() use ($userController) {
 
 // Client Type routes
 // Get all client types
-$router->respond('GET', '/client-types', function() use ($clientTypeController) {
+$router->respond('GET', '/client-types', function () use ($clientTypeController) {
     echo json_encode($clientTypeController->getAll());
 });
 
 // Get client type by ID
-$router->respond('GET', '/client-types/[i:id]', function($request) use ($clientTypeController) {
+$router->respond('GET', '/client-types/[i:id]', function ($request) use ($clientTypeController) {
     echo json_encode($clientTypeController->getById($request->id));
 });
 
 // Create client type
-$router->respond('POST', '/client-types', function($request) use ($clientTypeController) {
+$router->respond('POST', '/client-types', function ($request) use ($clientTypeController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check required fields
-    if(!empty($data['name'])) {
+    if (!empty($data['name'])) {
         echo json_encode($clientTypeController->create($data));
     } else {
         echo json_encode([
@@ -220,12 +219,12 @@ $router->respond('POST', '/client-types', function($request) use ($clientTypeCon
 });
 
 // Update client type
-$router->respond('PUT', '/client-types/[i:id]', function($request) use ($clientTypeController) {
+$router->respond('PUT', '/client-types/[i:id]', function ($request) use ($clientTypeController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check if data is not empty
-    if(!empty($data)) {
+    if (!empty($data)) {
         echo json_encode($clientTypeController->update($request->id, $data));
     } else {
         echo json_encode([
@@ -236,28 +235,28 @@ $router->respond('PUT', '/client-types/[i:id]', function($request) use ($clientT
 });
 
 // Delete client type
-$router->respond('DELETE', '/client-types/[i:id]', function($request) use ($clientTypeController) {
+$router->respond('DELETE', '/client-types/[i:id]', function ($request) use ($clientTypeController) {
     echo json_encode($clientTypeController->delete($request->id));
 });
 
 // Client routes
 // Get all clients
-$router->respond('GET', '/clients', function() use ($clientController) {
+$router->respond('GET', '/clients', function () use ($clientController) {
     echo json_encode($clientController->getAll());
 });
 
 // Get client by ID
-$router->respond('GET', '/clients/[i:id]', function($request) use ($clientController) {
+$router->respond('GET', '/clients/[i:id]', function ($request) use ($clientController) {
     echo json_encode($clientController->getById($request->id));
 });
 
 // Create client
-$router->respond('POST', '/clients', function($request) use ($clientController) {
+$router->respond('POST', '/clients', function ($request) use ($clientController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check required fields
-    if(!empty($data['client_name'])) {
+    if (!empty($data['client_name'])) {
         echo json_encode($clientController->create($data));
     } else {
         echo json_encode([
@@ -268,12 +267,12 @@ $router->respond('POST', '/clients', function($request) use ($clientController) 
 });
 
 // Update client
-$router->respond('PUT', '/clients/[i:id]', function($request) use ($clientController) {
+$router->respond('PUT', '/clients/[i:id]', function ($request) use ($clientController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check if data is not empty
-    if(!empty($data)) {
+    if (!empty($data)) {
         echo json_encode($clientController->update($request->id, $data));
     } else {
         echo json_encode([
@@ -285,22 +284,22 @@ $router->respond('PUT', '/clients/[i:id]', function($request) use ($clientContro
 
 // Project routes
 // Get all projects
-$router->respond('GET', '/projects', function() use ($projectController) {
+$router->respond('GET', '/projects', function () use ($projectController) {
     echo json_encode($projectController->getAll());
 });
 
 // Get project by ID
-$router->respond('GET', '/projects/[i:id]', function($request) use ($projectController) {
+$router->respond('GET', '/projects/[i:id]', function ($request) use ($projectController) {
     echo json_encode($projectController->getById($request->id));
 });
 
 // Create project
-$router->respond('POST', '/projects', function($request) use ($projectController) {
+$router->respond('POST', '/projects', function ($request) use ($projectController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check required fields
-    if(!empty($data['project_name']) && !empty($data['client_id'])) {
+    if (!empty($data['project_name']) && !empty($data['client_id'])) {
         echo json_encode($projectController->create($data));
     } else {
         echo json_encode([
@@ -311,12 +310,12 @@ $router->respond('POST', '/projects', function($request) use ($projectController
 });
 
 // Update project
-$router->respond('PUT', '/projects/[i:id]', function($request) use ($projectController) {
+$router->respond('PUT', '/projects/[i:id]', function ($request) use ($projectController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check if data is not empty
-    if(!empty($data)) {
+    if (!empty($data)) {
         echo json_encode($projectController->update($request->id, $data));
     } else {
         echo json_encode([
@@ -327,19 +326,19 @@ $router->respond('PUT', '/projects/[i:id]', function($request) use ($projectCont
 });
 
 // Delete project
-$router->respond('DELETE', '/projects/[i:id]', function($request) use ($projectController) {
+$router->respond('DELETE', '/projects/[i:id]', function ($request) use ($projectController) {
     echo json_encode($projectController->delete($request->id));
 });
 
 // Update project status
-$router->respond('PUT', '/projects/[i:id]/status', function($request) use ($projectController) {
+$router->respond('PUT', '/projects/[i:id]/status', function ($request) use ($projectController) {
     $projectId = $request->id;
     $data = json_decode(file_get_contents('php://input'), true);
     echo json_encode($projectController->updateStatus($projectId, $data));
 });
 
 // Update project payment
-$router->respond('PUT', '/projects/[i:id]/payment', function($request) use ($projectController) {
+$router->respond('PUT', '/projects/[i:id]/payment', function ($request) use ($projectController) {
     $projectId = $request->id;
     $data = json_decode(file_get_contents('php://input'), true);
     if (isset($data['amount'])) {
@@ -353,47 +352,47 @@ $router->respond('PUT', '/projects/[i:id]/payment', function($request) use ($pro
 });
 
 // Get project status history
-$router->respond('GET', '/projects/[i:id]/status-history', function($request) use ($projectController) {
+$router->respond('GET', '/projects/[i:id]/status-history', function ($request) use ($projectController) {
     $projectId = $request->id;
     echo json_encode($projectController->getStatusHistory($projectId));
 });
 
 // Get project timeline
-$router->respond('GET', '/projects/[i:id]/timeline', function($request) use ($projectController) {
+$router->respond('GET', '/projects/[i:id]/timeline', function ($request) use ($projectController) {
     $projectId = $request->id;
     echo json_encode($projectController->getTimeline($projectId));
 });
 
 // Update project timeline
-$router->respond('PUT', '/projects/[i:id]/timeline', function($request) use ($projectController) {
+$router->respond('PUT', '/projects/[i:id]/timeline', function ($request) use ($projectController) {
     $projectId = $request->id;
     $data = json_decode(file_get_contents('php://input'), true);
     echo json_encode($projectController->updateTimeline($projectId, $data));
 });
 
 // Delete client
-$router->respond('DELETE', '/clients/[i:id]', function($request) use ($clientController) {
+$router->respond('DELETE', '/clients/[i:id]', function ($request) use ($clientController) {
     echo json_encode($clientController->delete($request->id));
 });
 
 // Service Category routes
 // Get all service categories
-$router->respond('GET', '/service-categories', function() use ($serviceCategoryController) {
+$router->respond('GET', '/service-categories', function () use ($serviceCategoryController) {
     echo json_encode($serviceCategoryController->getAll());
 });
 
 // Get service category by ID
-$router->respond('GET', '/service-categories/[i:id]', function($request) use ($serviceCategoryController) {
+$router->respond('GET', '/service-categories/[i:id]', function ($request) use ($serviceCategoryController) {
     echo json_encode($serviceCategoryController->getById($request->id));
 });
 
 // Create service category
-$router->respond('POST', '/service-categories', function($request) use ($serviceCategoryController) {
+$router->respond('POST', '/service-categories', function ($request) use ($serviceCategoryController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check required fields
-    if(!empty($data['service_category_name'])) {
+    if (!empty($data['service_category_name'])) {
         echo json_encode($serviceCategoryController->create($data));
     } else {
         echo json_encode([
@@ -404,12 +403,12 @@ $router->respond('POST', '/service-categories', function($request) use ($service
 });
 
 // Update service category
-$router->respond('PUT', '/service-categories/[i:id]', function($request) use ($serviceCategoryController) {
+$router->respond('PUT', '/service-categories/[i:id]', function ($request) use ($serviceCategoryController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check if data is not empty
-    if(!empty($data)) {
+    if (!empty($data)) {
         echo json_encode($serviceCategoryController->update($request->id, $data));
     } else {
         echo json_encode([
@@ -420,33 +419,33 @@ $router->respond('PUT', '/service-categories/[i:id]', function($request) use ($s
 });
 
 // Delete service category
-$router->respond('DELETE', '/service-categories/[i:id]', function($request) use ($serviceCategoryController) {
+$router->respond('DELETE', '/service-categories/[i:id]', function ($request) use ($serviceCategoryController) {
     echo json_encode($serviceCategoryController->delete($request->id));
 });
 
 // Service routes
 // Get all services
-$router->respond('GET', '/services', function() use ($serviceController) {
+$router->respond('GET', '/services', function () use ($serviceController) {
     echo json_encode($serviceController->getAll());
 });
 
 // Get services by category
-$router->respond('GET', '/services/category/[i:id]', function($request) use ($serviceController) {
+$router->respond('GET', '/services/category/[i:id]', function ($request) use ($serviceController) {
     echo json_encode($serviceController->getByCategory($request->id));
 });
 
 // Get service by ID
-$router->respond('GET', '/services/[i:id]', function($request) use ($serviceController) {
+$router->respond('GET', '/services/[i:id]', function ($request) use ($serviceController) {
     echo json_encode($serviceController->getById($request->id));
 });
 
 // Create service
-$router->respond('POST', '/services', function($request) use ($serviceController) {
+$router->respond('POST', '/services', function ($request) use ($serviceController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check required fields
-    if(
+    if (
         !empty($data['service_name']) &&
         !empty($data['service_category_id'])
     ) {
@@ -460,12 +459,12 @@ $router->respond('POST', '/services', function($request) use ($serviceController
 });
 
 // Update service
-$router->respond('PUT', '/services/[i:id]', function($request) use ($serviceController) {
+$router->respond('PUT', '/services/[i:id]', function ($request) use ($serviceController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check if data is not empty
-    if(!empty($data)) {
+    if (!empty($data)) {
         echo json_encode($serviceController->update($request->id, $data));
     } else {
         echo json_encode([
@@ -476,23 +475,23 @@ $router->respond('PUT', '/services/[i:id]', function($request) use ($serviceCont
 });
 
 // Delete service
-$router->respond('DELETE', '/services/[i:id]', function($request) use ($serviceController) {
+$router->respond('DELETE', '/services/[i:id]', function ($request) use ($serviceController) {
     echo json_encode($serviceController->delete($request->id));
 });
 
 // Service Requirements routes
 // Get requirements for a service
-$router->respond('GET', '/services/[i:id]/requirements', function($request) use ($serviceController) {
+$router->respond('GET', '/services/[i:id]/requirements', function ($request) use ($serviceController) {
     echo json_encode($serviceController->getRequirements($request->id));
 });
 
 // Add requirement to a service
-$router->respond('POST', '/services/[i:id]/requirements', function($request) use ($serviceController) {
+$router->respond('POST', '/services/[i:id]/requirements', function ($request) use ($serviceController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check required fields
-    if(!empty($data['requirement'])) {
+    if (!empty($data['requirement'])) {
         echo json_encode($serviceController->addRequirement($request->id, $data));
     } else {
         echo json_encode([
@@ -503,12 +502,12 @@ $router->respond('POST', '/services/[i:id]/requirements', function($request) use
 });
 
 // Update requirement
-$router->respond('PUT', '/requirements/[i:id]', function($request) use ($serviceController) {
+$router->respond('PUT', '/requirements/[i:id]', function ($request) use ($serviceController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check if data is not empty
-    if(!empty($data) && !empty($data['requirement'])) {
+    if (!empty($data) && !empty($data['requirement'])) {
         echo json_encode($serviceController->updateRequirement($request->id, $data));
     } else {
         echo json_encode([
@@ -519,7 +518,7 @@ $router->respond('PUT', '/requirements/[i:id]', function($request) use ($service
 });
 
 // Delete requirement
-$router->respond('DELETE', '/requirements/[i:id]', function($request) use ($serviceController) {
+$router->respond('DELETE', '/requirements/[i:id]', function ($request) use ($serviceController) {
     echo json_encode($serviceController->deleteRequirement($request->id));
 });
 
@@ -549,8 +548,8 @@ $router->respond('POST', '/pro-services', function ($request) use ($proServiceCo
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new Exception('Invalid JSON data');
         }
-        $result = $proServiceController->create((object)$data);
-    echo json_encode($result);
+        $result = $proServiceController->create((object) $data);
+        echo json_encode($result);
     } catch (Exception $e) {
         http_response_code(400);
         echo json_encode([
@@ -598,81 +597,81 @@ $router->respond('POST', '/pro-services/proposal/[i:id]/copy-to-project', functi
 });
 
 // Company Info endpoints
-$router->respond('GET', '/company-info', function() use ($db) {
+$router->respond('GET', '/company-info', function () use ($db) {
     $controller = new CompanyInfoController($db);
     echo json_encode($controller->get());
 });
 
-$router->respond('PUT', '/company-info', function() use ($db) {
+$router->respond('PUT', '/company-info', function () use ($db) {
     $data = json_decode(file_get_contents('php://input'), true);
     $controller = new CompanyInfoController($db);
     echo json_encode($controller->update($data));
 });
 
 // Proposals endpoints
-$router->respond('GET', '/proposals', function() use ($db) {
+$router->respond('GET', '/proposals', function () use ($db) {
     $controller = new ProposalController($db);
     echo json_encode($controller->getAll());
 });
 
-$router->respond('GET', '/proposals/client/[i:id]', function($request) use ($db) {
+$router->respond('GET', '/proposals/client/[i:id]', function ($request) use ($db) {
     $clientId = $request->id;
     $controller = new ProposalController($db);
     echo json_encode($controller->getByClient($clientId));
 });
 
-$router->respond('PUT', '/proposals/[:id]/[:status]', function($request) use ($db) {
+$router->respond('PUT', '/proposals/[:id]/[:status]', function ($request) use ($db) {
     $proposalId = $request->id;
     $status = $request->status;
     $controller = new ProposalController($db);
     echo json_encode($controller->updateOnlyStatus($proposalId, $status));
 });
-$router->respond('GET', '/proposals/[i:id]', function($request) use ($db) {
+$router->respond('GET', '/proposals/[i:id]', function ($request) use ($db) {
     $proposalId = $request->id;
     $controller = new ProposalController($db);
     echo json_encode($controller->getById($proposalId));
 });
 
-$router->respond('POST', '/proposals', function() use ($db) {
+$router->respond('POST', '/proposals', function () use ($db) {
     $data = json_decode(file_get_contents('php://input'), true);
     $controller = new ProposalController($db);
     echo json_encode($controller->create($data));
 });
 
-$router->respond('PUT', '/proposals/[i:id]', function($request) use ($db) {
+$router->respond('PUT', '/proposals/[i:id]', function ($request) use ($db) {
     $proposalId = $request->id;
     $data = json_decode(file_get_contents('php://input'), true);
     $controller = new ProposalController($db);
     echo json_encode($controller->update($proposalId, $data));
 });
 
-$router->respond('DELETE', '/proposals/[i:id]', function($request) use ($db) {
+$router->respond('DELETE', '/proposals/[i:id]', function ($request) use ($db) {
     $proposalId = $request->id;
     $controller = new ProposalController($db);
     echo json_encode($controller->delete($proposalId));
 });
 
 // Additional proposal endpoints
-$router->respond('POST', '/proposals/draft', function() use ($db) {
+$router->respond('POST', '/proposals/draft', function () use ($db) {
     $data = json_decode(file_get_contents('php://input'), true);
     $data['status'] = 'Draft';
     $controller = new ProposalController($db);
     echo json_encode($controller->create($data));
 });
 
-$router->respond('POST', '/proposals/[i:id]/document', function($request) use ($db) {
+$router->respond('POST', '/proposals/[i:id]/document', function ($request) use ($db) {
     $proposalId = $request->id;
     $controller = new ProposalController($db);
     echo json_encode($controller->generateDocument($proposalId));
 });
 
-$router->respond('GET', '/proposals/[i:id]/document', function($request) use ($db) {
+$router->respond('GET', '/proposals/[i:id]/document', function ($request) use ($db) {
     $proposalId = $request->id;
     $controller = new ProposalController($db);
     echo json_encode($controller->getDocument($proposalId));
 });
 
-$router->respond('PUT', '/proposals/[i:id]/status', function($request) use ($db) {
+$router->respond('PUT', '/proposals/[i:id]/status', function ($request) use ($db) {
     $proposalId = $request->id;
     $data = json_decode(file_get_contents('php://input'), true);
     $controller = new ProposalController($db);
@@ -680,7 +679,7 @@ $router->respond('PUT', '/proposals/[i:id]/status', function($request) use ($db)
 });
 
 // Get last proposal reference
-$router->respond('GET', '/proposals/last-reference', function() use ($proposalController) {
+$router->respond('GET', '/proposals/last-reference', function () use ($proposalController) {
     echo json_encode($proposalController->getLastReference());
 });
 
@@ -703,58 +702,58 @@ $router->respond('DELETE', '/documents/[:document_id]', function ($request) use 
 });
 
 // Job Orders Routes
-$router->respond('POST', '/job-orders', function($request) use ($db) {
+$router->respond('POST', '/job-orders', function ($request) use ($db) {
     $data = json_decode(file_get_contents('php://input'), true);
     $controller = new JobOrderController($db);
     echo json_encode($controller->create($data));
 });
 
-$router->respond('GET', '/job-orders', function() use ($db) {
+$router->respond('GET', '/job-orders', function () use ($db) {
     $controller = new JobOrderController($db);
     echo json_encode($controller->getAll());
 });
 
-$router->respond('PUT', '/job-orders/[i:jobOrderId]', function($request) use ($db) {
+$router->respond('PUT', '/job-orders/[i:jobOrderId]', function ($request) use ($db) {
     $jobOrderId = $request->jobOrderId;
     $data = json_decode(file_get_contents('php://input'), true);
     $controller = new JobOrderController($db);
     echo json_encode($controller->update($jobOrderId, $data));
 });
 
-$router->respond('GET', '/job-orders/[i:jobOrderId]', function($request) use ($db) {
+$router->respond('GET', '/job-orders/[i:jobOrderId]', function ($request) use ($db) {
     $jobOrderId = $request->jobOrderId;
     $controller = new JobOrderController($db);
     echo json_encode($controller->getById($jobOrderId));
 });
 
-$router->respond('GET', '/job-orders/project/[i:projectId]', function($request) use ($db) {
+$router->respond('GET', '/job-orders/project/[i:projectId]', function ($request) use ($db) {
     $projectId = $request->projectId;
     $controller = new JobOrderController($db);
     echo json_encode($controller->getByProject($projectId));
 });
 
-$router->respond('GET', '/job-orders/service/[:serviceId]/proposal/[:proposalId]', function($request) use ($db) {
+$router->respond('GET', '/job-orders/service/[:serviceId]/proposal/[:proposalId]', function ($request) use ($db) {
     $controller = new JobOrderController($db);
     return json_encode($controller->getByService($request->serviceId, $request->proposalId));
 });
 
-$router->put('/job-orders/:id', function($id, $request) use ($db) {
+$router->put('/job-orders/:id', function ($id, $request) use ($db) {
     $controller = new JobOrderController($db);
     return $controller->update($id, $request);
 });
 
-$router->delete('/job-orders/:id', function($id) use ($db) {
+$router->delete('/job-orders/:id', function ($id) use ($db) {
     $controller = new JobOrderController($db);
     return $controller->delete($id);
 });
 
 // Assigned Job Orders Routes
-$router->respond('POST', '/job-orders/assign', function() use ($assignedJobOrderController) {
+$router->respond('POST', '/job-orders/assign', function () use ($assignedJobOrderController) {
     $data = json_decode(file_get_contents('php://input'), true);
     echo json_encode($assignedJobOrderController->create($data));
 });
 
-$router->respond('GET', '/job-orders/assigned/project/[i:projectId]', function($request) use ($assignedJobOrderController) {
+$router->respond('GET', '/job-orders/assigned/project/[i:projectId]', function ($request) use ($assignedJobOrderController) {
     try {
         $result = $assignedJobOrderController->getAssignedByProject($request->projectId);
         echo json_encode($result);
@@ -766,8 +765,8 @@ $router->respond('GET', '/job-orders/assigned/project/[i:projectId]', function($
     }
 });
 
-$router->respond('GET', '/job-orders/assigned/project/[i:projectId]/liaison/[i:liaisonId]', function($request) use ($assignedJobOrderController) {
-    
+$router->respond('GET', '/job-orders/assigned/project/[i:projectId]/liaison/[i:liaisonId]', function ($request) use ($assignedJobOrderController) {
+
     try {
         $result = $assignedJobOrderController->getAssignedByProjectAndLiaison($request->projectId, $request->liaisonId);
         echo json_encode($result);
@@ -780,7 +779,7 @@ $router->respond('GET', '/job-orders/assigned/project/[i:projectId]/liaison/[i:l
 });
 
 
-$router->respond('GET', '/job-orders/unassigned/project/[i:projectId]', function($request) use ($assignedJobOrderController) {
+$router->respond('GET', '/job-orders/unassigned/project/[i:projectId]', function ($request) use ($assignedJobOrderController) {
     try {
         $result = $assignedJobOrderController->getUnassignedByProject($request->projectId);
         echo json_encode($result);
@@ -792,151 +791,151 @@ $router->respond('GET', '/job-orders/unassigned/project/[i:projectId]', function
     }
 });
 
-$router->respond('PUT', '/job-orders/assigned/[i:id]/status', function($request) use ($assignedJobOrderController) {
+$router->respond('PUT', '/job-orders/assigned/[i:id]/status', function ($request) use ($assignedJobOrderController) {
     $data = json_decode(file_get_contents('php://input'), true);
     echo json_encode($assignedJobOrderController->updateStatus($request->id, $data));
 });
 
-$router->respond('DELETE', '/job-orders/assigned/[i:id]', function($request) use ($assignedJobOrderController) {
+$router->respond('DELETE', '/job-orders/assigned/[i:id]', function ($request) use ($assignedJobOrderController) {
     echo json_encode($assignedJobOrderController->delete($request->id));
 });
 
 // Email endpoints
-$router->respond('POST', '/email/send', function() use ($db) {
+$router->respond('POST', '/email/send', function () use ($db) {
     $data = json_decode(file_get_contents('php://input'), true);
     $emailController = new EmailController($db);
     return json_encode($emailController->send($data));
 });
 
 // Job Order Submission endpoints
-$router->respond('POST', '/job-orders/submit-completion', function() use ($jobOrderSubmissionController) {
+$router->respond('POST', '/job-orders/submit-completion', function () use ($jobOrderSubmissionController) {
     // For multipart/form-data with file uploads, we need to handle the data differently
     $data = new stdClass();
     $data->job_order_id = $_POST['job_order_id'] ?? null;
     $data->liaison_id = $_POST['liaison_id'] ?? null;
     $data->notes = $_POST['notes'] ?? '';
     $data->update_job_order_status = $_POST['update_job_order_status'] ?? 'false';
-    
+
     // Check if this is an update
     $data->is_update = $_POST['is_update'] ?? 'false';
     $data->submission_id = $_POST['submission_id'] ?? null;
-    
+
     // Parse expenses JSON if provided
     if (isset($_POST['expenses'])) {
         $data->expenses = json_decode($_POST['expenses']);
     } else {
         $data->expenses = [];
     }
-    
+
     // Parse manual attachments JSON if provided
     if (isset($_POST['manual_attachments'])) {
         $data->manual_attachments = $_POST['manual_attachments'];
     }
-    
+
     // Parse existing attachment IDs JSON if provided
     if (isset($_POST['existing_attachment_ids'])) {
         $data->existing_attachment_ids = $_POST['existing_attachment_ids'];
     }
-    
+
     echo json_encode($jobOrderSubmissionController->create($data));
 });
 
-$router->respond('GET', '/job-orders/[i:jobOrderId]/submissions', function($request) use ($jobOrderSubmissionController) {
+$router->respond('GET', '/job-orders/[i:jobOrderId]/submissions', function ($request) use ($jobOrderSubmissionController) {
     echo json_encode($jobOrderSubmissionController->getByJobOrderId($request->jobOrderId));
 });
 
-$router->respond('GET', '/job-orders/submissions/[i:id]', function($request) use ($jobOrderSubmissionController) {
+$router->respond('GET', '/job-orders/submissions/[i:id]', function ($request) use ($jobOrderSubmissionController) {
     echo json_encode($jobOrderSubmissionController->getById($request->id));
 });
 
-$router->respond('DELETE', '/job-orders/submissions/attachments/[i:id]', function($request) use ($jobOrderSubmissionController) {
+$router->respond('DELETE', '/job-orders/submissions/attachments/[i:id]', function ($request) use ($jobOrderSubmissionController) {
     echo json_encode($jobOrderSubmissionController->deleteAttachment($request->id));
 });
 
 // Task routes
-$router->respond('GET', '/tasks', function() use ($taskController) {
+$router->respond('GET', '/tasks', function () use ($taskController) {
     echo json_encode($taskController->getAllTasks());
 });
 
-$router->respond('GET', '/tasks/liaison/[i:id]', function($request) use ($taskController) {
+$router->respond('GET', '/tasks/liaison/[i:id]', function ($request) use ($taskController) {
     echo json_encode($taskController->getTasksByLiaison($request->id));
 });
 
-$router->respond('GET', '/tasks/[i:id]', function($request) use ($taskController) {
+$router->respond('GET', '/tasks/[i:id]', function ($request) use ($taskController) {
     echo json_encode($taskController->getTaskById($request->id));
 });
 
-$router->respond('POST', '/tasks', function() use ($taskController) {
+$router->respond('POST', '/tasks', function () use ($taskController) {
     $data = json_decode(file_get_contents("php://input"));
     echo json_encode($taskController->createTask($data));
 });
 
-$router->respond('PUT', '/tasks/[i:id]', function($request) use ($taskController) {
+$router->respond('PUT', '/tasks/[i:id]', function ($request) use ($taskController) {
     $data = json_decode(file_get_contents("php://input"));
     echo json_encode($taskController->updateTask($request->id, $data));
 });
 
-$router->respond('PUT', '/tasks/[i:id]/status', function($request) use ($taskController) {
+$router->respond('PUT', '/tasks/[i:id]/status', function ($request) use ($taskController) {
     $data = json_decode(file_get_contents("php://input"));
     echo json_encode($taskController->updateTaskStatus($request->id, $data));
 });
 
-$router->respond('DELETE', '/tasks/[i:id]', function($request) use ($taskController) {
+$router->respond('DELETE', '/tasks/[i:id]', function ($request) use ($taskController) {
     echo json_encode($taskController->deleteTask($request->id));
 });
 
 // Task submission routes
-$router->respond('POST', '/tasks/submit-completion', function() use ($taskController) {
+$router->respond('POST', '/tasks/submit-completion', function () use ($taskController) {
     echo json_encode($taskController->submitCompletion($_POST, $_FILES));
 });
 
-$router->respond('POST', '/tasks/update-submission', function() use ($taskController) {
+$router->respond('POST', '/tasks/update-submission', function () use ($taskController) {
     echo json_encode($taskController->updateSubmission($_POST, $_FILES));
 });
 
-$router->respond('GET', '/tasks/[i:id]/submissions', function($request) use ($taskController) {
+$router->respond('GET', '/tasks/[i:id]/submissions', function ($request) use ($taskController) {
     echo json_encode($taskController->getSubmissions($request->id));
 });
 
-$router->respond('GET', '/tasks/submissions/[i:id]', function($request) use ($taskController) {
+$router->respond('GET', '/tasks/submissions/[i:id]', function ($request) use ($taskController) {
     echo json_encode($taskController->getSubmissionById($request->id));
 });
 
-$router->respond('PUT', '/tasks/submissions/[i:id]/status', function($request) use ($taskController) {
+$router->respond('PUT', '/tasks/submissions/[i:id]/status', function ($request) use ($taskController) {
     $data = json_decode(file_get_contents("php://input"));
     echo json_encode($taskController->updateSubmissionStatus($request->id, $data->status));
 });
 
-$router->respond('DELETE', '/tasks/submissions/[i:id]', function($request) use ($taskController) {
+$router->respond('DELETE', '/tasks/submissions/[i:id]', function ($request) use ($taskController) {
     echo json_encode($taskController->deleteSubmission($request->id));
 });
 
-$router->respond('DELETE', '/tasks/submissions/attachments/[i:id]', function($request) use ($taskController) {
+$router->respond('DELETE', '/tasks/submissions/attachments/[i:id]', function ($request) use ($taskController) {
     echo json_encode($taskController->deleteSubmissionAttachment($request->id));
 });
 
-$router->respond('GET', '/liaisons/[i:id]/task-submissions', function($request) use ($taskController) {
+$router->respond('GET', '/liaisons/[i:id]/task-submissions', function ($request) use ($taskController) {
     echo json_encode($taskController->getLiaisonSubmissions($request->id));
 });
 
 // Message routes
 // Get conversation between two users
-$router->respond('GET', '/messages/conversation/[i:user1_id]/[i:user2_id]', function($request) use ($messageController) {
+$router->respond('GET', '/messages/conversation/[i:user1_id]/[i:user2_id]', function ($request) use ($messageController) {
     echo json_encode($messageController->getConversation($request->user1_id, $request->user2_id));
 });
 
 // Get recent conversations for a user
-$router->respond('GET', '/messages/conversations/[i:user_id]', function($request) use ($messageController) {
+$router->respond('GET', '/messages/conversations/[i:user_id]', function ($request) use ($messageController) {
     echo json_encode($messageController->getRecentConversations($request->user_id));
 });
 
 // Send a message
-$router->respond('POST', '/messages', function() use ($messageController) {
+$router->respond('POST', '/messages', function () use ($messageController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check required fields
-    if(
+    if (
         !empty($data['sender_id']) &&
         !empty($data['receiver_id']) &&
         !empty($data['message'])
@@ -951,9 +950,9 @@ $router->respond('POST', '/messages', function() use ($messageController) {
 });
 
 // Send a message with attachments
-$router->respond('POST', '/messages/with-attachments', function() use ($messageController) {
+$router->respond('POST', '/messages/with-attachments', function () use ($messageController) {
     // Check required fields
-    if(
+    if (
         !empty($_POST['sender_id']) &&
         !empty($_POST['receiver_id']) &&
         !empty($_POST['message'])
@@ -964,7 +963,7 @@ $router->respond('POST', '/messages/with-attachments', function() use ($messageC
             'message' => $_POST['message'],
             'attachments' => $_FILES['attachments'] ?? []
         ];
-        
+
         echo json_encode($messageController->sendMessage($data));
     } else {
         echo json_encode([
@@ -975,22 +974,22 @@ $router->respond('POST', '/messages/with-attachments', function() use ($messageC
 });
 
 // Mark messages as read
-$router->respond('PUT', '/messages/read/[i:sender_id]/[i:receiver_id]', function($request) use ($messageController) {
+$router->respond('PUT', '/messages/read/[i:sender_id]/[i:receiver_id]', function ($request) use ($messageController) {
     echo json_encode($messageController->markMessagesAsRead($request->sender_id, $request->receiver_id));
 });
 
 // Get unread message count
-$router->respond('GET', '/messages/unread/[i:user_id]', function($request) use ($messageController) {
+$router->respond('GET', '/messages/unread/[i:user_id]', function ($request) use ($messageController) {
     echo json_encode($messageController->getUnreadCount($request->user_id));
 });
 
 // Update user online status
-$router->respond('PUT', '/messages/status/[i:user_id]', function($request) use ($messageController) {
+$router->respond('PUT', '/messages/status/[i:user_id]', function ($request) use ($messageController) {
     // Get posted data
     $data = json_decode(file_get_contents("php://input"), true);
-    
+
     // Check required fields
-    if(isset($data['is_online'])) {
+    if (isset($data['is_online'])) {
         echo json_encode($messageController->updateUserStatus($request->user_id, $data['is_online']));
     } else {
         echo json_encode([
@@ -1001,18 +1000,18 @@ $router->respond('PUT', '/messages/status/[i:user_id]', function($request) use (
 });
 
 // Get user online status
-$router->respond('GET', '/messages/status/[i:user_id]', function($request) use ($messageController) {
+$router->respond('GET', '/messages/status/[i:user_id]', function ($request) use ($messageController) {
     echo json_encode($messageController->getUserStatus($request->user_id));
 });
 
 // User Profile routes
 // Get user profile
-$router->respond('GET', '/user_profile/[i:id]', function($request) use ($userProfileController) {
+$router->respond('GET', '/user_profile/[i:id]', function ($request) use ($userProfileController) {
     echo json_encode($userProfileController->getProfile($request->id));
 });
 
 // Update user profile
-$router->respond('PUT', '/user_profile/[i:id]', function($request) use ($userProfileController) {
+$router->respond('PUT', '/user_profile/[i:id]', function ($request) use ($userProfileController) {
     try {
         $inputData = file_get_contents("php://input");
         if (!$inputData) {
@@ -1022,7 +1021,7 @@ $router->respond('PUT', '/user_profile/[i:id]', function($request) use ($userPro
             ]);
             return;
         }
-        
+
         $data = json_decode($inputData);
         if (!$data) {
             echo json_encode([
@@ -1031,7 +1030,7 @@ $router->respond('PUT', '/user_profile/[i:id]', function($request) use ($userPro
             ]);
             return;
         }
-        
+
         echo json_encode($userProfileController->updateProfile($request->id, $data));
     } catch (Exception $e) {
         echo json_encode([
@@ -1042,9 +1041,9 @@ $router->respond('PUT', '/user_profile/[i:id]', function($request) use ($userPro
 });
 
 // Upload profile photo
-$router->respond('POST', '/user_profile/[i:id]/photo', function($request) use ($userProfileController) {
+$router->respond('POST', '/user_profile/[i:id]/photo', function ($request) use ($userProfileController) {
     echo json_encode($userProfileController->uploadPhoto($request->id, $_FILES['photo']));
 });
 
 // Dispatch the router
-$router->dispatch(); 
+$router->dispatch();
