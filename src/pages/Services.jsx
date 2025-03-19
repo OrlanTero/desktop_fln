@@ -57,18 +57,18 @@ const Services = ({ user, onLogout }) => {
   const [serviceCategories, setServiceCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
+
   // Filter state
   const [filters, setFilters] = useState({
     search: '',
     priceRange: '',
     timeline: '',
   });
-  
+
   // Dialog states
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState('add');
@@ -81,14 +81,14 @@ const Services = ({ user, onLogout }) => {
     remarks: '',
     requirements: [],
   });
-  
+
   const [newRequirement, setNewRequirement] = useState('');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success',
   });
-  
+
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(categoryIdFromUrl || '');
 
@@ -106,18 +106,21 @@ const Services = ({ user, onLogout }) => {
 
   // Filter services based on search and filter criteria
   const filteredServices = services.filter(service => {
-    const matchesSearch = filters.search === '' || 
+    const matchesSearch =
+      filters.search === '' ||
       service.service_name.toLowerCase().includes(filters.search.toLowerCase()) ||
       (service.remarks && service.remarks.toLowerCase().includes(filters.search.toLowerCase()));
-    
-    const matchesPriceRange = filters.priceRange === '' || 
+
+    const matchesPriceRange =
+      filters.priceRange === '' ||
       (filters.priceRange === 'low' && service.price <= 1000) ||
       (filters.priceRange === 'medium' && service.price > 1000 && service.price <= 5000) ||
       (filters.priceRange === 'high' && service.price > 5000);
-    
-    const matchesTimeline = filters.timeline === '' || 
+
+    const matchesTimeline =
+      filters.timeline === '' ||
       service.timeline.toLowerCase().includes(filters.timeline.toLowerCase());
-    
+
     return matchesSearch && matchesPriceRange && matchesTimeline;
   });
 
@@ -133,17 +136,17 @@ const Services = ({ user, onLogout }) => {
   };
 
   // Handle rows per page change
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = event => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
   // Handle filter changes
-  const handleFilterChange = (event) => {
+  const handleFilterChange = event => {
     const { name, value } = event.target;
     setFilters(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     setPage(0); // Reset to first page when filters change
   };
@@ -188,7 +191,7 @@ const Services = ({ user, onLogout }) => {
     }
   };
 
-  const fetchServicesByCategory = async (categoryId) => {
+  const fetchServicesByCategory = async categoryId => {
     setLoading(true);
     try {
       const response = await window.api.service.getByCategory(categoryId);
@@ -205,13 +208,13 @@ const Services = ({ user, onLogout }) => {
     }
   };
 
-  const handleCategoryChange = (event) => {
+  const handleCategoryChange = event => {
     const categoryId = event.target.value;
     setSelectedCategoryId(categoryId);
-    
+
     // Update URL without reloading the page
-    const newUrl = categoryId 
-      ? `${window.location.pathname}?category=${categoryId}` 
+    const newUrl = categoryId
+      ? `${window.location.pathname}?category=${categoryId}`
       : window.location.pathname;
     window.history.pushState({}, '', newUrl);
   };
@@ -226,7 +229,9 @@ const Services = ({ user, onLogout }) => {
         price: serviceData.price || '',
         timeline: serviceData.timeline || '',
         remarks: serviceData.remarks || '',
-        requirements: serviceData.requirements ? serviceData.requirements.map(req => req.requirement) : [],
+        requirements: serviceData.requirements
+          ? serviceData.requirements.map(req => req.requirement)
+          : [],
       });
     } else {
       setCurrentService(null);
@@ -247,7 +252,7 @@ const Services = ({ user, onLogout }) => {
     setNewRequirement('');
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -265,7 +270,7 @@ const Services = ({ user, onLogout }) => {
     }
   };
 
-  const handleRemoveRequirement = (index) => {
+  const handleRemoveRequirement = index => {
     const updatedRequirements = [...formData.requirements];
     updatedRequirements.splice(index, 1);
     setFormData({
@@ -277,7 +282,7 @@ const Services = ({ user, onLogout }) => {
   const handleSubmit = async () => {
     try {
       let response;
-      
+
       if (dialogType === 'add') {
         response = await window.api.service.create(formData);
       } else if (dialogType === 'edit') {
@@ -285,11 +290,13 @@ const Services = ({ user, onLogout }) => {
       } else if (dialogType === 'delete') {
         response = await window.api.service.delete(currentService.service_id);
       }
-      
+
       if (response.success) {
         setSnackbar({
           open: true,
-          message: `Service ${dialogType === 'add' ? 'added' : dialogType === 'edit' ? 'updated' : 'deleted'} successfully`,
+          message: `Service ${
+            dialogType === 'add' ? 'added' : dialogType === 'edit' ? 'updated' : 'deleted'
+          } successfully`,
           severity: 'success',
         });
         if (selectedCategoryId) {
@@ -323,7 +330,7 @@ const Services = ({ user, onLogout }) => {
     });
   };
 
-  const handleMenu = (event) => {
+  const handleMenu = event => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -337,7 +344,7 @@ const Services = ({ user, onLogout }) => {
     navigate('/login');
   };
 
-  const getCategoryName = (categoryId) => {
+  const getCategoryName = categoryId => {
     const category = serviceCategories.find(cat => cat.service_category_id === categoryId);
     return category ? category.service_category_name : 'Unknown';
   };
@@ -400,14 +407,13 @@ const Services = ({ user, onLogout }) => {
             <Grid item xs={12} sm={3}>
               <FormControl fullWidth>
                 <InputLabel>Category</InputLabel>
-                <Select
-                  value={selectedCategoryId}
-                  onChange={handleCategoryChange}
-                  label="Category"
-                >
+                <Select value={selectedCategoryId} onChange={handleCategoryChange} label="Category">
                   <MenuItem value="">All Categories</MenuItem>
-                  {serviceCategories.map((category) => (
-                    <MenuItem key={category.service_category_id} value={category.service_category_id}>
+                  {serviceCategories.map(category => (
+                    <MenuItem
+                      key={category.service_category_id}
+                      value={category.service_category_id}
+                    >
                       {category.service_category_name}
                     </MenuItem>
                   ))}
@@ -511,7 +517,7 @@ const Services = ({ user, onLogout }) => {
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedServices.map((service) => (
+                paginatedServices.map(service => (
                   <TableRow key={service.service_id}>
                     <TableCell>{service.service_id}</TableCell>
                     <TableCell>{service.service_name}</TableCell>
@@ -533,16 +539,10 @@ const Services = ({ user, onLogout }) => {
                     </TableCell>
                     <TableCell>{service.remarks}</TableCell>
                     <TableCell align="right">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleOpenDialog('edit', service)}
-                      >
+                      <IconButton color="primary" onClick={() => handleOpenDialog('edit', service)}>
                         <EditIcon />
                       </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleOpenDialog('delete', service)}
-                      >
+                      <IconButton color="error" onClick={() => handleOpenDialog('delete', service)}>
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>
@@ -563,8 +563,8 @@ const Services = ({ user, onLogout }) => {
         </TableContainer>
 
         {/* Add/Edit Service Dialog */}
-        <Dialog 
-          open={openDialog && (dialogType === 'add' || dialogType === 'edit')} 
+        <Dialog
+          open={openDialog && (dialogType === 'add' || dialogType === 'edit')}
           onClose={handleCloseDialog}
           maxWidth="md"
           fullWidth
@@ -596,8 +596,11 @@ const Services = ({ user, onLogout }) => {
                     <MenuItem value="">
                       <em>Select a category</em>
                     </MenuItem>
-                    {serviceCategories.map((category) => (
-                      <MenuItem key={category.service_category_id} value={category.service_category_id}>
+                    {serviceCategories.map(category => (
+                      <MenuItem
+                        key={category.service_category_id}
+                        value={category.service_category_id}
+                      >
                         {category.service_category_name}
                       </MenuItem>
                     ))}
@@ -606,14 +609,14 @@ const Services = ({ user, onLogout }) => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  name="price"
-                  label="Price"
-                  type="number"
                   fullWidth
-                  value={formData.price}
+                  label="Unit Price"
+                  name="unit_price"
+                  type="number"
+                  value={formData.unit_price}
                   onChange={handleInputChange}
                   InputProps={{
-                    startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
+                    startAdornment: <Typography sx={{ mr: 1 }}>₱</Typography>,
                   }}
                 />
               </Grid>
@@ -649,19 +652,15 @@ const Services = ({ user, onLogout }) => {
                     fullWidth
                     label="Add Requirement"
                     value={newRequirement}
-                    onChange={(e) => setNewRequirement(e.target.value)}
-                    onKeyPress={(e) => {
+                    onChange={e => setNewRequirement(e.target.value)}
+                    onKeyPress={e => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         handleAddRequirement();
                       }
                     }}
                   />
-                  <Button 
-                    variant="contained" 
-                    onClick={handleAddRequirement}
-                    sx={{ ml: 1 }}
-                  >
+                  <Button variant="contained" onClick={handleAddRequirement} sx={{ ml: 1 }}>
                     Add
                   </Button>
                 </Box>
@@ -705,7 +704,8 @@ const Services = ({ user, onLogout }) => {
           <DialogTitle>Delete Service</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete the service "{currentService?.service_name}"? This action cannot be undone.
+              Are you sure you want to delete the service "{currentService?.service_name}"? This
+              action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -732,4 +732,4 @@ const Services = ({ user, onLogout }) => {
   );
 };
 
-export default Services; 
+export default Services;

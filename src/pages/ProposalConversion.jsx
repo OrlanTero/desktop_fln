@@ -22,7 +22,7 @@ import {
   Alert,
   CircularProgress,
   TextField,
-  InputAdornment
+  InputAdornment,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -36,7 +36,7 @@ import { format } from 'date-fns';
 
 const Proposals = ({ user, onLogout }) => {
   const navigate = useNavigate();
-  
+
   // State
   const [proposals, setProposals] = useState([]);
   const [filteredProposals, setFilteredProposals] = useState([]);
@@ -44,31 +44,32 @@ const Proposals = ({ user, onLogout }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
-  
+
   // Fetch proposals on component mount
   useEffect(() => {
     fetchProposals();
   }, []);
-  
+
   // Filter proposals when search term changes
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredProposals(proposals);
     } else {
-      const filtered = proposals.filter(proposal => 
-        proposal.proposal_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        proposal.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        proposal.proposal_reference.toLowerCase().includes(searchTerm.toLowerCase())
+      const filtered = proposals.filter(
+        proposal =>
+          proposal.proposal_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          proposal.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          proposal.proposal_reference.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredProposals(filtered);
     }
   }, [searchTerm, proposals]);
-  
+
   // Fetch proposals from API
   const fetchProposals = async () => {
     setLoading(true);
@@ -80,13 +81,14 @@ const Proposals = ({ user, onLogout }) => {
         setLoading(false);
         return;
       }
-      
-      const response = await window.api.proposal.getAll();
-      
-      if (response && response.success) {
 
-        const dataa =(response.data || []).filter(proposal => proposal.status.toLowerCase() === 'accepted');
-        setProposals(dataa)
+      const response = await window.api.proposal.getAll();
+
+      if (response && response.success) {
+        const dataa = (response.data || []).filter(
+          proposal => proposal.status.toLowerCase() === 'accepted'
+        );
+        setProposals(dataa);
         setFilteredProposals(dataa);
       } else {
         setError('Failed to load proposals: ' + (response?.message || 'Unknown error'));
@@ -98,21 +100,19 @@ const Proposals = ({ user, onLogout }) => {
       setLoading(false);
     }
   };
-  
+
   // Handle create new proposal
   const handleCreateProposal = () => {
     navigate('/proposals/new');
   };
-  
+
   // Handle view proposal
-  const handleViewProposal = (id) => {
+  const handleViewProposal = id => {
     navigate(`/proposals/view/${id}`);
   };
-  
 
-  
   // Handle convert to project
-  const handleConvertClick = (proposal) => {
+  const handleConvertClick = proposal => {
     if (proposal.status.toLowerCase() !== 'accepted') {
       setError('Only accepted proposals can be converted to projects');
       return;
@@ -121,17 +121,17 @@ const Proposals = ({ user, onLogout }) => {
     const proposalData = proposals.find(p => p.proposal_id === proposal.proposal_id);
 
     // Navigate to project form with proposal data
-    navigate('/projects/new', { 
-      state: { 
+    navigate('/projects/new', {
+      state: {
         proposalData: proposalData,
-        isConversion: true
-      }
+        isConversion: true,
+      },
     });
   };
-  
+
   const handleConvertConfirm = async () => {
     if (!selectedProposal) return;
-    
+
     setLoading(true);
     try {
       // Create project from proposal data
@@ -144,18 +144,20 @@ const Proposals = ({ user, onLogout }) => {
         notes: selectedProposal.notes,
         total_amount: selectedProposal.total_amount,
         status: 'pending',
-        priority: 'medium'
+        priority: 'medium',
       };
 
       const response = await window.api.project.create(projectData);
-      
+
       if (response.status === 'success') {
         // Copy services from proposal to project
         await window.api.proService.copyToProject(selectedProposal.proposal_id);
-        
+
         // Update proposal status to converted
-        await window.api.proposal.updateStatus(selectedProposal.proposal_id, { status: 'Converted' });
-        
+        await window.api.proposal.updateStatus(selectedProposal.proposal_id, {
+          status: 'Converted',
+        });
+
         setSuccess('Proposal converted to project successfully');
         fetchProposals();
       } else {
@@ -170,9 +172,9 @@ const Proposals = ({ user, onLogout }) => {
       setSelectedProposal(null);
     }
   };
-  
+
   // Get status chip color
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     switch (status) {
       case 'Draft':
         return 'default';
@@ -186,9 +188,9 @@ const Proposals = ({ user, onLogout }) => {
         return 'default';
     }
   };
-  
+
   // Format date
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return 'N/A';
     try {
       return format(new Date(dateString), 'MMM dd, yyyy');
@@ -196,31 +198,30 @@ const Proposals = ({ user, onLogout }) => {
       return 'Invalid Date';
     }
   };
-  
+
   if (loading) {
     return (
       <Layout title="Proposal Conversion">
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
+        <Box
+          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}
+        >
           <CircularProgress />
         </Box>
       </Layout>
     );
   }
-  
+
   return (
     <Layout title="Proposal Conversion">
-      <PageHeader 
-        title="Proposal Conversion" 
-        subtitle="Convert accepted proposals into projects"
-      />
-      
+      <PageHeader title="Proposal Conversion" subtitle="Convert accepted proposals into projects" />
+
       <Box sx={{ mb: 3 }}>
         <TextField
           fullWidth
           variant="outlined"
           placeholder="Search proposals by name, client, or reference..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={e => setSearchTerm(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -230,7 +231,7 @@ const Proposals = ({ user, onLogout }) => {
           }}
         />
       </Box>
-      
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -253,19 +254,21 @@ const Proposals = ({ user, onLogout }) => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProposals.map((proposal) => (
+              filteredProposals.map(proposal => (
                 <TableRow key={proposal.proposal_id}>
                   <TableCell>{proposal.proposal_reference}</TableCell>
                   <TableCell>{proposal.proposal_name}</TableCell>
                   <TableCell>{proposal.client_name}</TableCell>
                   <TableCell>{proposal.project_name}</TableCell>
                   <TableCell>{formatDate(proposal.valid_until)}</TableCell>
-                  <TableCell align="right">${parseFloat(proposal.total_amount).toFixed(2)}</TableCell>
+                  <TableCell align="right">
+                    ₱{parseFloat(proposal.total_amount).toFixed(2)}
+                  </TableCell>
                   <TableCell>
-                    <Chip 
-                      label={proposal.status} 
-                      color={getStatusColor(proposal.status)} 
-                      size="small" 
+                    <Chip
+                      label={proposal.status}
+                      color={getStatusColor(proposal.status)}
+                      size="small"
                     />
                   </TableCell>
                   <TableCell align="center">
@@ -280,11 +283,10 @@ const Proposals = ({ user, onLogout }) => {
                       color="success"
                       onClick={() => handleConvertClick(proposal)}
                       title="Convert to Project"
-                    disabled={  proposal.status.toLowerCase() !== 'accepted'}
+                      disabled={proposal.status.toLowerCase() !== 'accepted'}
                     >
                       <EngineeringIcon />
                     </IconButton>
-                  
                   </TableCell>
                 </TableRow>
               ))
@@ -292,18 +294,14 @@ const Proposals = ({ user, onLogout }) => {
           </TableBody>
         </Table>
       </TableContainer>
-      
-    
-    
+
       {/* Convert to Project Dialog */}
-      <Dialog
-        open={convertDialogOpen}
-        onClose={() => setConvertDialogOpen(false)}
-      >
+      <Dialog open={convertDialogOpen} onClose={() => setConvertDialogOpen(false)}>
         <DialogTitle>Convert to Project</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to convert the proposal "{selectedProposal?.proposal_name}" to a project? This will create a new project with all the services from this proposal.
+            Are you sure you want to convert the proposal "{selectedProposal?.proposal_name}" to a
+            project? This will create a new project with all the services from this proposal.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -315,23 +313,15 @@ const Proposals = ({ user, onLogout }) => {
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Snackbars for notifications */}
-      <Snackbar
-        open={Boolean(error)}
-        autoHideDuration={6000}
-        onClose={() => setError(null)}
-      >
+      <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError(null)}>
         <Alert onClose={() => setError(null)} severity="error">
           {error}
         </Alert>
       </Snackbar>
-      
-      <Snackbar
-        open={Boolean(success)}
-        autoHideDuration={6000}
-        onClose={() => setSuccess(null)}
-      >
+
+      <Snackbar open={Boolean(success)} autoHideDuration={6000} onClose={() => setSuccess(null)}>
         <Alert onClose={() => setSuccess(null)} severity="success">
           {success}
         </Alert>
@@ -340,4 +330,4 @@ const Proposals = ({ user, onLogout }) => {
   );
 };
 
-export default Proposals; 
+export default Proposals;

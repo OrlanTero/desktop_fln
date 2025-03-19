@@ -24,7 +24,7 @@ import {
   Snackbar,
   Alert,
   InputAdornment,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -44,11 +44,11 @@ const ProposalForm = ({ user, onLogout }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
-  
+
   // Add step state
   const [activeStep, setActiveStep] = useState(0);
   const steps = ['Proposal Details', 'Document Preview', 'Send Email'];
-  
+
   // Add company info state
   const [companyInfo, setCompanyInfo] = useState({
     company_name: '',
@@ -56,10 +56,10 @@ const ProposalForm = ({ user, onLogout }) => {
     phone: '',
     email: '',
   });
-  
+
   // Add document preview state
   const [documentPreview, setDocumentPreview] = useState(null);
-  
+
   // State for proposal data
   const [formData, setFormData] = useState({
     proposal_name: '',
@@ -73,12 +73,12 @@ const ProposalForm = ({ user, onLogout }) => {
     valid_until: null,
     notes: '',
     status: 'Draft',
-    attn_to: ''
+    attn_to: '',
   });
-  
+
   // Add state to track if document has been uploaded
   const [documentUploaded, setDocumentUploaded] = useState(false);
-  
+
   // State for services
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedService, setSelectedService] = useState('');
@@ -86,7 +86,7 @@ const ProposalForm = ({ user, onLogout }) => {
   const [unitPrice, setUnitPrice] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [selectedServices, setSelectedServices] = useState([]);
-  
+
   // State for data loading
   const [clients, setClients] = useState([]);
   const [serviceCategories, setServiceCategories] = useState([]);
@@ -96,31 +96,31 @@ const ProposalForm = ({ user, onLogout }) => {
   const [success, setSuccess] = useState(null);
 
   const [currentProposalId, setCurrentProposalId] = useState(null);
-  
+
   // Inside the ProposalForm component, add new state for selected service details
   const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
   const [jobOrderError, setJobOrderError] = useState(null);
-  
+
   // Add local job orders state
   const [localJobOrders, setLocalJobOrders] = useState({});
-  
+
   // Add state for document base64
   const [documentBase64, setDocumentBase64] = useState(null);
-  
+
   // Calculate totals
   const calculateSubtotal = () => {
     return selectedServices.reduce((total, service) => total + service.price, 0);
   };
-  
+
   const calculateDownpayment = () => {
     return formData.has_downpayment ? formData.downpayment_amount : 0;
   };
 
-  const handleDocumentGenerated = (document) => {
+  const handleDocumentGenerated = document => {
     setDocumentBase64(document.base64);
     setDocumentUploaded(true);
   };
-  
+
   // Load data on component mount
   useEffect(() => {
     const fetchData = async () => {
@@ -131,13 +131,13 @@ const ProposalForm = ({ user, onLogout }) => {
         if (clientsResponse.success) {
           setClients(clientsResponse.data || []);
         }
-        
+
         // Fetch service categories
         const categoriesResponse = await window.api.serviceCategory.getAll();
         if (categoriesResponse.success) {
           setServiceCategories(categoriesResponse.data || []);
         }
-        
+
         // If in edit mode, fetch proposal data
         if (isEditMode) {
           const proposalResponse = await window.api.proposal.getById(id);
@@ -148,9 +148,9 @@ const ProposalForm = ({ user, onLogout }) => {
               project_start: proposal.project_start ? new Date(proposal.project_start) : null,
               project_end: proposal.project_end ? new Date(proposal.project_end) : null,
               valid_until: proposal.valid_until ? new Date(proposal.valid_until) : null,
-              has_downpayment: Boolean(proposal.has_downpayment)
+              has_downpayment: Boolean(proposal.has_downpayment),
             });
-            
+
             // Fetch services for this proposal
             const servicesResponse = await window.api.proService.getByProposal(id);
             if (servicesResponse.success) {
@@ -164,17 +164,17 @@ const ProposalForm = ({ user, onLogout }) => {
           const year = new Date().getFullYear();
           const lastProposalResponse = await window.api.proposal.getLastReference();
           let increment = 1;
-          
+
           if (lastProposalResponse.success && lastProposalResponse.data) {
             const lastRef = lastProposalResponse.data;
             const lastIncrement = parseInt(lastRef.split('-')[2]);
             increment = lastIncrement + 1;
           }
-          
+
           const proposalReference = `PRO-${year}-${String(increment).padStart(4, '0')}`;
           setFormData(prev => ({
             ...prev,
-            proposal_reference: proposalReference
+            proposal_reference: proposalReference,
           }));
         }
       } catch (err) {
@@ -183,10 +183,10 @@ const ProposalForm = ({ user, onLogout }) => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [id, isEditMode]);
-  
+
   // Load services when category changes
   useEffect(() => {
     const fetchServices = async () => {
@@ -194,7 +194,7 @@ const ProposalForm = ({ user, onLogout }) => {
         setServices([]);
         return;
       }
-      
+
       try {
         const response = await window.api.service.getByCategory(selectedCategory);
         if (response.success) {
@@ -206,10 +206,10 @@ const ProposalForm = ({ user, onLogout }) => {
         setError('Error loading services: ' + err.message);
       }
     };
-    
+
     fetchServices();
   }, [selectedCategory]);
-  
+
   // Load company info
   useEffect(() => {
     const fetchCompanyInfo = async () => {
@@ -222,65 +222,67 @@ const ProposalForm = ({ user, onLogout }) => {
         setError('Error loading company info: ' + err.message);
       }
     };
-    
+
     fetchCompanyInfo();
   }, []);
-  
+
   // Handle form input changes
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
-  
+
   // Handle date changes
   const handleDateChange = (name, e) => {
     const dateValue = e.target.value ? parse(e.target.value, 'yyyy-MM-dd', new Date()) : null;
     setFormData({
       ...formData,
-      [name]: dateValue
+      [name]: dateValue,
     });
   };
-  
+
   // Add service to the list
   const handleAddService = () => {
     if (!selectedService || quantity <= 0 || unitPrice < 0) {
       setError('Please select a service, and enter valid quantity and price');
       return;
     }
-    
+
     const serviceObj = services.find(s => s.service_id === selectedService);
     if (!serviceObj) return;
-    
+
     // Calculate price with discount
     const totalPrice = quantity * unitPrice;
     const discountAmount = (totalPrice * discount) / 100;
     const finalPrice = totalPrice - discountAmount;
-    
+
     const newService = {
       service_id: selectedService,
       service_name: serviceObj.service_name,
       service_category_id: selectedCategory,
-      service_category_name: serviceCategories.find(c => c.service_category_id === selectedCategory)?.service_category_name || '',
+      service_category_name:
+        serviceCategories.find(c => c.service_category_id === selectedCategory)
+          ?.service_category_name || '',
       quantity: quantity,
       unit_price: unitPrice,
       discount_percentage: discount,
-      price: finalPrice
+      price: finalPrice,
     };
-    
+
     setSelectedServices([...selectedServices, newService]);
-    
+
     // Reset selection fields
     setSelectedService('');
     setQuantity(1);
     setUnitPrice(0);
     setDiscount(0);
   };
-  
+
   // Remove service from the list
-  const handleRemoveService = (index) => {
+  const handleRemoveService = index => {
     const updatedServices = [...selectedServices];
     const removedService = updatedServices[index];
     updatedServices.splice(index, 1);
@@ -295,7 +297,7 @@ const ProposalForm = ({ user, onLogout }) => {
       });
     }
   };
-  
+
   // Handle next step
   const handleNext = async () => {
     if (activeStep === 0) {
@@ -305,15 +307,17 @@ const ProposalForm = ({ user, onLogout }) => {
         // Format dates for API
         const formattedData = {
           ...formData,
-          project_start: formData.project_start ? format(formData.project_start, 'yyyy-MM-dd') : null,
+          project_start: formData.project_start
+            ? format(formData.project_start, 'yyyy-MM-dd')
+            : null,
           project_end: formData.project_end ? format(formData.project_end, 'yyyy-MM-dd') : null,
           valid_until: formData.valid_until ? format(formData.valid_until, 'yyyy-MM-dd') : null,
           total_amount: calculateSubtotal(),
-          status: 'Draft'
+          status: 'Draft',
         };
 
         let proposalId;
-        
+
         // Create or update proposal
         if (isEditMode) {
           const response = await window.api.proposal.update(id, formattedData);
@@ -324,26 +328,25 @@ const ProposalForm = ({ user, onLogout }) => {
         } else {
           const response = await window.api.proposal.create(formattedData);
           console.log('Create proposal response:', response);
-          
+
           if (!response.success) {
             throw new Error(response.message || 'Failed to create proposal');
           }
           proposalId = response.data.proposal_id;
           console.log('Saved proposal ID:', proposalId);
-
         }
-        
+
         // Update formData with the proposal_id
         setFormData(prev => ({
           ...prev,
-          proposal_id: proposalId
+          proposal_id: proposalId,
         }));
-        
+
         // If editing, delete existing services first
         if (isEditMode) {
           await window.api.proService.deleteByProposal(proposalId);
         }
-        
+
         // Add services
         for (const service of selectedServices) {
           const serviceData = {
@@ -352,14 +355,14 @@ const ProposalForm = ({ user, onLogout }) => {
             quantity: service.quantity,
             unit_price: service.unit_price,
             discount: service.discount,
-            price: service.price
+            price: service.price,
           };
-          
+
           await window.api.proService.create(serviceData);
         }
-        
+
         setSuccess('Proposal saved successfully');
-        setActiveStep((prevStep) => prevStep + 1);
+        setActiveStep(prevStep => prevStep + 1);
         setCurrentProposalId(proposalId);
       } catch (err) {
         setError('Error saving proposal: ' + err.message);
@@ -374,18 +377,18 @@ const ProposalForm = ({ user, onLogout }) => {
           throw new Error(response.message || 'Failed to get document');
         }
         setDocumentBase64(response.data.base64);
-        setActiveStep((prevStep) => prevStep + 1);
+        setActiveStep(prevStep => prevStep + 1);
       } catch (err) {
         setError('Error getting document: ' + err.message);
       }
     } else {
-      setActiveStep((prevStep) => prevStep + 1);
+      setActiveStep(prevStep => prevStep + 1);
     }
   };
 
   // Handle back step
   const handleBack = () => {
-    setActiveStep((prevStep) => prevStep - 1);
+    setActiveStep(prevStep => prevStep - 1);
     // Reset document uploaded state when going back to form
     setDocumentUploaded(false);
   };
@@ -400,9 +403,9 @@ const ProposalForm = ({ user, onLogout }) => {
         project_end: formData.project_end ? format(formData.project_end, 'yyyy-MM-dd') : null,
         valid_until: formData.valid_until ? format(formData.valid_until, 'yyyy-MM-dd') : null,
         total_amount: calculateSubtotal(),
-        status: 'Draft'
+        status: 'Draft',
       };
-      
+
       const response = await window.api.proposal.saveAsDraft(formattedData);
       if (response.success) {
         setSuccess('Proposal saved as draft');
@@ -418,16 +421,14 @@ const ProposalForm = ({ user, onLogout }) => {
       setLoading(false);
     }
   };
-  
+
   // Submit the form
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     try {
       e.preventDefault();
-    } catch (err) {
-
-    }
+    } catch (err) {}
     setLoading(true);
-    
+
     try {
       // Format dates for API
       const formattedData = {
@@ -435,23 +436,22 @@ const ProposalForm = ({ user, onLogout }) => {
         project_start: formData.project_start ? format(formData.project_start, 'yyyy-MM-dd') : null,
         project_end: formData.project_end ? format(formData.project_end, 'yyyy-MM-dd') : null,
         valid_until: formData.valid_until ? format(formData.valid_until, 'yyyy-MM-dd') : null,
-        total_amount: calculateSubtotal()
+        total_amount: calculateSubtotal(),
       };
-      
-      
+
       // Create or update proposal
       if (isEditMode) {
         const response = await window.api.proposal.update(currentProposalId, formattedData);
         if (!response.success) {
           throw new Error(response.message || 'Failed to update proposal');
         }
-      } 
-      
+      }
+
       // If editing, delete existing services first
       if (isEditMode) {
         await window.api.proService.deleteByProposal(currentProposalId);
       }
-      
+
       // Add services and their job orders
       for (const service of selectedServices) {
         // Create service
@@ -462,9 +462,9 @@ const ProposalForm = ({ user, onLogout }) => {
           unit_price: service.unit_price,
           price: service.price,
           discount_percentage: service.discount_percentage || 0,
-          pro_type: 'Proposal'
+          pro_type: 'Proposal',
         };
-        
+
         const serviceResponse = await window.api.proService.create(serviceData);
         if (!serviceResponse.success) {
           throw new Error('Failed to add service: ' + serviceResponse.message);
@@ -476,63 +476,61 @@ const ProposalForm = ({ user, onLogout }) => {
           const jobOrderData = {
             ...jobOrder,
             service_id: service.service_id,
-            proposal_id: currentProposalId
+            proposal_id: currentProposalId,
           };
-          
+
           await window.api.jobOrders.create(jobOrderData);
-         
         }
       }
-      
+
       // Update proposal total
       const totalResponse = await window.api.proService.calculateProposalTotal(currentProposalId);
       if (totalResponse.success) {
-        await window.api.proposal.update(currentProposalId, { 
-          total_amount: totalResponse.data.total 
+        await window.api.proposal.update(currentProposalId, {
+          total_amount: totalResponse.data.total,
         });
       }
-      
+
       setSuccess('Proposal saved successfully');
-      
+
       // Navigate back to proposals list after a short delay
       setTimeout(() => {
         navigate('/proposals');
       }, 2000);
-      
     } catch (err) {
       setError('Error saving proposal: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
-  
+
   // Handle cancel
   const handleCancel = () => {
     navigate('/proposals');
   };
-  
+
   // Add this function to handle job order management
-  const handleManageJobOrders = (service) => {
+  const handleManageJobOrders = service => {
     // Set the selected service for job orders management
     setSelectedServiceDetails(service);
-    
+
     // Initialize local job orders for this service if not exists
     if (!localJobOrders[service.service_id]) {
       setLocalJobOrders(prev => ({
         ...prev,
-        [service.service_id]: []
+        [service.service_id]: [],
       }));
     }
   };
-  
+
   // Add handlers for job order operations
   const handleJobOrderUpdate = (serviceId, updatedJobOrders) => {
     setLocalJobOrders(prev => ({
       ...prev,
-      [serviceId]: updatedJobOrders
+      [serviceId]: updatedJobOrders,
     }));
   };
-  
+
   // Modify the services table to include a button to manage job orders
   const renderServicesTable = () => (
     <TableContainer component={Paper}>
@@ -553,12 +551,12 @@ const ProposalForm = ({ user, onLogout }) => {
               <TableRow>
                 <TableCell>{service.service_name}</TableCell>
                 <TableCell align="right">{service.quantity}</TableCell>
-                <TableCell align="right">${service.unit_price}</TableCell>
+                <TableCell align="right">₱{service.unit_price}</TableCell>
                 <TableCell align="right">{service.discount_percentage}%</TableCell>
-                <TableCell align="right">${service.price}</TableCell>
+                <TableCell align="right">₱{service.price}</TableCell>
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                    <IconButton 
+                    <IconButton
                       onClick={() => handleRemoveService(index)}
                       color="error"
                       size="small"
@@ -602,13 +600,12 @@ const ProposalForm = ({ user, onLogout }) => {
             proposalId={formData.proposal_id || 'temp'}
             serviceName={selectedServiceDetails.service_name}
             jobOrders={localJobOrders[selectedServiceDetails.service_id] || []}
-            onUpdate={(updatedJobOrders) => handleJobOrderUpdate(selectedServiceDetails.service_id, updatedJobOrders)}
+            onUpdate={updatedJobOrders =>
+              handleJobOrderUpdate(selectedServiceDetails.service_id, updatedJobOrders)
+            }
           />
           <Box mt={2}>
-            <Button
-              variant="outlined"
-              onClick={() => setSelectedServiceDetails(null)}
-            >
+            <Button variant="outlined" onClick={() => setSelectedServiceDetails(null)}>
               Close Job Orders
             </Button>
           </Box>
@@ -616,13 +613,13 @@ const ProposalForm = ({ user, onLogout }) => {
       </Box>
     );
   };
-  
+
   // Render the document preview step
   const renderDocumentPreview = () => {
     // Add job orders to services data
     const servicesWithJobOrders = selectedServices.map(service => ({
       ...service,
-      jobOrders: localJobOrders[service.service_id] || []
+      jobOrders: localJobOrders[service.service_id] || [],
     }));
 
     return (
@@ -638,7 +635,7 @@ const ProposalForm = ({ user, onLogout }) => {
       </Box>
     );
   };
-  
+
   // Add email sent handler
   const handleEmailSent = () => {
     setSuccess('Email sent successfully');
@@ -650,14 +647,19 @@ const ProposalForm = ({ user, onLogout }) => {
   const renderStepContent = () => {
     switch (activeStep) {
       case 0:
-  return (
+        return (
           // Step 1: Proposal Form
-          <form onSubmit={(e) => { e.preventDefault(); handleNext(); }}>
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              handleNext();
+            }}
+          >
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Proposal Information
               </Typography>
-              
+
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                   <TextField
@@ -670,7 +672,7 @@ const ProposalForm = ({ user, onLogout }) => {
                     margin="normal"
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
@@ -683,7 +685,7 @@ const ProposalForm = ({ user, onLogout }) => {
                     margin="normal"
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth margin="normal">
                     <InputLabel>Client</InputLabel>
@@ -693,7 +695,7 @@ const ProposalForm = ({ user, onLogout }) => {
                       onChange={handleChange}
                       required
                     >
-                      {clients.map((client) => (
+                      {clients.map(client => (
                         <MenuItem key={client.client_id} value={client.client_id}>
                           {client.client_name}
                         </MenuItem>
@@ -701,7 +703,7 @@ const ProposalForm = ({ user, onLogout }) => {
                     </Select>
                   </FormControl>
                 </Grid>
-                
+
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
@@ -712,16 +714,11 @@ const ProposalForm = ({ user, onLogout }) => {
                     margin="normal"
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth margin="normal">
                     <InputLabel>Status</InputLabel>
-                    <Select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      required
-                    >
+                    <Select name="status" value={formData.status} onChange={handleChange} required>
                       <MenuItem value="Draft">Draft</MenuItem>
                       <MenuItem value="Sent">Sent</MenuItem>
                       <MenuItem value="Accepted">Accepted</MenuItem>
@@ -729,7 +726,7 @@ const ProposalForm = ({ user, onLogout }) => {
                     </Select>
                   </FormControl>
                 </Grid>
-                
+
                 <Grid item xs={12}>
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={4}>
@@ -738,8 +735,10 @@ const ProposalForm = ({ user, onLogout }) => {
                         label="Valid Until"
                         type="date"
                         name="valid_until"
-                        value={formData.valid_until ? format(formData.valid_until, 'yyyy-MM-dd') : ''}
-                        onChange={(e) => handleDateChange('valid_until', e)}
+                        value={
+                          formData.valid_until ? format(formData.valid_until, 'yyyy-MM-dd') : ''
+                        }
+                        onChange={e => handleDateChange('valid_until', e)}
                         margin="normal"
                         InputLabelProps={{ shrink: true }}
                       />
@@ -748,12 +747,12 @@ const ProposalForm = ({ user, onLogout }) => {
                 </Grid>
               </Grid>
             </Paper>
-            
+
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Project Information
               </Typography>
-              
+
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
@@ -766,20 +765,22 @@ const ProposalForm = ({ user, onLogout }) => {
                     margin="normal"
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Project Start Date"
                     type="date"
                     name="project_start"
-                    value={formData.project_start ? format(formData.project_start, 'yyyy-MM-dd') : ''}
-                    onChange={(e) => handleDateChange('project_start', e)}
+                    value={
+                      formData.project_start ? format(formData.project_start, 'yyyy-MM-dd') : ''
+                    }
+                    onChange={e => handleDateChange('project_start', e)}
                     margin="normal"
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
@@ -787,12 +788,12 @@ const ProposalForm = ({ user, onLogout }) => {
                     type="date"
                     name="project_end"
                     value={formData.project_end ? format(formData.project_end, 'yyyy-MM-dd') : ''}
-                    onChange={(e) => handleDateChange('project_end', e)}
+                    onChange={e => handleDateChange('project_end', e)}
                     margin="normal"
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -805,7 +806,7 @@ const ProposalForm = ({ user, onLogout }) => {
                     margin="normal"
                   />
                 </Grid>
-                
+
                 <Grid item xs={12}>
                   <FormControlLabel
                     control={
@@ -818,7 +819,7 @@ const ProposalForm = ({ user, onLogout }) => {
                     label="Requires Downpayment"
                   />
                 </Grid>
-                
+
                 {formData.has_downpayment && (
                   <Grid item xs={12} md={6}>
                     <TextField
@@ -837,38 +838,52 @@ const ProposalForm = ({ user, onLogout }) => {
                 )}
               </Grid>
             </Paper>
-            
+
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Services
               </Typography>
-              
+
               <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid item xs={12} md={3}>
                   <FormControl fullWidth margin="normal">
                     <InputLabel>Service Category</InputLabel>
                     <Select
                       value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      onChange={e => setSelectedCategory(e.target.value)}
                     >
-                      {serviceCategories.map((category) => (
-                        <MenuItem key={category.service_category_id} value={category.service_category_id}>
+                      {serviceCategories.map(category => (
+                        <MenuItem
+                          key={category.service_category_id}
+                          value={category.service_category_id}
+                        >
                           {category.service_category_name}
                         </MenuItem>
                       ))}
                     </Select>
                   </FormControl>
                 </Grid>
-                
+
                 <Grid item xs={12} md={3}>
                   <FormControl fullWidth margin="normal">
                     <InputLabel>Service</InputLabel>
                     <Select
                       value={selectedService}
-                      onChange={(e) => setSelectedService(e.target.value)}
+                      onChange={e => {
+                        const serviceId = e.target.value;
+                        setSelectedService(serviceId);
+
+                        // Automatically set the unit price to the service price
+                        if (serviceId) {
+                          const selectedServiceObj = services.find(s => s.service_id === serviceId);
+                          if (selectedServiceObj && selectedServiceObj.price) {
+                            setUnitPrice(selectedServiceObj.price);
+                          }
+                        }
+                      }}
                       disabled={!selectedCategory}
                     >
-                      {services.map((service) => (
+                      {services.map(service => (
                         <MenuItem key={service.service_id} value={service.service_id}>
                           {service.service_name}
                         </MenuItem>
@@ -876,49 +891,49 @@ const ProposalForm = ({ user, onLogout }) => {
                     </Select>
                   </FormControl>
                 </Grid>
-                
+
                 <Grid item xs={12} md={2}>
                   <TextField
                     fullWidth
                     label="Quantity"
                     type="number"
                     value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    onChange={e => setQuantity(Number(e.target.value))}
                     margin="normal"
                     InputProps={{ inputProps: { min: 1 } }}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={2}>
                   <TextField
                     fullWidth
                     label="Unit Price"
                     type="number"
                     value={unitPrice}
-                    onChange={(e) => setUnitPrice(Number(e.target.value))}
+                    onChange={e => setUnitPrice(Number(e.target.value))}
                     margin="normal"
                     InputProps={{
                       startAdornment: <InputAdornment position="start">₱</InputAdornment>,
-                      inputProps: { min: 0 }
+                      inputProps: { min: 0 },
                     }}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={2}>
                   <TextField
                     fullWidth
                     label="Discount %"
                     type="number"
                     value={discount}
-                    onChange={(e) => setDiscount(Number(e.target.value))}
+                    onChange={e => setDiscount(Number(e.target.value))}
                     margin="normal"
                     InputProps={{
                       endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                      inputProps: { min: 0, max: 100 }
+                      inputProps: { min: 0, max: 100 },
                     }}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12}>
                   <Button
                     variant="contained"
@@ -931,10 +946,10 @@ const ProposalForm = ({ user, onLogout }) => {
                   </Button>
                 </Grid>
               </Grid>
-              
+
               {selectedServices.length > 0 && renderServicesTable()}
               {selectedServiceDetails && renderJobOrders()}
-              
+
               <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
@@ -948,14 +963,12 @@ const ProposalForm = ({ user, onLogout }) => {
                     )}
                   </Grid>
                   <Grid item xs={12} md={6} sx={{ textAlign: 'right' }}>
-                    <Typography variant="h6">
-                      Total: ₱{calculateSubtotal().toFixed(2)}
-                    </Typography>
+                    <Typography variant="h6">Total: ₱{calculateSubtotal().toFixed(2)}</Typography>
                   </Grid>
                 </Grid>
               </Box>
             </Paper>
-            
+
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
               <Button
                 variant="outlined"
@@ -965,7 +978,7 @@ const ProposalForm = ({ user, onLogout }) => {
               >
                 Save as Draft
               </Button>
-              
+
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
                   variant="outlined"
@@ -1004,50 +1017,43 @@ const ProposalForm = ({ user, onLogout }) => {
         return null;
     }
   };
-  
+
   if (loading && !isEditMode) {
     return (
       <Layout title={isEditMode ? 'Edit Proposal' : 'Create Proposal'}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
+        <Box
+          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}
+        >
           <CircularProgress />
         </Box>
       </Layout>
     );
   }
-  
+
   return (
     <Layout title={isEditMode ? 'Edit Proposal' : 'Create Proposal'}>
-      <PageHeader 
-        title={isEditMode ? 'Edit Proposal' : 'Create New Proposal'} 
+      <PageHeader
+        title={isEditMode ? 'Edit Proposal' : 'Create New Proposal'}
         subtitle="Create or edit a proposal for a client"
       />
-      
+
       <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-        {steps.map((label) => (
+        {steps.map(label => (
           <Step key={label}>
             <StepLabel>{label}</StepLabel>
           </Step>
         ))}
       </Stepper>
-      
+
       {renderStepContent()}
-          
+
       <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
-        <Button
-          variant="outlined"
-          onClick={handleBack}
-          disabled={activeStep === 0 || loading}
-        >
+        <Button variant="outlined" onClick={handleBack} disabled={activeStep === 0 || loading}>
           Back
         </Button>
-        
+
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={handleCancel}
-            disabled={loading}
-          >
+          <Button variant="outlined" color="secondary" onClick={handleCancel} disabled={loading}>
             Cancel
           </Button>
           {activeStep === steps.length - 1 ? null : (
@@ -1062,22 +1068,14 @@ const ProposalForm = ({ user, onLogout }) => {
           )}
         </Box>
       </Box>
-      
-      <Snackbar
-        open={Boolean(error)}
-        autoHideDuration={6000}
-        onClose={() => setError(null)}
-      >
+
+      <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError(null)}>
         <Alert onClose={() => setError(null)} severity="error">
           {error}
         </Alert>
       </Snackbar>
-      
-      <Snackbar
-        open={Boolean(success)}
-        autoHideDuration={6000}
-        onClose={() => setSuccess(null)}
-      >
+
+      <Snackbar open={Boolean(success)} autoHideDuration={6000} onClose={() => setSuccess(null)}>
         <Alert onClose={() => setSuccess(null)} severity="success">
           {success}
         </Alert>
@@ -1086,4 +1084,4 @@ const ProposalForm = ({ user, onLogout }) => {
   );
 };
 
-export default ProposalForm; 
+export default ProposalForm;

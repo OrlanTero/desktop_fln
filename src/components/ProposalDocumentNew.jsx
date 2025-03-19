@@ -6,7 +6,13 @@ import { pdf } from '@react-pdf/renderer';
 import ProposalPDF from './ProposalPDF';
 import logoPath from '../../assets/images/logo.jpg';
 
-const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, onDocumentGenerated }) => {
+const ProposalDocumentNew = ({
+  companyInfo,
+  proposalData,
+  clientName,
+  services,
+  onDocumentGenerated,
+}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [documentGenerated, setDocumentGenerated] = useState(false);
@@ -16,7 +22,7 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
 
     const generatePDF = async () => {
       if (documentGenerated || !mounted) return;
-      
+
       try {
         setLoading(true);
         setError(null);
@@ -27,7 +33,7 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
             hasCompanyInfo: !!companyInfo,
             hasProposalData: !!proposalData,
             hasClientName: !!clientName,
-            hasServices: Array.isArray(services)
+            hasServices: Array.isArray(services),
           });
           if (mounted) {
             setError('Missing required data for PDF generation');
@@ -37,31 +43,33 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
         }
 
         // Generate PDF in background for download/print
-        const doc = <ProposalPDF 
-          companyInfo={companyInfo} 
-          proposalData={proposalData} 
-          clientName={clientName} 
-          services={services} 
-        />;
-        
+        const doc = (
+          <ProposalPDF
+            companyInfo={companyInfo}
+            proposalData={proposalData}
+            clientName={clientName}
+            services={services}
+          />
+        );
+
         const asPdf = pdf();
         asPdf.updateContainer(doc);
         const blob = await asPdf.toBlob();
-        
+
         if (!mounted) return;
-        
+
         // Convert to base64 for API upload
         const reader = new FileReader();
         reader.onloadend = async () => {
           if (!mounted) return;
-          
+
           const base64Data = reader.result;
-          
+
           if (typeof onDocumentGenerated === 'function') {
             // Upload the document first
             const uploadResponse = await window.api.document.upload(proposalData.proposal_id, {
               base64: base64Data,
-              name: `${proposalData.proposal_reference || 'proposal'}.pdf`
+              name: `${proposalData.proposal_reference || 'proposal'}.pdf`,
             });
 
             if (!uploadResponse.success) {
@@ -70,22 +78,22 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
 
             onDocumentGenerated({
               base64: base64Data,
-              name: `${proposalData.proposal_reference || 'proposal'}.pdf`
+              name: `${proposalData.proposal_reference || 'proposal'}.pdf`,
             });
           }
-          
+
           setDocumentGenerated(true);
           setLoading(false);
         };
-        
-        reader.onerror = (error) => {
+
+        reader.onerror = error => {
           if (!mounted) return;
           console.error('Error reading blob as data URL:', error);
           setError('Failed to convert document to data URL');
           setDocumentGenerated(true);
           setLoading(false);
         };
-        
+
         reader.readAsDataURL(blob);
       } catch (err) {
         if (!mounted) return;
@@ -96,12 +104,18 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
       }
     };
 
-    if (companyInfo && proposalData && clientName && Array.isArray(services) && !documentGenerated) {
+    if (
+      companyInfo &&
+      proposalData &&
+      clientName &&
+      Array.isArray(services) &&
+      !documentGenerated
+    ) {
       generatePDF();
     } else {
       setLoading(false);
     }
-    
+
     return () => {
       mounted = false;
     };
@@ -114,18 +128,20 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
   const handleDownload = async () => {
     try {
       // Generate PDF for download
-      const doc = <ProposalPDF 
-        companyInfo={companyInfo} 
-        proposalData={proposalData} 
-        clientName={clientName} 
-        services={services} 
-      />;
-      
+      const doc = (
+        <ProposalPDF
+          companyInfo={companyInfo}
+          proposalData={proposalData}
+          clientName={clientName}
+          services={services}
+        />
+      );
+
       const asPdf = pdf();
       asPdf.updateContainer(doc);
       const blob = await asPdf.toBlob();
       const url = URL.createObjectURL(blob);
-      
+
       const link = document.createElement('a');
       link.href = url;
       link.download = `${proposalData.proposal_reference || 'proposal'}.pdf`;
@@ -144,22 +160,22 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
     if (!proposalData || !services || !Array.isArray(services)) {
       return { subtotal: 0, vat: 0, total: 0 };
     }
-    
+
     const subtotal = services.reduce((sum, service) => {
       const serviceTotal = parseFloat(service.price || 0);
-      const jobOrderTotal = Array.isArray(service.jobOrders) 
+      const jobOrderTotal = Array.isArray(service.jobOrders)
         ? service.jobOrders.reduce((sum, jo) => sum + parseFloat(jo.estimated_fee || 0), 0)
         : 0;
       return sum + serviceTotal + jobOrderTotal;
     }, 0);
-    
+
     const vat = subtotal * 0.12; // 12% VAT
     const total = subtotal + vat;
-    
+
     return {
       subtotal: subtotal.toFixed(2),
       vat: vat.toFixed(2),
-      total: total.toFixed(2)
+      total: total.toFixed(2),
     };
   };
 
@@ -184,35 +200,48 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
         </Button>
       </Box>
 
-      <Box sx={{ height: 'calc(100vh - 200px)', border: '1px solid #ddd', backgroundColor: '#f5f5f5', overflow: 'auto' }}>
+      <Box
+        sx={{
+          height: 'calc(100vh - 200px)',
+          border: '1px solid #ddd',
+          backgroundColor: '#f5f5f5',
+          overflow: 'auto',
+        }}
+      >
         {loading ? (
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%' 
-          }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+            }}
+          >
             <CircularProgress />
-            <Typography variant="body2" sx={{ mt: 2 }}>Generating document...</Typography>
+            <Typography variant="body2" sx={{ mt: 2 }}>
+              Generating document...
+            </Typography>
           </Box>
         ) : error ? (
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%',
-            color: 'error.main'
-          }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: 'error.main',
+            }}
+          >
             <Typography variant="h6">Error</Typography>
             <Typography variant="body2">{error}</Typography>
           </Box>
         ) : (
-          <Paper 
-            elevation={1} 
-            sx={{ 
-              p: 4, 
+          <Paper
+            elevation={1}
+            sx={{
+              p: 4,
               mx: 'auto',
               my: 2,
               maxWidth: '800px',
@@ -220,7 +249,9 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
             }}
           >
             {/* Header with Logo */}
-            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box
+              sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Box
                   component="img"
@@ -229,7 +260,7 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                   sx={{
                     height: '60px',
                     marginRight: '16px',
-                    objectFit: 'contain'
+                    objectFit: 'contain',
                   }}
                 />
                 <Box>
@@ -243,7 +274,7 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                   )}
                 </Box>
               </Box>
-              
+
               <Box sx={{ textAlign: 'right' }}>
                 {companyInfo?.address && (
                   <Typography variant="body2" color="text.secondary">
@@ -281,18 +312,12 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
                   CLIENT
                 </Typography>
-                <Typography variant="body1">
-                  {clientName || 'Client Name'}
-                </Typography>
+                <Typography variant="body1">{clientName || 'Client Name'}</Typography>
                 {proposalData?.client_address && (
-                  <Typography variant="body2">
-                    {proposalData.client_address}
-                  </Typography>
+                  <Typography variant="body2">{proposalData.client_address}</Typography>
                 )}
                 {proposalData?.client_email && (
-                  <Typography variant="body2">
-                    {proposalData.client_email}
-                  </Typography>
+                  <Typography variant="body2">{proposalData.client_email}</Typography>
                 )}
               </Box>
 
@@ -320,9 +345,7 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                         </Typography>
                       </Grid>
                       <Grid item xs={6}>
-                        <Typography variant="body2">
-                          {proposalData.valid_until}
-                        </Typography>
+                        <Typography variant="body2">{proposalData.valid_until}</Typography>
                       </Grid>
                     </>
                   )}
@@ -335,9 +358,7 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                         </Typography>
                       </Grid>
                       <Grid item xs={6}>
-                        <Typography variant="body2">
-                          {proposalData.attn_to}
-                        </Typography>
+                        <Typography variant="body2">{proposalData.attn_to}</Typography>
                       </Grid>
                     </>
                   )}
@@ -365,16 +386,21 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
 
               <Paper variant="outlined" sx={{ p: 0, overflow: 'hidden' }}>
                 {/* Table Header */}
-                <Box sx={{ 
-                  p: 2, 
-                  backgroundColor: '#f5f5f5', 
-                  borderBottom: '1px solid #ddd',
-                  display: 'flex'
-                }}>
+                <Box
+                  sx={{
+                    p: 2,
+                    backgroundColor: '#f5f5f5',
+                    borderBottom: '1px solid #ddd',
+                    display: 'flex',
+                  }}
+                >
                   <Typography variant="subtitle2" sx={{ fontWeight: 'bold', flex: 3 }}>
                     Description
                   </Typography>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', flex: 1, textAlign: 'right' }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 'bold', flex: 1, textAlign: 'right' }}
+                  >
                     Amount
                   </Typography>
                 </Box>
@@ -384,12 +410,14 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                   services.map((service, index) => (
                     <React.Fragment key={index}>
                       {/* Service Row */}
-                      <Box sx={{ 
-                        p: 2, 
-                        borderBottom: '1px solid #eee',
-                        display: 'flex',
-                        backgroundColor: '#fff'
-                      }}>
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderBottom: '1px solid #eee',
+                          display: 'flex',
+                          backgroundColor: '#fff',
+                        }}
+                      >
                         <Box sx={{ flex: 3 }}>
                           <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
                             {service.service_name || 'Service'}
@@ -402,36 +430,40 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                         </Box>
                         <Box sx={{ flex: 1, textAlign: 'right' }}>
                           <Typography variant="body1">
-                            ${parseFloat(service.price || 0).toFixed(2)}
+                            ₱{parseFloat(service.price || 0).toFixed(2)}
                           </Typography>
                         </Box>
                       </Box>
 
                       {/* Job Order Rows */}
-                      {Array.isArray(service.jobOrders) && service.jobOrders.map((jobOrder, joIndex) => (
-                        <Box 
-                          key={`${index}-${joIndex}`}
-                          sx={{ 
-                            p: 2,
-                            pl: 4, // Extra padding for indentation
-                            borderBottom: '1px solid #eee',
-                            display: 'flex',
-                            backgroundColor: '#fafafa'
-                          }}
-                        >
-                          <Box sx={{ flex: 3 }}>
-                            <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center' }}>
-                              <span style={{ marginRight: '8px' }}>•</span>
-                              {jobOrder.description || 'Job Order'}
-                            </Typography>
+                      {Array.isArray(service.jobOrders) &&
+                        service.jobOrders.map((jobOrder, joIndex) => (
+                          <Box
+                            key={`${index}-${joIndex}`}
+                            sx={{
+                              p: 2,
+                              pl: 4, // Extra padding for indentation
+                              borderBottom: '1px solid #eee',
+                              display: 'flex',
+                              backgroundColor: '#fafafa',
+                            }}
+                          >
+                            <Box sx={{ flex: 3 }}>
+                              <Typography
+                                variant="body2"
+                                sx={{ display: 'flex', alignItems: 'center' }}
+                              >
+                                <span style={{ marginRight: '8px' }}>•</span>
+                                {jobOrder.description || 'Job Order'}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ flex: 1, textAlign: 'right' }}>
+                              <Typography variant="body2">
+                                ₱{parseFloat(jobOrder.estimated_fee || 0).toFixed(2)}
+                              </Typography>
+                            </Box>
                           </Box>
-                          <Box sx={{ flex: 1, textAlign: 'right' }}>
-                            <Typography variant="body2">
-                              ${parseFloat(jobOrder.estimated_fee || 0).toFixed(2)}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      ))}
+                        ))}
                     </React.Fragment>
                   ))
                 ) : (
@@ -450,7 +482,7 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                           Subtotal:
                         </Typography>
                         <Typography variant="body1" sx={{ flex: 1, textAlign: 'right' }}>
-                          ${subtotal}
+                          ₱{subtotal}
                         </Typography>
                       </Box>
 
@@ -459,16 +491,22 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                           VAT (12%):
                         </Typography>
                         <Typography variant="body1" sx={{ flex: 1, textAlign: 'right' }}>
-                          ${vat}
+                          ₱{vat}
                         </Typography>
                       </Box>
 
                       <Box sx={{ display: 'flex' }}>
-                        <Typography variant="subtitle1" sx={{ flex: 3, textAlign: 'right', pr: 2, fontWeight: 'bold' }}>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ flex: 3, textAlign: 'right', pr: 2, fontWeight: 'bold' }}
+                        >
                           Total:
                         </Typography>
-                        <Typography variant="subtitle1" sx={{ flex: 1, textAlign: 'right', fontWeight: 'bold' }}>
-                          ${total}
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ flex: 1, textAlign: 'right', fontWeight: 'bold' }}
+                        >
+                          ₱{total}
                         </Typography>
                       </Box>
                     </Box>
@@ -483,8 +521,8 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                 PAYMENT INSTRUCTIONS
               </Typography>
               <Typography variant="body2" paragraph>
-                Upon confirmation, a downpayment of 50% of the total service fee is required.
-                The remaining balance and estimated fees shall be paid upon completion of the service.
+                Upon confirmation, a downpayment of 50% of the total service fee is required. The
+                remaining balance and estimated fees shall be paid upon completion of the service.
               </Typography>
               <Typography variant="body2" paragraph>
                 Please deposit your payment to:
@@ -506,9 +544,7 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
                   TERMS AND CONDITIONS
                 </Typography>
-                <Typography variant="body2">
-                  {proposalData.terms}
-                </Typography>
+                <Typography variant="body2">{proposalData.terms}</Typography>
               </Box>
             )}
 
@@ -530,4 +566,4 @@ const ProposalDocumentNew = ({ companyInfo, proposalData, clientName, services, 
   );
 };
 
-export default ProposalDocumentNew; 
+export default ProposalDocumentNew;

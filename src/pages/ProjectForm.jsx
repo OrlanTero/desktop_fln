@@ -22,7 +22,7 @@ import {
   Snackbar,
   Alert,
   InputAdornment,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -37,7 +37,7 @@ const ProjectForm = ({ user, onLogout }) => {
   const isEditMode = Boolean(id);
   const isConversion = location.state?.isConversion;
   const proposalData = location.state?.proposalData;
-  
+
   // State for project data
   const [formData, setFormData] = useState({
     project_name: '',
@@ -51,9 +51,9 @@ const ProjectForm = ({ user, onLogout }) => {
     status: 'Not Started',
     total_amount: 0,
     paid_amount: 0,
-    notes: ''
+    notes: '',
   });
-  
+
   // State for services
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedService, setSelectedService] = useState('');
@@ -61,7 +61,7 @@ const ProjectForm = ({ user, onLogout }) => {
   const [unitPrice, setUnitPrice] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [selectedServices, setSelectedServices] = useState([]);
-  
+
   // State for data loading
   const [clients, setClients] = useState([]);
   const [proposals, setProposals] = useState([]);
@@ -70,17 +70,17 @@ const ProjectForm = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
+
   // Add job order related state
   const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
   const [jobOrderError, setJobOrderError] = useState(null);
   const [localJobOrders, setLocalJobOrders] = useState({});
-  
+
   // Calculate totals
   const calculateSubtotal = () => {
     return selectedServices.reduce((total, service) => total + service.price, 0);
   };
-  
+
   // Load data on component mount
   useEffect(() => {
     const fetchData = async () => {
@@ -91,7 +91,7 @@ const ProjectForm = ({ user, onLogout }) => {
         if (clientsResponse.success) {
           setClients(clientsResponse.data || []);
         }
-        
+
         // Fetch proposals
         const proposalsResponse = await window.api.proposal.getAll();
         if (proposalsResponse.success) {
@@ -101,16 +101,16 @@ const ProjectForm = ({ user, onLogout }) => {
           );
           setProposals(acceptedProposals || []);
         }
-        
+
         // Fetch service categories
         const categoriesResponse = await window.api.serviceCategory.getAll();
         if (categoriesResponse.success) {
           setServiceCategories(categoriesResponse.data || []);
         }
-        
+
         // If converting from proposal
         if (isConversion && proposalData) {
-          console.log(proposalData)
+          console.log(proposalData);
           setFormData({
             project_name: proposalData.project_name || '',
             client_id: proposalData.client_id || '',
@@ -123,7 +123,7 @@ const ProjectForm = ({ user, onLogout }) => {
             status: 'Not Started',
             total_amount: proposalData.total_amount || 0,
             paid_amount: 0,
-            notes: proposalData.notes || ''
+            notes: proposalData.notes || '',
           });
 
           // Fetch services from proposal
@@ -131,15 +131,19 @@ const ProjectForm = ({ user, onLogout }) => {
           if (servicesResponse.success) {
             const services = servicesResponse.data.map(service => ({
               ...service,
-              price: service.quantity * service.unit_price * (1 - service.discount_percentage / 100)
+              price:
+                service.quantity * service.unit_price * (1 - service.discount_percentage / 100),
             }));
             setSelectedServices(services);
 
             // Fetch job orders for each service
             const jobOrdersMap = {};
             for (const service of services) {
-              const jobOrdersResponse = await window.api.jobOrders.getByService(service.service_id, proposalData.id);
-              console.log(jobOrdersResponse)
+              const jobOrdersResponse = await window.api.jobOrders.getByService(
+                service.service_id,
+                proposalData.id
+              );
+              console.log(jobOrdersResponse);
               if (jobOrdersResponse.success) {
                 jobOrdersMap[service.service_id] = jobOrdersResponse.data || [];
               }
@@ -155,9 +159,9 @@ const ProjectForm = ({ user, onLogout }) => {
             setFormData({
               ...project,
               start_date: project.start_date ? new Date(project.start_date) : null,
-              end_date: project.end_date ? new Date(project.end_date) : null
+              end_date: project.end_date ? new Date(project.end_date) : null,
             });
-            
+
             // Fetch services for this project
             const servicesResponse = await window.api.proService.getByProject(id);
             if (servicesResponse.success) {
@@ -171,10 +175,10 @@ const ProjectForm = ({ user, onLogout }) => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [id, isEditMode, isConversion, proposalData]);
-  
+
   // Load services when category changes
   useEffect(() => {
     const fetchServices = async () => {
@@ -182,7 +186,7 @@ const ProjectForm = ({ user, onLogout }) => {
         setServices([]);
         return;
       }
-      
+
       try {
         const response = await window.api.service.getByCategory(selectedCategory);
         if (response.success) {
@@ -194,43 +198,43 @@ const ProjectForm = ({ user, onLogout }) => {
         setError('Error loading services: ' + err.message);
       }
     };
-    
+
     fetchServices();
   }, [selectedCategory]);
-  
+
   // Handle form input changes
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: value,
     });
   };
-  
+
   // Handle date changes
   const handleDateChange = (name, e) => {
     const dateValue = e.target.value ? parse(e.target.value, 'yyyy-MM-dd', new Date()) : null;
     setFormData({
       ...formData,
-      [name]: dateValue
+      [name]: dateValue,
     });
   };
-  
+
   // Handle proposal selection
-  const handleProposalChange = async (e) => {
+  const handleProposalChange = async e => {
     const proposalId = e.target.value;
     setFormData({
       ...formData,
-      proposal_id: proposalId
+      proposal_id: proposalId,
     });
-    
+
     if (proposalId) {
       try {
         // Get proposal details
         const proposalResponse = await window.api.proposal.getById(proposalId);
         if (proposalResponse.success && proposalResponse.data) {
           const proposal = proposalResponse.data;
-          
+
           // Update form with proposal data
           setFormData(prevData => ({
             ...prevData,
@@ -242,9 +246,9 @@ const ProjectForm = ({ user, onLogout }) => {
             end_date: proposal.project_end ? new Date(proposal.project_end) : null,
             description: proposal.description || '',
             notes: proposal.notes || '',
-            total_amount: proposal.total_amount || 0
+            total_amount: proposal.total_amount || 0,
           }));
-          
+
           // Get services from proposal
           const servicesResponse = await window.api.proService.getByProposal(proposalId);
           if (servicesResponse.success) {
@@ -256,74 +260,76 @@ const ProjectForm = ({ user, onLogout }) => {
       }
     }
   };
-  
+
   // Add service to the list
   const handleAddService = () => {
     if (!selectedService || quantity <= 0 || unitPrice < 0) {
       setError('Please select a service, and enter valid quantity and price');
       return;
     }
-    
+
     const serviceObj = services.find(s => s.service_id === selectedService);
     if (!serviceObj) return;
-    
+
     // Calculate price with discount
     const totalPrice = quantity * unitPrice;
     const discountAmount = (totalPrice * discount) / 100;
     const finalPrice = totalPrice - discountAmount;
-    
+
     const newService = {
       service_id: selectedService,
       service_name: serviceObj.service_name,
       service_category_id: selectedCategory,
-      service_category_name: serviceCategories.find(c => c.service_category_id === selectedCategory)?.service_category_name || '',
+      service_category_name:
+        serviceCategories.find(c => c.service_category_id === selectedCategory)
+          ?.service_category_name || '',
       quantity: quantity,
       unit_price: unitPrice,
       discount_percentage: discount,
-      price: finalPrice
+      price: finalPrice,
     };
-    
+
     setSelectedServices([...selectedServices, newService]);
-    
+
     // Reset selection fields
     setSelectedService('');
     setQuantity(1);
     setUnitPrice(0);
     setDiscount(0);
   };
-  
+
   // Remove service from the list
-  const handleRemoveService = (index) => {
+  const handleRemoveService = index => {
     const updatedServices = [...selectedServices];
     updatedServices.splice(index, 1);
     setSelectedServices(updatedServices);
   };
-  
+
   // Add job order management functions
-  const handleManageJobOrders = (service) => {
+  const handleManageJobOrders = service => {
     setSelectedServiceDetails(service);
-    
+
     if (!localJobOrders[service.service_id]) {
       setLocalJobOrders(prev => ({
         ...prev,
-        [service.service_id]: []
+        [service.service_id]: [],
       }));
     }
   };
-  
+
   const handleJobOrderUpdate = (serviceId, updatedJobOrders) => {
     setLocalJobOrders(prev => ({
       ...prev,
-      [serviceId]: updatedJobOrders
+      [serviceId]: updatedJobOrders,
     }));
   };
-  
+
   // Update handleSubmit to include job orders
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
+
     try {
       // Create project first
       const projectData = {
@@ -331,13 +337,13 @@ const ProjectForm = ({ user, onLogout }) => {
         start_date: formData.start_date ? format(formData.start_date, 'yyyy-MM-dd') : null,
         end_date: formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : null,
         total_amount: calculateSubtotal(),
-        status: 'PENDING'
+        status: 'PENDING',
       };
 
       if (proposalData) {
-        projectData.proposal_id = proposalData.id
+        projectData.proposal_id = proposalData.id;
       }
-      
+
       console.log(projectData, proposalData);
       let projectId;
       if (isEditMode) {
@@ -349,7 +355,7 @@ const ProjectForm = ({ user, onLogout }) => {
       } else {
         const response = await window.api.project.create(projectData);
 
-        console.log(response)
+        console.log(response);
 
         if (!response.success) {
           throw new Error('Failed to create project: ' + response.message);
@@ -366,10 +372,9 @@ const ProjectForm = ({ user, onLogout }) => {
           unit_price: service.unit_price,
           price: service.price,
           discount_percentage: service.discount_percentage || 0,
-          pro_type: 'Project'
+          pro_type: 'Project',
         };
 
-        
         const serviceResponse = await window.api.proService.create(serviceData);
         if (!serviceResponse.success) {
           throw new Error('Failed to add service: ' + serviceResponse.message);
@@ -377,7 +382,7 @@ const ProjectForm = ({ user, onLogout }) => {
 
         // Get the created service ID from the response
         const createdServiceId = serviceResponse.data.pro_service_id;
-        
+
         // Add job orders for this service using the new service ID
         const jobOrders = localJobOrders[service.service_id] || [];
         for (const jobOrder of jobOrders) {
@@ -387,9 +392,8 @@ const ProjectForm = ({ user, onLogout }) => {
             service_id: createdServiceId,
             project_id: projectId,
             proposal_id: proposalData ? proposalData.id : null,
-            status: 'PENDING'
+            status: 'PENDING',
           };
-
 
           const jobOrderResponse = await window.api.jobOrders.create(jobOrderData);
           if (!jobOrderResponse.success) {
@@ -397,25 +401,27 @@ const ProjectForm = ({ user, onLogout }) => {
           }
         }
       }
-      
+
       // If this is a conversion, update the proposal status
       if (isConversion && proposalData) {
-        const updateResponse = await window.api.proposal.updateOnlyStatus(proposalData.id, 'CONVERTED' );
-        console.log(updateResponse)
+        const updateResponse = await window.api.proposal.updateOnlyStatus(
+          proposalData.id,
+          'CONVERTED'
+        );
+        console.log(updateResponse);
       }
-      
+
       setSuccess('Project saved successfully');
       setTimeout(() => {
         navigate('/projects');
       }, 2000);
-      
     } catch (err) {
       setError('Error saving project: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
-  
+
   // Add job orders UI component
   const renderJobOrders = () => {
     if (!selectedServiceDetails) {
@@ -435,21 +441,20 @@ const ProjectForm = ({ user, onLogout }) => {
             projectId={id || 'temp'}
             serviceName={selectedServiceDetails.service_name}
             jobOrders={localJobOrders[selectedServiceDetails.service_id] || []}
-            onUpdate={(updatedJobOrders) => handleJobOrderUpdate(selectedServiceDetails.service_id, updatedJobOrders)}
+            onUpdate={updatedJobOrders =>
+              handleJobOrderUpdate(selectedServiceDetails.service_id, updatedJobOrders)
+            }
           />
           <Box mt={2}>
-            <Button
-              variant="outlined"
-              onClick={() => setSelectedServiceDetails(null)}
-            >
+            <Button variant="outlined" onClick={() => setSelectedServiceDetails(null)}>
               Close Job Orders
             </Button>
-        </Box>
+          </Box>
         </Paper>
       </Box>
     );
   };
-  
+
   // Update the services table to include job order management
   const renderServicesTable = () => (
     <TableContainer component={Paper}>
@@ -469,20 +474,14 @@ const ProjectForm = ({ user, onLogout }) => {
             <TableRow key={index}>
               <TableCell>{service.service_name}</TableCell>
               <TableCell align="right">{service.quantity}</TableCell>
-              <TableCell align="right">{service.unit_price}</TableCell>
-              <TableCell align="right">{service.discount_percentage || 0}</TableCell>
-              <TableCell align="right">{service.price}</TableCell>
+              <TableCell align="right">₱{service.unit_price}</TableCell>
+              <TableCell align="right">{service.discount_percentage || 0}%</TableCell>
+              <TableCell align="right">₱{service.price}</TableCell>
               <TableCell align="center">
-                <IconButton
-                  color="primary"
-                  onClick={() => handleManageJobOrders(service)}
-                >
+                <IconButton color="primary" onClick={() => handleManageJobOrders(service)}>
                   <AddIcon />
                 </IconButton>
-                <IconButton
-                  color="error"
-                  onClick={() => handleRemoveService(index)}
-                >
+                <IconButton color="error" onClick={() => handleRemoveService(index)}>
                   <DeleteIcon />
                 </IconButton>
               </TableCell>
@@ -492,20 +491,24 @@ const ProjectForm = ({ user, onLogout }) => {
       </Table>
     </TableContainer>
   );
-  
+
   return (
     <Layout user={user} onLogout={onLogout}>
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" gutterBottom>
-          {isEditMode ? 'Edit Project' : isConversion ? 'Convert Proposal to Project' : 'Create New Project'}
+          {isEditMode
+            ? 'Edit Project'
+            : isConversion
+            ? 'Convert Proposal to Project'
+            : 'Create New Project'}
         </Typography>
-        
+
         <form onSubmit={handleSubmit}>
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               Project Details
             </Typography>
-            
+
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
                 <TextField
@@ -517,7 +520,7 @@ const ProjectForm = ({ user, onLogout }) => {
                   required
                 />
               </Grid>
-              
+
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth required>
                   <InputLabel>Client</InputLabel>
@@ -527,7 +530,7 @@ const ProjectForm = ({ user, onLogout }) => {
                     onChange={handleChange}
                     disabled={isConversion}
                   >
-                    {clients.map((client) => (
+                    {clients.map(client => (
                       <MenuItem key={client.client_id} value={client.client_id}>
                         {client.client_name}
                       </MenuItem>
@@ -535,7 +538,7 @@ const ProjectForm = ({ user, onLogout }) => {
                   </Select>
                 </FormControl>
               </Grid>
-              
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -545,22 +548,18 @@ const ProjectForm = ({ user, onLogout }) => {
                   onChange={handleChange}
                 />
               </Grid>
-              
+
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth required>
                   <InputLabel>Priority</InputLabel>
-                  <Select
-                    name="priority"
-                    value={formData.priority}
-                    onChange={handleChange}
-                  >
+                  <Select name="priority" value={formData.priority} onChange={handleChange}>
                     <MenuItem value="Low">Low</MenuItem>
                     <MenuItem value="Medium">Medium</MenuItem>
                     <MenuItem value="High">High</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
-              
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -568,11 +567,11 @@ const ProjectForm = ({ user, onLogout }) => {
                   label="Start Date"
                   name="start_date"
                   value={formData.start_date ? format(formData.start_date, 'yyyy-MM-dd') : ''}
-                  onChange={(e) => handleDateChange('start_date', e)}
+                  onChange={e => handleDateChange('start_date', e)}
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
-              
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -580,11 +579,11 @@ const ProjectForm = ({ user, onLogout }) => {
                   label="End Date"
                   name="end_date"
                   value={formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : ''}
-                  onChange={(e) => handleDateChange('end_date', e)}
+                  onChange={e => handleDateChange('end_date', e)}
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -598,37 +597,51 @@ const ProjectForm = ({ user, onLogout }) => {
               </Grid>
             </Grid>
           </Paper>
-          
+
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               Services
             </Typography>
-            
+
             <Grid container spacing={2} sx={{ mb: 2 }}>
               <Grid item xs={12} sm={6} md={3}>
                 <FormControl fullWidth>
                   <InputLabel>Service Category</InputLabel>
                   <Select
                     value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    onChange={e => setSelectedCategory(e.target.value)}
                   >
-                    {serviceCategories.map((category) => (
-                      <MenuItem key={category.service_category_id} value={category.service_category_id}>
+                    {serviceCategories.map(category => (
+                      <MenuItem
+                        key={category.service_category_id}
+                        value={category.service_category_id}
+                      >
                         {category.service_category_name}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
-              
+
               <Grid item xs={12} sm={6} md={3}>
                 <FormControl fullWidth>
                   <InputLabel>Service</InputLabel>
                   <Select
                     value={selectedService}
-                    onChange={(e) => setSelectedService(e.target.value)}
+                    onChange={e => {
+                      const serviceId = e.target.value;
+                      setSelectedService(serviceId);
+
+                      // Automatically set the unit price to the service price
+                      if (serviceId) {
+                        const selectedServiceObj = services.find(s => s.service_id === serviceId);
+                        if (selectedServiceObj && selectedServiceObj.price) {
+                          setUnitPrice(selectedServiceObj.price);
+                        }
+                      }
+                    }}
                   >
-                    {services.map((service) => (
+                    {services.map(service => (
                       <MenuItem key={service.service_id} value={service.service_id}>
                         {service.service_name}
                       </MenuItem>
@@ -636,46 +649,46 @@ const ProjectForm = ({ user, onLogout }) => {
                   </Select>
                 </FormControl>
               </Grid>
-              
+
               <Grid item xs={12} sm={6} md={2}>
                 <TextField
                   fullWidth
                   type="number"
                   label="Quantity"
                   value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  onChange={e => setQuantity(Number(e.target.value))}
                   InputProps={{ inputProps: { min: 1 } }}
                 />
               </Grid>
-              
+
               <Grid item xs={12} sm={6} md={2}>
                 <TextField
                   fullWidth
                   type="number"
                   label="Unit Price (₱)"
                   value={unitPrice}
-                  onChange={(e) => setUnitPrice(Number(e.target.value))}
+                  onChange={e => setUnitPrice(Number(e.target.value))}
                   InputProps={{
                     startAdornment: <InputAdornment position="start">₱</InputAdornment>,
-                    inputProps: { min: 0 }
+                    inputProps: { min: 0 },
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12} sm={6} md={2}>
                 <TextField
                   fullWidth
                   type="number"
                   label="Discount (%)"
                   value={discount}
-                  onChange={(e) => setDiscount(Number(e.target.value))}
+                  onChange={e => setDiscount(Number(e.target.value))}
                   InputProps={{
                     endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                    inputProps: { min: 0, max: 100 }
+                    inputProps: { min: 0, max: 100 },
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12} sm={6} md={2}>
                 <Button
                   fullWidth
@@ -688,16 +701,12 @@ const ProjectForm = ({ user, onLogout }) => {
                 </Button>
               </Grid>
             </Grid>
-            
+
             {renderServicesTable()}
           </Paper>
-          
+
           <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/projects')}
-              disabled={loading}
-            >
+            <Button variant="outlined" onClick={() => navigate('/projects')} disabled={loading}>
               Cancel
             </Button>
             <Button
@@ -710,24 +719,16 @@ const ProjectForm = ({ user, onLogout }) => {
             </Button>
           </Box>
         </form>
-        
+
         {renderJobOrders()}
-        
-        <Snackbar
-          open={Boolean(error)}
-          autoHideDuration={6000}
-          onClose={() => setError(null)}
-        >
+
+        <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError(null)}>
           <Alert onClose={() => setError(null)} severity="error">
             {error}
           </Alert>
         </Snackbar>
-        
-        <Snackbar
-          open={Boolean(success)}
-          autoHideDuration={6000}
-          onClose={() => setSuccess(null)}
-        >
+
+        <Snackbar open={Boolean(success)} autoHideDuration={6000} onClose={() => setSuccess(null)}>
           <Alert onClose={() => setSuccess(null)} severity="success">
             {success}
           </Alert>
@@ -737,4 +738,4 @@ const ProjectForm = ({ user, onLogout }) => {
   );
 };
 
-export default ProjectForm; 
+export default ProjectForm;

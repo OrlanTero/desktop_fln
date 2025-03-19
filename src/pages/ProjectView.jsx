@@ -23,7 +23,7 @@ import {
   DialogContentText,
   DialogTitle,
   TextField,
-  InputAdornment
+  InputAdornment,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -33,18 +33,18 @@ import { format } from 'date-fns';
 const ProjectView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   // State
   const [project, setProject] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
+
   // Payment dialog state
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
-  
+
   // Fetch project data
   useEffect(() => {
     const fetchData = async () => {
@@ -57,7 +57,7 @@ const ProjectView = () => {
         } else {
           setError('Failed to load project details');
         }
-        
+
         // Fetch services for this project
         const servicesResponse = await window.api.proService.getByProject(id);
         if (servicesResponse.success) {
@@ -71,43 +71,43 @@ const ProjectView = () => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [id]);
-  
+
   // Handle edit project
   const handleEdit = () => {
     navigate(`/projects/edit/${id}`);
   };
-  
+
   // Handle back
   const handleBack = () => {
     navigate('/projects');
   };
-  
+
   // Handle payment
   const handlePaymentClick = () => {
     setPaymentAmount(0);
     setPaymentDialogOpen(true);
   };
-  
+
   const handlePaymentConfirm = async () => {
     if (!project || paymentAmount <= 0) return;
-    
+
     setLoading(true);
     try {
       const response = await window.api.project.updatePaidAmount(
         project.project_id,
         parseFloat(paymentAmount)
       );
-      
+
       if (response.success) {
-        setSuccess(`Payment of $${paymentAmount} recorded successfully`);
-        
+        setSuccess(`Payment of ₱${paymentAmount} recorded successfully`);
+
         // Update local state
         setProject({
           ...project,
-          paid_amount: parseFloat(project.paid_amount || 0) + parseFloat(paymentAmount)
+          paid_amount: parseFloat(project.paid_amount || 0) + parseFloat(paymentAmount),
         });
       } else {
         setError('Failed to record payment: ' + response.message);
@@ -120,9 +120,9 @@ const ProjectView = () => {
       setPaymentAmount(0);
     }
   };
-  
+
   // Format date
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return 'N/A';
     try {
       return format(new Date(dateString), 'MMM dd, yyyy');
@@ -130,9 +130,9 @@ const ProjectView = () => {
       return 'Invalid Date';
     }
   };
-  
+
   // Get status chip color
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     switch (status) {
       case 'Not Started':
         return 'default';
@@ -148,9 +148,9 @@ const ProjectView = () => {
         return 'default';
     }
   };
-  
+
   // Get priority chip color
-  const getPriorityColor = (priority) => {
+  const getPriorityColor = priority => {
     switch (priority) {
       case 'Low':
         return 'success';
@@ -164,20 +164,20 @@ const ProjectView = () => {
         return 'default';
     }
   };
-  
+
   // Calculate payment status
   const getPaymentStatus = () => {
     if (!project) return 'Unknown';
-    
+
     const total = parseFloat(project.total_amount || 0);
     const paid = parseFloat(project.paid_amount || 0);
-    
+
     if (paid === 0) return 'Not Paid';
     if (paid < total) return 'Partially Paid';
     return 'Fully Paid';
   };
-  
-  const getPaymentStatusColor = (status) => {
+
+  const getPaymentStatusColor = status => {
     switch (status) {
       case 'Not Paid':
         return 'error';
@@ -189,21 +189,26 @@ const ProjectView = () => {
         return 'default';
     }
   };
-  
+
   // Calculate remaining amount
   const getRemainingAmount = () => {
     if (!project) return 0;
-    return Math.max(0, parseFloat(project.total_amount || 0) - parseFloat(project.paid_amount || 0));
+    return Math.max(
+      0,
+      parseFloat(project.total_amount || 0) - parseFloat(project.paid_amount || 0)
+    );
   };
-  
+
   if (loading && !project) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+      >
         <CircularProgress />
       </Box>
     );
   }
-  
+
   if (!project) {
     return (
       <Box sx={{ p: 3 }}>
@@ -221,17 +226,13 @@ const ProjectView = () => {
       </Box>
     );
   }
-  
+
   const paymentStatus = getPaymentStatus();
-  
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-        >
+        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={handleBack}>
           Back to Projects
         </Button>
         <Box>
@@ -254,16 +255,16 @@ const ProjectView = () => {
           </Button>
         </Box>
       </Box>
-      
+
       <Typography variant="h4" gutterBottom>
         {project.project_name}
       </Typography>
-      
+
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
           Project Information
         </Typography>
-        
+
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2" color="text.secondary">
@@ -273,7 +274,7 @@ const ProjectView = () => {
               {project.client_name}
             </Typography>
           </Grid>
-          
+
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2" color="text.secondary">
               Attention To
@@ -282,31 +283,31 @@ const ProjectView = () => {
               {project.attn_to || 'N/A'}
             </Typography>
           </Grid>
-          
+
           <Grid item xs={12} md={3}>
             <Typography variant="subtitle2" color="text.secondary">
               Status
             </Typography>
-            <Chip 
-              label={project.status} 
-              color={getStatusColor(project.status)} 
-              size="small" 
+            <Chip
+              label={project.status}
+              color={getStatusColor(project.status)}
+              size="small"
               sx={{ mt: 0.5 }}
             />
           </Grid>
-          
+
           <Grid item xs={12} md={3}>
             <Typography variant="subtitle2" color="text.secondary">
               Priority
             </Typography>
-            <Chip 
-              label={project.priority} 
-              color={getPriorityColor(project.priority)} 
-              size="small" 
+            <Chip
+              label={project.priority}
+              color={getPriorityColor(project.priority)}
+              size="small"
               sx={{ mt: 0.5 }}
             />
           </Grid>
-          
+
           <Grid item xs={12} md={3}>
             <Typography variant="subtitle2" color="text.secondary">
               Start Date
@@ -315,7 +316,7 @@ const ProjectView = () => {
               {formatDate(project.start_date)}
             </Typography>
           </Grid>
-          
+
           <Grid item xs={12} md={3}>
             <Typography variant="subtitle2" color="text.secondary">
               End Date
@@ -324,7 +325,7 @@ const ProjectView = () => {
               {formatDate(project.end_date)}
             </Typography>
           </Grid>
-          
+
           {project.proposal_id && (
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle2" color="text.secondary">
@@ -335,11 +336,11 @@ const ProjectView = () => {
               </Typography>
             </Grid>
           )}
-          
+
           <Grid item xs={12}>
             <Divider sx={{ my: 2 }} />
           </Grid>
-          
+
           <Grid item xs={12}>
             <Typography variant="subtitle2" color="text.secondary">
               Description
@@ -348,7 +349,7 @@ const ProjectView = () => {
               {project.description || 'No description provided'}
             </Typography>
           </Grid>
-          
+
           <Grid item xs={12}>
             <Typography variant="subtitle2" color="text.secondary">
               Notes
@@ -359,12 +360,12 @@ const ProjectView = () => {
           </Grid>
         </Grid>
       </Paper>
-      
+
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
           Financial Information
         </Typography>
-        
+
         <Grid container spacing={2}>
           <Grid item xs={12} md={4}>
             <Paper elevation={0} sx={{ p: 2, bgcolor: '#f5f5f5', height: '100%' }}>
@@ -372,52 +373,49 @@ const ProjectView = () => {
                 Total Amount
               </Typography>
               <Typography variant="h5" color="primary">
-                ${parseFloat(project.total_amount || 0).toFixed(2)}
+                ₱{parseFloat(project.total_amount || 0).toFixed(2)}
               </Typography>
             </Paper>
           </Grid>
-          
+
           <Grid item xs={12} md={4}>
             <Paper elevation={0} sx={{ p: 2, bgcolor: '#f5f5f5', height: '100%' }}>
               <Typography variant="subtitle2" color="text.secondary">
                 Paid Amount
               </Typography>
               <Typography variant="h5" color="success.main">
-                ${parseFloat(project.paid_amount || 0).toFixed(2)}
+                ₱{parseFloat(project.paid_amount || 0).toFixed(2)}
               </Typography>
             </Paper>
           </Grid>
-          
+
           <Grid item xs={12} md={4}>
             <Paper elevation={0} sx={{ p: 2, bgcolor: '#f5f5f5', height: '100%' }}>
               <Typography variant="subtitle2" color="text.secondary">
                 Remaining Amount
               </Typography>
               <Typography variant="h5" color="error">
-                ${getRemainingAmount().toFixed(2)}
+                ₱{getRemainingAmount().toFixed(2)}
               </Typography>
             </Paper>
           </Grid>
-          
+
           <Grid item xs={12}>
             <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
               <Typography variant="subtitle1" sx={{ mr: 1 }}>
                 Payment Status:
               </Typography>
-              <Chip 
-                label={paymentStatus} 
-                color={getPaymentStatusColor(paymentStatus)} 
-              />
+              <Chip label={paymentStatus} color={getPaymentStatusColor(paymentStatus)} />
             </Box>
           </Grid>
         </Grid>
       </Paper>
-      
+
       <Paper sx={{ p: 3 }}>
         <Typography variant="h6" gutterBottom>
           Services
         </Typography>
-        
+
         <TableContainer>
           <Table>
             <TableHead>
@@ -443,9 +441,11 @@ const ProjectView = () => {
                     <TableCell>{service.service_category_name}</TableCell>
                     <TableCell>{service.service_name}</TableCell>
                     <TableCell align="right">{service.quantity}</TableCell>
-                    <TableCell align="right">${parseFloat(service.unit_price).toFixed(2)}</TableCell>
+                    <TableCell align="right">
+                      ₱{parseFloat(service.unit_price).toFixed(2)}
+                    </TableCell>
                     <TableCell align="right">{service.discount_percentage}%</TableCell>
-                    <TableCell align="right">${parseFloat(service.price).toFixed(2)}</TableCell>
+                    <TableCell align="right">₱{parseFloat(service.price).toFixed(2)}</TableCell>
                   </TableRow>
                 ))
               )}
@@ -454,33 +454,30 @@ const ProjectView = () => {
                   Total:
                 </TableCell>
                 <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                  ${parseFloat(project.total_amount || 0).toFixed(2)}
+                  ₱{parseFloat(project.total_amount || 0).toFixed(2)}
                 </TableCell>
               </TableRow>
             </TableBody>
           </Table>
         </TableContainer>
       </Paper>
-      
+
       {/* Payment Dialog */}
-      <Dialog
-        open={paymentDialogOpen}
-        onClose={() => setPaymentDialogOpen(false)}
-      >
+      <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)}>
         <DialogTitle>Record Payment</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
             Record a payment for project "{project.project_name}".
           </DialogContentText>
           <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" gutterBottom>
-              Total Amount: ${parseFloat(project.total_amount || 0).toFixed(2)}
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Total Amount:</strong> ₱{parseFloat(project.total_amount || 0).toFixed(2)}
             </Typography>
-            <Typography variant="body2" gutterBottom>
-              Paid Amount: ${parseFloat(project.paid_amount || 0).toFixed(2)}
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Paid Amount:</strong> ₱{parseFloat(project.paid_amount || 0).toFixed(2)}
             </Typography>
-            <Typography variant="body2" gutterBottom>
-              Remaining: ${getRemainingAmount().toFixed(2)}
+            <Typography variant="body1" sx={{ mb: 3 }}>
+              <strong>Remaining:</strong> ₱{getRemainingAmount().toFixed(2)}
             </Typography>
           </Box>
           <TextField
@@ -490,9 +487,9 @@ const ProjectView = () => {
             type="number"
             fullWidth
             value={paymentAmount}
-            onChange={(e) => setPaymentAmount(e.target.value)}
+            onChange={e => setPaymentAmount(e.target.value)}
             InputProps={{
-              startAdornment: <InputAdornment position="start">$</InputAdornment>,
+              startAdornment: <InputAdornment position="start">₱</InputAdornment>,
             }}
           />
         </DialogContent>
@@ -500,32 +497,24 @@ const ProjectView = () => {
           <Button onClick={() => setPaymentDialogOpen(false)} color="primary">
             Cancel
           </Button>
-          <Button 
-            onClick={handlePaymentConfirm} 
-            color="primary" 
+          <Button
+            onClick={handlePaymentConfirm}
+            color="primary"
             disabled={loading || paymentAmount <= 0 || paymentAmount > getRemainingAmount()}
           >
             {loading ? <CircularProgress size={24} /> : 'Record Payment'}
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Snackbars for notifications */}
-      <Snackbar
-        open={Boolean(error)}
-        autoHideDuration={6000}
-        onClose={() => setError(null)}
-      >
+      <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError(null)}>
         <Alert onClose={() => setError(null)} severity="error">
           {error}
         </Alert>
       </Snackbar>
-      
-      <Snackbar
-        open={Boolean(success)}
-        autoHideDuration={6000}
-        onClose={() => setSuccess(null)}
-      >
+
+      <Snackbar open={Boolean(success)} autoHideDuration={6000} onClose={() => setSuccess(null)}>
         <Alert onClose={() => setSuccess(null)} severity="success">
           {success}
         </Alert>
@@ -534,4 +523,4 @@ const ProjectView = () => {
   );
 };
 
-export default ProjectView; 
+export default ProjectView;

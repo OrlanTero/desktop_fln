@@ -46,18 +46,18 @@ import { format } from 'date-fns';
 
 const Proposals = ({ user, onLogout }) => {
   const navigate = useNavigate();
-  
+
   // State
   const [proposals, setProposals] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
+
   // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
+
   // Filter state
   const [filters, setFilters] = useState({
     search: '',
@@ -65,11 +65,11 @@ const Proposals = ({ user, onLogout }) => {
     client: '',
     dateRange: '',
   });
-  
+
   // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
-  
+
   // Fetch clients from API
   const fetchClients = async () => {
     try {
@@ -84,40 +84,43 @@ const Proposals = ({ user, onLogout }) => {
       setError('Error loading clients: ' + (err?.message || 'Unknown error'));
     }
   };
-  
+
   // Fetch proposals on component mount
   useEffect(() => {
     fetchProposals();
     fetchClients();
   }, []);
-  
+
   // Filter proposals based on search and filter criteria
   const filteredProposals = proposals.filter(proposal => {
-    const matchesSearch = filters.search === '' || 
+    const matchesSearch =
+      filters.search === '' ||
       proposal.proposal_reference.toLowerCase().includes(filters.search.toLowerCase()) ||
       proposal.client_name.toLowerCase().includes(filters.search.toLowerCase());
-    
+
     const matchesStatus = filters.status === '' || proposal.status === filters.status;
-    
+
     const matchesClient = filters.client === '' || proposal.client_id === filters.client;
-    
-    const matchesDateRange = filters.dateRange === '' || (() => {
-      const proposalDate = new Date(proposal.created_at);
-      const today = new Date();
-      switch (filters.dateRange) {
-        case 'today':
-          return proposalDate.toDateString() === today.toDateString();
-        case 'week':
-          const weekAgo = new Date(today.setDate(today.getDate() - 7));
-          return proposalDate >= weekAgo;
-        case 'month':
-          const monthAgo = new Date(today.setMonth(today.getMonth() - 1));
-          return proposalDate >= monthAgo;
-        default:
-          return true;
-      }
-    })();
-    
+
+    const matchesDateRange =
+      filters.dateRange === '' ||
+      (() => {
+        const proposalDate = new Date(proposal.created_at);
+        const today = new Date();
+        switch (filters.dateRange) {
+          case 'today':
+            return proposalDate.toDateString() === today.toDateString();
+          case 'week':
+            const weekAgo = new Date(today.setDate(today.getDate() - 7));
+            return proposalDate >= weekAgo;
+          case 'month':
+            const monthAgo = new Date(today.setMonth(today.getMonth() - 1));
+            return proposalDate >= monthAgo;
+          default:
+            return true;
+        }
+      })();
+
     return matchesSearch && matchesStatus && matchesClient && matchesDateRange;
   });
 
@@ -133,17 +136,17 @@ const Proposals = ({ user, onLogout }) => {
   };
 
   // Handle rows per page change
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = event => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
   // Handle filter changes
-  const handleFilterChange = (event) => {
+  const handleFilterChange = event => {
     const { name, value } = event.target;
     setFilters(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     setPage(0); // Reset to first page when filters change
   };
@@ -158,7 +161,7 @@ const Proposals = ({ user, onLogout }) => {
     });
     setPage(0);
   };
-  
+
   // Fetch proposals from API
   const fetchProposals = async () => {
     setLoading(true);
@@ -170,7 +173,7 @@ const Proposals = ({ user, onLogout }) => {
         setLoading(false);
         return;
       }
-      
+
       const response = await window.api.proposal.getAll();
 
       if (response && response.success) {
@@ -185,36 +188,36 @@ const Proposals = ({ user, onLogout }) => {
       setLoading(false);
     }
   };
-  
+
   // Handle create new proposal
   const handleCreateProposal = () => {
     navigate('/proposals/new');
   };
-  
+
   // Handle edit proposal
-  const handleEditProposal = (id) => {
+  const handleEditProposal = id => {
     navigate(`/proposals/edit/${id}`);
   };
-  
+
   // Handle view proposal
-  const handleViewProposal = (id) => {
+  const handleViewProposal = id => {
     navigate(`/proposals/view/${id}`);
   };
-  
+
   // Handle delete proposal
-  const handleDeleteClick = (proposal) => {
+  const handleDeleteClick = proposal => {
     setSelectedProposal(proposal);
     setDeleteDialogOpen(true);
   };
-  
+
   const handleDeleteConfirm = async () => {
     if (!selectedProposal) return;
-    
+
     setLoading(true);
     try {
       // First delete all services associated with this proposal
       await window.api.proService.deleteByProposal(selectedProposal.proposal_id);
-      
+
       // Then delete the proposal
       const response = await window.api.proposal.delete(selectedProposal.proposal_id);
       if (response.success) {
@@ -231,28 +234,27 @@ const Proposals = ({ user, onLogout }) => {
       setSelectedProposal(null);
     }
   };
-  
+
   // Handle convert to project
-  const handleConvertClick = (proposal) => {
+  const handleConvertClick = proposal => {
     if (proposal.status.toLowerCase() !== 'accepted') {
       setError('Only accepted proposals can be converted to projects');
       return;
-    } 
+    }
 
     const proposalData = proposals.find(p => p.proposal_id === proposal.proposal_id);
 
-
     // Navigate to project form with proposal data
-    navigate('/projects/new', { 
-      state: { 
+    navigate('/projects/new', {
+      state: {
         proposalData: proposalData,
-        isConversion: true
-      }
+        isConversion: true,
+      },
     });
   };
-  
+
   // Get status chip color
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     switch (status) {
       case 'DRAFT':
         return 'default';
@@ -268,9 +270,9 @@ const Proposals = ({ user, onLogout }) => {
         return 'default';
     }
   };
-  
+
   // Format date
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return 'N/A';
     try {
       return format(new Date(dateString), 'MMM dd, yyyy');
@@ -278,15 +280,17 @@ const Proposals = ({ user, onLogout }) => {
       return 'Invalid Date';
     }
   };
-  
+
   if (loading && proposals.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+      >
         <CircularProgress />
       </Box>
     );
   }
-  
+
   return (
     <Layout user={user} onLogout={onLogout}>
       <Box sx={{ p: 3 }}>
@@ -349,7 +353,7 @@ const Proposals = ({ user, onLogout }) => {
                   label="Client"
                 >
                   <MenuItem value="">All</MenuItem>
-                  {clients.map((client) => (
+                  {clients.map(client => (
                     <MenuItem key={client.client_id} value={client.client_id}>
                       {client.client_name}
                     </MenuItem>
@@ -418,13 +422,11 @@ const Proposals = ({ user, onLogout }) => {
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedProposals.map((proposal) => (
+                paginatedProposals.map(proposal => (
                   <TableRow key={proposal.proposal_id}>
                     <TableCell>{proposal.proposal_reference}</TableCell>
                     <TableCell>{proposal.client_name}</TableCell>
-                    <TableCell>
-                      ${parseFloat(proposal.total_amount || 0).toFixed(2)}
-                    </TableCell>
+                    <TableCell>₱{parseFloat(proposal.total_amount || 0).toFixed(2)}</TableCell>
                     <TableCell>
                       <Chip
                         label={proposal.status}
@@ -457,18 +459,12 @@ const Proposals = ({ user, onLogout }) => {
                         </>
                       )}
                       {proposal.status === 'ACCEPTED' && (
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleConvertClick(proposal)}
-                        >
+                        <IconButton color="primary" onClick={() => handleConvertClick(proposal)}>
                           <ConvertIcon />
                         </IconButton>
                       )}
                       {proposal.status === 'DRAFT' && (
-                        <IconButton
-                          color="error"
-                          onClick={() => handleDeleteClick(proposal)}
-                        >
+                        <IconButton color="error" onClick={() => handleDeleteClick(proposal)}>
                           <DeleteIcon />
                         </IconButton>
                       )}
@@ -488,16 +484,14 @@ const Proposals = ({ user, onLogout }) => {
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
         </TableContainer>
-        
+
         {/* Delete Confirmation Dialog */}
-        <Dialog
-          open={deleteDialogOpen}
-          onClose={() => setDeleteDialogOpen(false)}
-        >
+        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
           <DialogTitle>Delete Proposal</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete the proposal "{selectedProposal?.proposal_name}"? This action cannot be undone.
+              Are you sure you want to delete the proposal "{selectedProposal?.proposal_name}"? This
+              action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -509,23 +503,15 @@ const Proposals = ({ user, onLogout }) => {
             </Button>
           </DialogActions>
         </Dialog>
-        
+
         {/* Snackbars for notifications */}
-        <Snackbar
-          open={Boolean(error)}
-          autoHideDuration={6000}
-          onClose={() => setError(null)}
-        >
+        <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError(null)}>
           <Alert onClose={() => setError(null)} severity="error">
             {error}
           </Alert>
         </Snackbar>
-        
-        <Snackbar
-          open={Boolean(success)}
-          autoHideDuration={6000}
-          onClose={() => setSuccess(null)}
-        >
+
+        <Snackbar open={Boolean(success)} autoHideDuration={6000} onClose={() => setSuccess(null)}>
           <Alert onClose={() => setSuccess(null)} severity="success">
             {success}
           </Alert>
@@ -535,4 +521,4 @@ const Proposals = ({ user, onLogout }) => {
   );
 };
 
-export default Proposals; 
+export default Proposals;

@@ -34,7 +34,6 @@ import {
   Grid,
   TablePagination,
   LinearProgress,
-
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -59,10 +58,9 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 
-
 const Projects = ({ user, onLogout }) => {
   const navigate = useNavigate();
-  
+
   // State
   const [projects, setProjects] = useState([]);
   const [clients, setClients] = useState([]);
@@ -70,7 +68,7 @@ const Projects = ({ user, onLogout }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -78,15 +76,15 @@ const Projects = ({ user, onLogout }) => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [paymentAmount, setPaymentAmount] = useState(0);
-  
+
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuProject, setMenuProject] = useState(null);
-  
+
   // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
+
   // Filter state
   const [filters, setFilters] = useState({
     search: '',
@@ -95,7 +93,7 @@ const Projects = ({ user, onLogout }) => {
     dateRange: '',
     progressRange: '',
   });
-  
+
   // Fetch clients from API
   const fetchClients = async () => {
     try {
@@ -110,57 +108,62 @@ const Projects = ({ user, onLogout }) => {
       setError('Error loading clients: ' + (err?.message || 'Unknown error'));
     }
   };
-  
+
   // Fetch projects on component mount
   useEffect(() => {
     fetchProjects();
     fetchClients();
   }, []);
-  
+
   // Filter projects based on search and filter criteria
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = filters.search === '' || 
+    const matchesSearch =
+      filters.search === '' ||
       project.project_name.toLowerCase().includes(filters.search.toLowerCase()) ||
       project.client_name.toLowerCase().includes(filters.search.toLowerCase());
-    
-    const matchesStatus = filters.status === '' || project.status === filters.status;
-    
-    const matchesClient = filters.client === '' || project.client_id === filters.client;
-    
-    const matchesDateRange = filters.dateRange === '' || (() => {
-      const projectDate = new Date(project.created_at);
-      const today = new Date();
-      switch (filters.dateRange) {
-        case 'today':
-          return projectDate.toDateString() === today.toDateString();
-        case 'week':
-          const weekAgo = new Date(today.setDate(today.getDate() - 7));
-          return projectDate >= weekAgo;
-        case 'month':
-          const monthAgo = new Date(today.setMonth(today.getMonth() - 1));
-          return projectDate >= monthAgo;
-        default:
-          return true;
-      }
-    })();
 
-    const matchesProgress = filters.progressRange === '' || (() => {
-      const progress = (project.completed_tasks / project.total_tasks) * 100;
-      switch (filters.progressRange) {
-        case 'not-started':
-          return progress === 0;
-        case 'in-progress':
-          return progress > 0 && progress < 100;
-        case 'completed':
-          return progress === 100;
-        default:
-          return true;
-      }
-    })();
-    
+    const matchesStatus = filters.status === '' || project.status === filters.status;
+
+    const matchesClient = filters.client === '' || project.client_id === filters.client;
+
+    const matchesDateRange =
+      filters.dateRange === '' ||
+      (() => {
+        const projectDate = new Date(project.created_at);
+        const today = new Date();
+        switch (filters.dateRange) {
+          case 'today':
+            return projectDate.toDateString() === today.toDateString();
+          case 'week':
+            const weekAgo = new Date(today.setDate(today.getDate() - 7));
+            return projectDate >= weekAgo;
+          case 'month':
+            const monthAgo = new Date(today.setMonth(today.getMonth() - 1));
+            return projectDate >= monthAgo;
+          default:
+            return true;
+        }
+      })();
+
+    const matchesProgress =
+      filters.progressRange === '' ||
+      (() => {
+        const progress = (project.completed_tasks / project.total_tasks) * 100;
+        switch (filters.progressRange) {
+          case 'not-started':
+            return progress === 0;
+          case 'in-progress':
+            return progress > 0 && progress < 100;
+          case 'completed':
+            return progress === 100;
+          default:
+            return true;
+        }
+      })();
+
     return matchesSearch && matchesStatus && matchesClient && matchesDateRange && matchesProgress;
   });
-  
+
   // Fetch projects from API
   const fetchProjects = async () => {
     setLoading(true);
@@ -172,7 +175,7 @@ const Projects = ({ user, onLogout }) => {
         setLoading(false);
         return;
       }
-      
+
       const response = await window.api.project.getAll();
       if (response && response.success) {
         setProjects(response.data || []);
@@ -186,39 +189,39 @@ const Projects = ({ user, onLogout }) => {
       setLoading(false);
     }
   };
-  
+
   // Handle create new project
   const handleCreateProject = () => {
     navigate('/projects/new');
   };
-  
+
   // Handle edit project
-  const handleEditProject = (id) => {
+  const handleEditProject = id => {
     navigate(`/projects/edit/${id}`);
   };
-  
+
   // Handle view project
-  const handleViewProject = (id) => {
+  const handleViewProject = id => {
     navigate(`/projects/view/${id}`);
   };
-  
+
   // Handle delete project
-  const handleDeleteClick = (project) => {
+  const handleDeleteClick = project => {
     setSelectedProject(project);
     setDeleteDialogOpen(true);
   };
-  
+
   const handleDeleteConfirm = async () => {
     if (!selectedProject) return;
-    
+
     setLoading(true);
     try {
       // Use selectedProject.id instead of selectedProject.project_id
       const projectId = selectedProject.id || selectedProject.project_id;
-      
+
       // First delete all services associated with this project
       await window.api.proService.deleteByProject(projectId);
-      
+
       // Then delete the project
       const response = await window.api.project.delete(projectId);
       if (response.success) {
@@ -235,7 +238,7 @@ const Projects = ({ user, onLogout }) => {
       setSelectedProject(null);
     }
   };
-  
+
   // Handle status change
   const handleStatusClick = (project, status) => {
     console.log('handleStatusClick - project:', project);
@@ -245,22 +248,19 @@ const Projects = ({ user, onLogout }) => {
     setStatusDialogOpen(true);
     handleMenuClose();
   };
-  
+
   const handleStatusConfirm = async () => {
     console.log('handleStatusConfirm - selectedProject:', selectedProject);
     console.log('handleStatusConfirm - newStatus:', newStatus);
     if (!selectedProject || !newStatus) return;
-    
+
     setLoading(true);
     try {
       // Use selectedProject.id instead of selectedProject.project_id
       const projectId = selectedProject.id || selectedProject.project_id;
       console.log('Calling updateStatus with:', projectId, { status: newStatus });
-      const response = await window.api.project.updateStatus(
-        projectId,
-        { status: newStatus }
-      );
-      
+      const response = await window.api.project.updateStatus(projectId, { status: newStatus });
+
       if (response.success) {
         setSuccess(`Project status updated to ${newStatus}`);
         fetchProjects();
@@ -276,18 +276,18 @@ const Projects = ({ user, onLogout }) => {
       setNewStatus('');
     }
   };
-  
+
   // Handle payment
-  const handlePaymentClick = (project) => {
+  const handlePaymentClick = project => {
     setSelectedProject(project);
     setPaymentAmount(0);
     setPaymentDialogOpen(true);
     handleMenuClose();
   };
-  
+
   const handlePaymentConfirm = async () => {
     if (!selectedProject || paymentAmount <= 0) return;
-    
+
     setLoading(true);
     try {
       // Use selectedProject.id instead of selectedProject.project_id
@@ -296,9 +296,9 @@ const Projects = ({ user, onLogout }) => {
         projectId,
         parseFloat(paymentAmount)
       );
-      
+
       if (response.success) {
-        setSuccess(`Payment of $${paymentAmount} recorded successfully`);
+        setSuccess(`Payment of ₱${paymentAmount} recorded successfully`);
         fetchProjects();
       } else {
         setError('Failed to record payment: ' + response.message);
@@ -312,24 +312,24 @@ const Projects = ({ user, onLogout }) => {
       setPaymentAmount(0);
     }
   };
-  
+
   // Menu handlers
   const handleMenuOpen = (event, project) => {
     console.log('handleMenuOpen - project:', project);
     setAnchorEl(event.currentTarget);
     setMenuProject(project);
   };
-  
+
   const handleMenuClose = () => {
     setAnchorEl(null);
     setMenuProject(null);
   };
-  
+
   // Get status chip color
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     // Normalize status to uppercase for comparison
     const normalizedStatus = status ? status.toUpperCase() : '';
-    
+
     switch (normalizedStatus) {
       case 'NOT STARTED':
       case 'PENDING':
@@ -346,9 +346,9 @@ const Projects = ({ user, onLogout }) => {
         return 'default';
     }
   };
-  
+
   // Format date
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return 'N/A';
     try {
       return format(new Date(dateString), 'MMM dd, yyyy');
@@ -356,18 +356,18 @@ const Projects = ({ user, onLogout }) => {
       return 'Invalid Date';
     }
   };
-  
+
   // Calculate payment status
-  const getPaymentStatus = (project) => {
+  const getPaymentStatus = project => {
     const total = parseFloat(project.total_amount || 0);
     const paid = parseFloat(project.paid_amount || 0);
-    
+
     if (paid === 0) return 'Not Paid';
     if (paid < total) return 'Partially Paid';
     return 'Fully Paid';
   };
-  
-  const getPaymentStatusColor = (status) => {
+
+  const getPaymentStatusColor = status => {
     switch (status) {
       case 'Not Paid':
         return 'error';
@@ -379,19 +379,19 @@ const Projects = ({ user, onLogout }) => {
         return 'default';
     }
   };
-  
+
   // Add progress calculation function
-  const calculateProgress = (project) => {
+  const calculateProgress = project => {
     // If no tasks, return 0
     if (!project.total_tasks || project.total_tasks === 0) return 0;
-    
+
     // If completed_tasks is undefined, treat as 0
     const completedTasks = project.completed_tasks || 0;
-    
+
     // Calculate percentage
     return Math.round((completedTasks / project.total_tasks) * 100);
   };
-  
+
   // Get paginated data
   const paginatedProjects = filteredProjects.slice(
     page * rowsPerPage,
@@ -404,17 +404,17 @@ const Projects = ({ user, onLogout }) => {
   };
 
   // Handle rows per page change
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = event => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
   // Handle filter changes
-  const handleFilterChange = (event) => {
+  const handleFilterChange = event => {
     const { name, value } = event.target;
     setFilters(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     setPage(0); // Reset to first page when filters change
   };
@@ -430,7 +430,7 @@ const Projects = ({ user, onLogout }) => {
     });
     setPage(0);
   };
-  
+
   const handleLogout = () => {
     handleMenuClose();
     if (onLogout) onLogout();
@@ -473,15 +473,17 @@ const Projects = ({ user, onLogout }) => {
       </Menu>
     </Box>
   );
-  
+
   if (loading && projects.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+      >
         <CircularProgress />
       </Box>
     );
   }
-  
+
   return (
     <Layout title="Projects" userMenu={userMenu}>
       <Box sx={{ p: 3 }}>
@@ -496,25 +498,25 @@ const Projects = ({ user, onLogout }) => {
             Create Project
           </Button>
         </Box>
-        
+
         {/* Filters */}
         <Box sx={{ mb: 3 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={3}>
-          <TextField
-            fullWidth
+              <TextField
+                fullWidth
                 name="search"
                 value={filters.search}
                 onChange={handleFilterChange}
                 placeholder="Search projects..."
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </Grid>
             <Grid item xs={12} sm={2}>
               <FormControl fullWidth>
@@ -544,7 +546,7 @@ const Projects = ({ user, onLogout }) => {
                   label="Client"
                 >
                   <MenuItem value="">All</MenuItem>
-                  {clients.map((client) => (
+                  {clients.map(client => (
                     <MenuItem key={client.client_id} value={client.client_id}>
                       {client.client_name}
                     </MenuItem>
@@ -596,27 +598,27 @@ const Projects = ({ user, onLogout }) => {
             </Grid>
           </Grid>
         </Box>
-        
+
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
           </Alert>
         )}
 
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Project Name</TableCell>
-                  <TableCell>Client</TableCell>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Project Name</TableCell>
+                <TableCell>Client</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Progress</TableCell>
-                  <TableCell>Start Date</TableCell>
+                <TableCell>Start Date</TableCell>
                 <TableCell>Due Date</TableCell>
                 <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
@@ -624,35 +626,33 @@ const Projects = ({ user, onLogout }) => {
                   </TableCell>
                 </TableRow>
               ) : paginatedProjects.length === 0 ? (
-                  <TableRow>
+                <TableRow>
                   <TableCell colSpan={7} align="center">
                     No projects found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                paginatedProjects.map((project) => (
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedProjects.map(project => (
                   <TableRow key={project.project_id}>
-                        <TableCell>{project.project_name}</TableCell>
-                        <TableCell>{project.client_name}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={project.status} 
-                            color={getStatusColor(project.status)} 
-                            size="small" 
-                          />
-                        </TableCell>
-                        <TableCell>
+                    <TableCell>{project.project_name}</TableCell>
+                    <TableCell>{project.client_name}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={project.status}
+                        color={getStatusColor(project.status)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <LinearProgress
                           variant="determinate"
                           value={calculateProgress(project)}
                           sx={{ flexGrow: 1 }}
                         />
-                        <Typography variant="body2">
-                          {calculateProgress(project)}%
-                        </Typography>
+                        <Typography variant="body2">{calculateProgress(project)}%</Typography>
                       </Box>
-                        </TableCell>
+                    </TableCell>
                     <TableCell>{new Date(project.start_date).toLocaleDateString()}</TableCell>
                     <TableCell>{new Date(project.due_date).toLocaleDateString()}</TableCell>
                     <TableCell align="right">
@@ -662,32 +662,29 @@ const Projects = ({ user, onLogout }) => {
                       >
                         <TaskIcon />
                       </IconButton>
-                          <IconButton
-                            color="primary"
-                        onClick={() => handleViewTimeline(project.project_id)}
-                          >
-                        <TimelineIcon />
-                          </IconButton>
-                          <IconButton
+                      <IconButton
                         color="primary"
-                        onClick={() => handleOpenDialog('edit', project)}
-                          >
-                            <EditIcon />
-                          </IconButton>
+                        onClick={() => handleViewTimeline(project.project_id)}
+                      >
+                        <TimelineIcon />
+                      </IconButton>
+                      <IconButton color="primary" onClick={() => handleOpenDialog('edit', project)}>
+                        <EditIcon />
+                      </IconButton>
                       {project.status !== 'COMPLETED' && project.status !== 'CANCELLED' && (
-                          <IconButton
-                            color="error"
+                        <IconButton
+                          color="error"
                           onClick={() => handleOpenDialog('delete', project)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
+                        >
+                          <DeleteIcon />
+                        </IconButton>
                       )}
-                        </TableCell>
-                      </TableRow>
+                    </TableCell>
+                  </TableRow>
                 ))
-                )}
-              </TableBody>
-            </Table>
+              )}
+            </TableBody>
+          </Table>
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
@@ -697,22 +694,18 @@ const Projects = ({ user, onLogout }) => {
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
-          </TableContainer>
-        
+        </TableContainer>
+
         {/* Actions Menu */}
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-        >
+        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
           <MenuItem onClick={() => handlePaymentClick(menuProject)}>
             <ListItemIcon>
               <PaymentIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText>Record Payment</ListItemText>
           </MenuItem>
-          <MenuItem 
-            disabled={menuProject?.status?.toUpperCase() === 'IN PROGRESS'} 
+          <MenuItem
+            disabled={menuProject?.status?.toUpperCase() === 'IN PROGRESS'}
             onClick={() => handleStatusClick(menuProject, 'IN PROGRESS')}
           >
             <ListItemIcon>
@@ -720,8 +713,8 @@ const Projects = ({ user, onLogout }) => {
             </ListItemIcon>
             <ListItemText>Mark as In Progress</ListItemText>
           </MenuItem>
-          <MenuItem 
-            disabled={menuProject?.status?.toUpperCase() === 'ON HOLD'} 
+          <MenuItem
+            disabled={menuProject?.status?.toUpperCase() === 'ON HOLD'}
             onClick={() => handleStatusClick(menuProject, 'ON HOLD')}
           >
             <ListItemIcon>
@@ -729,8 +722,8 @@ const Projects = ({ user, onLogout }) => {
             </ListItemIcon>
             <ListItemText>Put On Hold</ListItemText>
           </MenuItem>
-          <MenuItem 
-            disabled={menuProject?.status?.toUpperCase() === 'COMPLETED'} 
+          <MenuItem
+            disabled={menuProject?.status?.toUpperCase() === 'COMPLETED'}
             onClick={() => handleStatusClick(menuProject, 'COMPLETED')}
           >
             <ListItemIcon>
@@ -738,8 +731,8 @@ const Projects = ({ user, onLogout }) => {
             </ListItemIcon>
             <ListItemText>Mark as Completed</ListItemText>
           </MenuItem>
-          <MenuItem 
-            disabled={menuProject?.status?.toUpperCase() === 'CANCELLED'} 
+          <MenuItem
+            disabled={menuProject?.status?.toUpperCase() === 'CANCELLED'}
             onClick={() => handleStatusClick(menuProject, 'CANCELLED')}
           >
             <ListItemIcon>
@@ -748,16 +741,14 @@ const Projects = ({ user, onLogout }) => {
             <ListItemText>Cancel Project</ListItemText>
           </MenuItem>
         </Menu>
-        
+
         {/* Delete Confirmation Dialog */}
-        <Dialog
-          open={deleteDialogOpen}
-          onClose={() => setDeleteDialogOpen(false)}
-        >
+        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
           <DialogTitle>Delete Project</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete the project "{selectedProject?.project_name}"? This action cannot be undone.
+              Are you sure you want to delete the project "{selectedProject?.project_name}"? This
+              action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -769,16 +760,14 @@ const Projects = ({ user, onLogout }) => {
             </Button>
           </DialogActions>
         </Dialog>
-        
+
         {/* Status Change Dialog */}
-        <Dialog
-          open={statusDialogOpen}
-          onClose={() => setStatusDialogOpen(false)}
-        >
+        <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)}>
           <DialogTitle>Change Project Status</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to change the status of project "{selectedProject?.project_name}" to "{newStatus}"?
+              Are you sure you want to change the status of project "{selectedProject?.project_name}
+              " to "{newStatus}"?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -790,12 +779,9 @@ const Projects = ({ user, onLogout }) => {
             </Button>
           </DialogActions>
         </Dialog>
-        
+
         {/* Payment Dialog */}
-        <Dialog
-          open={paymentDialogOpen}
-          onClose={() => setPaymentDialogOpen(false)}
-        >
+        <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)}>
           <DialogTitle>Record Payment</DialogTitle>
           <DialogContent>
             <DialogContentText sx={{ mb: 2 }}>
@@ -803,13 +789,17 @@ const Projects = ({ user, onLogout }) => {
             </DialogContentText>
             <Box sx={{ mt: 2 }}>
               <Typography variant="body2" gutterBottom>
-                Total Amount: ${parseFloat(selectedProject?.total_amount || 0).toFixed(2)}
+                Total Amount: ₱{parseFloat(selectedProject?.total_amount || 0).toFixed(2)}
               </Typography>
               <Typography variant="body2" gutterBottom>
-                Paid Amount: ${parseFloat(selectedProject?.paid_amount || 0).toFixed(2)}
+                Paid Amount: ₱{parseFloat(selectedProject?.paid_amount || 0).toFixed(2)}
               </Typography>
               <Typography variant="body2" gutterBottom>
-                Remaining: ${(parseFloat(selectedProject?.total_amount || 0) - parseFloat(selectedProject?.paid_amount || 0)).toFixed(2)}
+                Remaining: ₱
+                {(
+                  parseFloat(selectedProject?.total_amount || 0) -
+                  parseFloat(selectedProject?.paid_amount || 0)
+                ).toFixed(2)}
               </Typography>
             </Box>
             <TextField
@@ -819,9 +809,9 @@ const Projects = ({ user, onLogout }) => {
               type="number"
               fullWidth
               value={paymentAmount}
-              onChange={(e) => setPaymentAmount(e.target.value)}
+              onChange={e => setPaymentAmount(e.target.value)}
               InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                startAdornment: <InputAdornment position="start">₱</InputAdornment>,
               }}
             />
           </DialogContent>
@@ -829,32 +819,24 @@ const Projects = ({ user, onLogout }) => {
             <Button onClick={() => setPaymentDialogOpen(false)} color="primary">
               Cancel
             </Button>
-            <Button 
-              onClick={handlePaymentConfirm} 
-              color="primary" 
+            <Button
+              onClick={handlePaymentConfirm}
+              color="primary"
               disabled={loading || paymentAmount <= 0}
             >
               {loading ? <CircularProgress size={24} /> : 'Record Payment'}
             </Button>
           </DialogActions>
         </Dialog>
-        
+
         {/* Snackbars for notifications */}
-        <Snackbar
-          open={Boolean(error)}
-          autoHideDuration={6000}
-          onClose={() => setError(null)}
-        >
+        <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={() => setError(null)}>
           <Alert onClose={() => setError(null)} severity="error">
             {error}
           </Alert>
         </Snackbar>
-        
-        <Snackbar
-          open={Boolean(success)}
-          autoHideDuration={6000}
-          onClose={() => setSuccess(null)}
-        >
+
+        <Snackbar open={Boolean(success)} autoHideDuration={6000} onClose={() => setSuccess(null)}>
           <Alert onClose={() => setSuccess(null)} severity="success">
             {success}
           </Alert>
@@ -864,4 +846,4 @@ const Projects = ({ user, onLogout }) => {
   );
 };
 
-export default Projects; 
+export default Projects;

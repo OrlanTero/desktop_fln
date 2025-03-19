@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Paper
+  Paper,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -23,7 +23,7 @@ const JobOrderList = ({ serviceId, proposalId, serviceName, jobOrders, onUpdate 
   const [editingJobOrder, setEditingJobOrder] = useState(null);
   const [formData, setFormData] = useState({
     description: '',
-    estimated_fee: ''
+    estimated_fee: '',
   });
 
   const handleOpenDialog = (jobOrder = null) => {
@@ -31,13 +31,13 @@ const JobOrderList = ({ serviceId, proposalId, serviceName, jobOrders, onUpdate 
       setEditingJobOrder(jobOrder);
       setFormData({
         description: jobOrder.description,
-        estimated_fee: jobOrder.estimated_fee
+        estimated_fee: jobOrder.estimated_fee,
       });
     } else {
       setEditingJobOrder(null);
       setFormData({
         description: '',
-        estimated_fee: ''
+        estimated_fee: '',
       });
     }
     setOpenDialog(true);
@@ -48,20 +48,20 @@ const JobOrderList = ({ serviceId, proposalId, serviceName, jobOrders, onUpdate 
     setEditingJobOrder(null);
     setFormData({
       description: '',
-      estimated_fee: ''
+      estimated_fee: '',
     });
   };
 
   const handleSubmit = () => {
     const updatedJobOrders = [...jobOrders];
-    
+
     if (editingJobOrder) {
       // Update existing job order
       const index = updatedJobOrders.findIndex(jo => jo.id === editingJobOrder.id);
       if (index !== -1) {
         updatedJobOrders[index] = {
           ...editingJobOrder,
-          ...formData
+          ...formData,
         };
       }
     } else {
@@ -70,16 +70,16 @@ const JobOrderList = ({ serviceId, proposalId, serviceName, jobOrders, onUpdate 
         id: Date.now(), // Use timestamp as temporary ID
         service_id: serviceId,
         proposal_id: proposalId,
-        ...formData
+        ...formData,
       };
       updatedJobOrders.push(newJobOrder);
     }
-    
+
     onUpdate(updatedJobOrders);
     handleCloseDialog();
   };
 
-  const handleDelete = (jobOrderId) => {
+  const handleDelete = jobOrderId => {
     const updatedJobOrders = jobOrders.filter(jo => jo.id !== jobOrderId);
     onUpdate(updatedJobOrders);
   };
@@ -88,18 +88,14 @@ const JobOrderList = ({ serviceId, proposalId, serviceName, jobOrders, onUpdate 
     <Box sx={{ mt: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">Job Orders - {serviceName}</Typography>
-        <Button
-          startIcon={<AddIcon />}
-          variant="contained"
-          onClick={() => handleOpenDialog()}
-        >
+        <Button startIcon={<AddIcon />} variant="contained" onClick={() => handleOpenDialog()}>
           Add Job Order
         </Button>
       </Box>
 
       <Paper elevation={1}>
         <List>
-          {jobOrders.map((jobOrder) => (
+          {jobOrders.map(jobOrder => (
             <ListItem
               key={jobOrder.id}
               secondaryAction={
@@ -115,7 +111,7 @@ const JobOrderList = ({ serviceId, proposalId, serviceName, jobOrders, onUpdate 
             >
               <ListItemText
                 primary={jobOrder.description}
-                secondary={`Estimated Fee: $${parseFloat(jobOrder.estimated_fee).toFixed(2)}`}
+                secondary={`Estimated Fee: ₱${parseFloat(jobOrder.estimated_fee).toFixed(2)}`}
               />
             </ListItem>
           ))}
@@ -128,15 +124,13 @@ const JobOrderList = ({ serviceId, proposalId, serviceName, jobOrders, onUpdate 
       </Paper>
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingJobOrder ? 'Edit Job Order' : 'Add Job Order'}
-        </DialogTitle>
+        <DialogTitle>{editingJobOrder ? 'Edit Job Order' : 'Add Job Order'}</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
             label="Description"
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={e => setFormData({ ...formData, description: e.target.value })}
             margin="normal"
           />
           <TextField
@@ -144,7 +138,7 @@ const JobOrderList = ({ serviceId, proposalId, serviceName, jobOrders, onUpdate 
             label="Estimated Fee"
             type="number"
             value={formData.estimated_fee}
-            onChange={(e) => setFormData({ ...formData, estimated_fee: e.target.value })}
+            onChange={e => setFormData({ ...formData, estimated_fee: e.target.value })}
             margin="normal"
           />
         </DialogContent>
@@ -159,4 +153,4 @@ const JobOrderList = ({ serviceId, proposalId, serviceName, jobOrders, onUpdate 
   );
 };
 
-export default JobOrderList; 
+export default JobOrderList;
