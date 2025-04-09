@@ -39,11 +39,13 @@ import PreviewIcon from '@mui/icons-material/Preview';
 import ProposalDocumentNew from '../components/ProposalDocumentNew';
 import JobOrderList from '../components/JobOrderList';
 import EmailProposalForm from '../components/EmailProposalForm';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProposalForm = ({ user, onLogout }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
+  const { currentUser } = useAuth();
 
   // Add step state
   const [activeStep, setActiveStep] = useState(0);
@@ -51,14 +53,18 @@ const ProposalForm = ({ user, onLogout }) => {
 
   // Add company info state
   const [companyInfo, setCompanyInfo] = useState({
-    company_name: '',
-    address: '',
-    phone: '',
-    email: '',
+    company_name: 'FLN Services Corporation',
+    address: '123 Main St, Anytown, Philippines',
+    phone: '09751570622',
+    email: 'flnservicescorp@gmail.com',
   });
 
   // Add document preview state
   const [documentPreview, setDocumentPreview] = useState(null);
+
+  // Add state for user signature and name
+  const [userSignature, setUserSignature] = useState(null);
+  const [userName, setUserName] = useState(null);
 
   // State for proposal data
   const [formData, setFormData] = useState({
@@ -109,11 +115,27 @@ const ProposalForm = ({ user, onLogout }) => {
 
   // Calculate totals
   const calculateSubtotal = () => {
-    return selectedServices.reduce((total, service) => total + service.price, 0);
+    return selectedServices.reduce((total, service) => {
+      // Convert service.price to number and handle undefined or NaN cases
+      const price = parseFloat(service.price || 0);
+
+      // Include job order estimated fees
+      const jobOrderTotal = localJobOrders[service.service_id]
+        ? localJobOrders[service.service_id].reduce((sum, jobOrder) => {
+            const estimatedFee = parseFloat(jobOrder.estimated_fee || 0);
+            return sum + (isNaN(estimatedFee) ? 0 : estimatedFee);
+          }, 0)
+        : 0;
+
+      return total + (isNaN(price) ? 0 : price) + jobOrderTotal;
+    }, 0);
   };
 
   const calculateDownpayment = () => {
-    return formData.has_downpayment ? formData.downpayment_amount : 0;
+    if (!formData.has_downpayment) return 0;
+
+    const amount = parseFloat(formData.downpayment_amount || 0);
+    return isNaN(amount) ? 0 : amount;
   };
 
   const handleDocumentGenerated = document => {
@@ -177,6 +199,29 @@ const ProposalForm = ({ user, onLogout }) => {
             proposal_reference: proposalReference,
           }));
         }
+
+        // Fetch user profile to get signature and name
+        if (currentUser && currentUser.id) {
+          const userProfileResponse = await window.api.userProfile.getProfile(currentUser.id);
+          if (
+            userProfileResponse.success &&
+            userProfileResponse.data &&
+            userProfileResponse.data.user
+          ) {
+            // Get user name
+            if (userProfileResponse.data.user.name) {
+              setUserName(userProfileResponse.data.user.name);
+            }
+
+            // Get signature
+            const signatureUrl = userProfileResponse.data.user.signature_url;
+            if (signatureUrl) {
+              // Format the URL properly for use in the PDF
+              const formattedSignatureUrl = window.api.utils.formatUploadUrl(signatureUrl);
+              setUserSignature(formattedSignatureUrl);
+            }
+          }
+        }
       } catch (err) {
         setError('Error loading data: ' + err.message);
       } finally {
@@ -185,7 +230,7 @@ const ProposalForm = ({ user, onLogout }) => {
     };
 
     fetchData();
-  }, [id, isEditMode]);
+  }, [id, isEditMode, currentUser]);
 
   // Load services when category changes
   useEffect(() => {
@@ -354,8 +399,9 @@ const ProposalForm = ({ user, onLogout }) => {
             service_id: service.service_id,
             quantity: service.quantity,
             unit_price: service.unit_price,
-            discount: service.discount,
+            discount_percentage: service.discount_percentage || 0,
             price: service.price,
+            pro_type: 'Proposal',
           };
 
           await window.api.proService.create(serviceData);
@@ -402,7 +448,7 @@ const ProposalForm = ({ user, onLogout }) => {
         project_start: formData.project_start ? format(formData.project_start, 'yyyy-MM-dd') : null,
         project_end: formData.project_end ? format(formData.project_end, 'yyyy-MM-dd') : null,
         valid_until: formData.valid_until ? format(formData.valid_until, 'yyyy-MM-dd') : null,
-        total_amount: calculateSubtotal(),
+        total_amount: calculateSubtotal() || 0,
         status: 'Draft',
       };
 
@@ -436,7 +482,7 @@ const ProposalForm = ({ user, onLogout }) => {
         project_start: formData.project_start ? format(formData.project_start, 'yyyy-MM-dd') : null,
         project_end: formData.project_end ? format(formData.project_end, 'yyyy-MM-dd') : null,
         valid_until: formData.valid_until ? format(formData.valid_until, 'yyyy-MM-dd') : null,
-        total_amount: calculateSubtotal(),
+        total_amount: calculateSubtotal() || 0,
       };
 
       // Create or update proposal
@@ -460,8 +506,8 @@ const ProposalForm = ({ user, onLogout }) => {
           service_id: service.service_id,
           quantity: service.quantity,
           unit_price: service.unit_price,
-          price: service.price,
           discount_percentage: service.discount_percentage || 0,
+          price: service.price,
           pro_type: 'Proposal',
         };
 
@@ -631,6 +677,8 @@ const ProposalForm = ({ user, onLogout }) => {
           services={servicesWithJobOrders}
           proposal_id={currentProposalId}
           onDocumentGenerated={handleDocumentGenerated}
+          userSignature={userSignature}
+          userName={userName}
         />
       </Box>
     );
@@ -954,16 +1002,18 @@ const ProposalForm = ({ user, onLogout }) => {
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle1">
-                      Subtotal: ₱{calculateSubtotal().toFixed(2)}
+                      Subtotal: ₱{(calculateSubtotal() || 0).toFixed(2)}
                     </Typography>
                     {formData.has_downpayment && (
                       <Typography variant="subtitle1">
-                        Downpayment: ₱{calculateDownpayment().toFixed(2)}
+                        Downpayment: ₱{(calculateDownpayment() || 0).toFixed(2)}
                       </Typography>
                     )}
                   </Grid>
                   <Grid item xs={12} md={6} sx={{ textAlign: 'right' }}>
-                    <Typography variant="h6">Total: ₱{calculateSubtotal().toFixed(2)}</Typography>
+                    <Typography variant="h6">
+                      Total: ₱{(calculateSubtotal() || 0).toFixed(2)}
+                    </Typography>
                   </Grid>
                 </Grid>
               </Box>

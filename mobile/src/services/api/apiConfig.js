@@ -9,7 +9,10 @@ const API_CONFIG = {
   // Ngrok tunnel URL (for physical devices)
   // NGROK_URL: 'https://a39f-120-28-70-225.ngrok-free.app',
 
-  NGROK_URL: 'https://fln.enutrition.site',
+  // NGROK_URL: 'https://fln.enutrition.site',
+  NGROK_URL: 'https://2986-120-28-139-19.ngrok-free.app',
+
+  SERVER_ADDRESS: 'http://localhost:3001',
 };
 
 // Determine the base URL based on the platform and environment
@@ -84,6 +87,7 @@ apiClient.interceptors.response.use(
 export const switchApiUrl = (useNgrok = false) => {
   const newBaseUrl = useNgrok ? API_CONFIG.NGROK_URL : API_CONFIG.LOCAL_URL;
   apiClient.defaults.baseURL = newBaseUrl;
+  apiClient.defaults.serverUrl = API_CONFIG.SERVER_ADDRESS;
   console.log(`API URL switched to: ${newBaseUrl}`);
 };
 

@@ -9,7 +9,8 @@ const https = require('https');
 // const { URL } = require('url');
 
 // API base URL - hardcoded to ensure it's correct
-const API_BASE_URL = 'https://fln.enutrition.site';
+// const API_BASE_URL = 'https://fln.enutrition.site';
+const API_BASE_URL = 'http://localhost:4005';
 console.log('Using API URL:', API_BASE_URL);
 
 // Helper function to manually parse URLs without using the URL constructor
@@ -419,6 +420,45 @@ contextBridge.exposeInMainWorld('api', {
         };
       }
     },
+
+    // Upload signature
+    uploadSignature: async (userId, signatureFile) => {
+      const formData = new FormData();
+      formData.append('signature', signatureFile);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/user_profile/${userId}/signature`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          let errorMessage;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+          } catch (e) {
+            errorMessage = `HTTP error! status: ${response.status}`;
+          }
+          throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+
+        return {
+          success: data.success === true,
+          data: data.data || null,
+          message: data.message || '',
+        };
+      } catch (error) {
+        console.error('Signature upload error:', error);
+        return {
+          success: false,
+          data: null,
+          message: error.message,
+        };
+      }
+    },
   },
 
   // Client API
@@ -510,6 +550,11 @@ contextBridge.exposeInMainWorld('api', {
     // Get all services
     getAll: async () => {
       return makeRequest(`${API_BASE_URL}/services`);
+    },
+
+    // Get services by project
+    getByProject: async projectId => {
+      return makeRequest(`${API_BASE_URL}/services/project/${projectId}`);
     },
 
     // Get services by category
@@ -1096,6 +1141,20 @@ contextBridge.exposeInMainWorld('api', {
       console.log('Sending open-external IPC message:', url);
       // Use the Electron shell to open the URL in the default browser
       ipcRenderer.send('open-external', url);
+    },
+
+    // Format URL for uploaded files
+    formatUploadUrl: path => {
+      if (!path) return '';
+      if (path.startsWith('http')) return path;
+
+      // Use the serving script to access files
+      if (path.startsWith('/uploads/')) {
+        const filePath = path.substring(9); // Remove the /uploads/ prefix
+        return `${API_BASE_URL}/uploads/serving.php?file=${filePath}`;
+      }
+
+      return `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
     },
 
     // Load attachment in the app

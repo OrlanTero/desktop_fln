@@ -118,7 +118,7 @@ const Proposals = ({ user, onLogout }) => {
       return;
     }
 
-    const proposalData = proposals.find(p => p.proposal_id === proposal.proposal_id);
+    const proposalData = proposals.find(p => p.id === proposal.id);
 
     // Navigate to project form with proposal data
     navigate('/projects/new', {
@@ -138,7 +138,7 @@ const Proposals = ({ user, onLogout }) => {
       const projectData = {
         project_name: selectedProposal.project_name || selectedProposal.proposal_name,
         client_id: selectedProposal.client_id,
-        proposal_id: selectedProposal.proposal_id,
+        proposal_id: selectedProposal.id,
         attn_to: selectedProposal.attn_to,
         description: selectedProposal.description,
         notes: selectedProposal.notes,
@@ -151,10 +151,10 @@ const Proposals = ({ user, onLogout }) => {
 
       if (response.status === 'success') {
         // Copy services from proposal to project
-        await window.api.proService.copyToProject(selectedProposal.proposal_id);
+        await window.api.proService.copyToProject(selectedProposal.id);
 
         // Update proposal status to converted
-        await window.api.proposal.updateStatus(selectedProposal.proposal_id, {
+        await window.api.proposal.updateStatus(selectedProposal.id, {
           status: 'Converted',
         });
 
@@ -255,7 +255,7 @@ const Proposals = ({ user, onLogout }) => {
               </TableRow>
             ) : (
               filteredProposals.map(proposal => (
-                <TableRow key={proposal.proposal_id}>
+                <TableRow key={proposal.id}>
                   <TableCell>{proposal.proposal_reference}</TableCell>
                   <TableCell>{proposal.proposal_name}</TableCell>
                   <TableCell>{proposal.client_name}</TableCell>
@@ -274,7 +274,7 @@ const Proposals = ({ user, onLogout }) => {
                   <TableCell align="center">
                     <IconButton
                       color="primary"
-                      onClick={() => handleViewProposal(proposal.proposal_id)}
+                      onClick={() => handleViewProposal(proposal.id)}
                       title="View Proposal"
                     >
                       <VisibilityIcon />

@@ -216,10 +216,10 @@ const Proposals = ({ user, onLogout }) => {
     setLoading(true);
     try {
       // First delete all services associated with this proposal
-      await window.api.proService.deleteByProposal(selectedProposal.proposal_id);
+      await window.api.proService.deleteByProposal(selectedProposal.id);
 
       // Then delete the proposal
-      const response = await window.api.proposal.delete(selectedProposal.proposal_id);
+      const response = await window.api.proposal.delete(selectedProposal.id);
       if (response.success) {
         setSuccess('Proposal deleted successfully');
         fetchProposals();
@@ -242,7 +242,7 @@ const Proposals = ({ user, onLogout }) => {
       return;
     }
 
-    const proposalData = proposals.find(p => p.proposal_id === proposal.proposal_id);
+    const proposalData = proposals.find(p => p.id === proposal.id);
 
     // Navigate to project form with proposal data
     navigate('/projects/new', {
@@ -423,7 +423,7 @@ const Proposals = ({ user, onLogout }) => {
                 </TableRow>
               ) : (
                 paginatedProposals.map(proposal => (
-                  <TableRow key={proposal.proposal_id}>
+                  <TableRow key={proposal.id}>
                     <TableCell>{proposal.proposal_reference}</TableCell>
                     <TableCell>{proposal.client_name}</TableCell>
                     <TableCell>₱{parseFloat(proposal.total_amount || 0).toFixed(2)}</TableCell>
@@ -436,23 +436,20 @@ const Proposals = ({ user, onLogout }) => {
                     </TableCell>
                     <TableCell>{new Date(proposal.created_at).toLocaleString()}</TableCell>
                     <TableCell align="right">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleViewProposal(proposal.proposal_id)}
-                      >
+                      <IconButton color="primary" onClick={() => handleViewProposal(proposal.id)}>
                         <ViewIcon />
                       </IconButton>
                       {proposal.status === 'DRAFT' && (
                         <>
                           <IconButton
                             color="primary"
-                            onClick={() => handleEditProposal(proposal.proposal_id)}
+                            onClick={() => handleEditProposal(proposal.id)}
                           >
                             <EditIcon />
                           </IconButton>
                           <IconButton
                             color="primary"
-                            onClick={() => handleSendProposal(proposal.proposal_id)}
+                            onClick={() => handleSendProposal(proposal.id)}
                           >
                             <SendIcon />
                           </IconButton>

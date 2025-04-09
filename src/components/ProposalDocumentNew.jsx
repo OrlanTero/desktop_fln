@@ -5,6 +5,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import { pdf } from '@react-pdf/renderer';
 import ProposalPDF from './ProposalPDF';
 import logoPath from '../../assets/images/logo.jpg';
+import defaultSignaturePath from '../../assets/images/default_signature.png';
 
 const ProposalDocumentNew = ({
   companyInfo,
@@ -12,10 +13,21 @@ const ProposalDocumentNew = ({
   clientName,
   services,
   onDocumentGenerated,
+  userSignature,
+  userName,
+  proposal_id,
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [documentGenerated, setDocumentGenerated] = useState(false);
+
+  // Format currency to Peso sign with 2 decimal places
+  const formatCurrency = amount => {
+    // Using "P" instead of Unicode character which may not display correctly
+    return `P ${parseFloat(amount || 0)
+      .toFixed(2)
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -49,6 +61,8 @@ const ProposalDocumentNew = ({
             proposalData={proposalData}
             clientName={clientName}
             services={services}
+            userSignature={userSignature}
+            userName={userName}
           />
         );
 
@@ -66,8 +80,19 @@ const ProposalDocumentNew = ({
           const base64Data = reader.result;
 
           if (typeof onDocumentGenerated === 'function') {
+            // Get the correct proposal ID - use explicit prop if available, otherwise get from proposalData
+            const effectiveProposalId = proposal_id || proposalData.id || proposalData.proposal_id;
+
+            if (!effectiveProposalId) {
+              console.error('No proposal ID available for document upload');
+              setError('Missing proposal ID for document upload');
+              setDocumentGenerated(true);
+              setLoading(false);
+              return;
+            }
+
             // Upload the document first
-            const uploadResponse = await window.api.document.upload(proposalData.proposal_id, {
+            const uploadResponse = await window.api.document.upload(effectiveProposalId, {
               base64: base64Data,
               name: `${proposalData.proposal_reference || 'proposal'}.pdf`,
             });
@@ -119,7 +144,17 @@ const ProposalDocumentNew = ({
     return () => {
       mounted = false;
     };
-  }, [companyInfo, proposalData, clientName, services, documentGenerated, onDocumentGenerated]);
+  }, [
+    companyInfo,
+    proposalData,
+    clientName,
+    services,
+    documentGenerated,
+    onDocumentGenerated,
+    userSignature,
+    userName,
+    proposal_id,
+  ]);
 
   const handlePrint = () => {
     window.print();
@@ -127,13 +162,21 @@ const ProposalDocumentNew = ({
 
   const handleDownload = async () => {
     try {
-      // Generate PDF for download
+      // Generate PDF for download with properly formatted company info
+      const formattedCompanyInfo = {
+        ...companyInfo,
+        name: companyInfo?.name || 'FLN Services Corporation', // Ensure name is provided
+      };
+
+      // Generate PDF with the correctly structured data
       const doc = (
         <ProposalPDF
-          companyInfo={companyInfo}
+          companyInfo={formattedCompanyInfo}
           proposalData={proposalData}
           clientName={clientName}
           services={services}
+          userSignature={userSignature}
+          userName={userName}
         />
       );
 
@@ -173,9 +216,9 @@ const ProposalDocumentNew = ({
     const total = subtotal + vat;
 
     return {
-      subtotal: subtotal.toFixed(2),
-      vat: vat.toFixed(2),
-      total: total.toFixed(2),
+      subtotal: subtotal,
+      vat: vat,
+      total: total,
     };
   };
 
@@ -259,13 +302,14 @@ const ProposalDocumentNew = ({
                   alt="Company Logo"
                   sx={{
                     height: '60px',
+                    width: 'auto',
                     marginRight: '16px',
                     objectFit: 'contain',
                   }}
                 />
                 <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                    {companyInfo?.name || 'Company Name'}
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
+                    {companyInfo?.name || 'FLN Services Corporation'}
                   </Typography>
                   {companyInfo?.tagline && (
                     <Typography variant="subtitle2" color="text.secondary">
@@ -301,7 +345,7 @@ const ProposalDocumentNew = ({
               <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
                 PROPOSAL
               </Typography>
-              <Typography variant="h6">
+              <Typography variant="h6" sx={{ color: '#2c3e50' }}>
                 {proposalData?.proposal_reference || 'Reference'}
               </Typography>
             </Box>
@@ -309,20 +353,30 @@ const ProposalDocumentNew = ({
             {/* Client and Proposal Info */}
             <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between' }}>
               <Box sx={{ width: '48%' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 'bold', mb: 1, color: '#2c3e50' }}
+                >
                   CLIENT
                 </Typography>
                 <Typography variant="body1">{clientName || 'Client Name'}</Typography>
                 {proposalData?.client_address && (
-                  <Typography variant="body2">{proposalData.client_address}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {proposalData.client_address}
+                  </Typography>
                 )}
                 {proposalData?.client_email && (
-                  <Typography variant="body2">{proposalData.client_email}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {proposalData.client_email}
+                  </Typography>
                 )}
               </Box>
 
               <Box sx={{ width: '48%' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 'bold', mb: 1, color: '#2c3e50' }}
+                >
                   PROPOSAL DETAILS
                 </Typography>
                 <Grid container spacing={1}>
@@ -333,7 +387,9 @@ const ProposalDocumentNew = ({
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="body2">
-                      {proposalData?.proposal_date || new Date().toLocaleDateString()}
+                      {proposalData?.proposal_date
+                        ? new Date(proposalData.proposal_date).toLocaleDateString()
+                        : new Date().toLocaleDateString()}
                     </Typography>
                   </Grid>
 
@@ -345,7 +401,9 @@ const ProposalDocumentNew = ({
                         </Typography>
                       </Grid>
                       <Grid item xs={6}>
-                        <Typography variant="body2">{proposalData.valid_until}</Typography>
+                        <Typography variant="body2">
+                          {new Date(proposalData.valid_until).toLocaleDateString()}
+                        </Typography>
                       </Grid>
                     </>
                   )}
@@ -369,7 +427,10 @@ const ProposalDocumentNew = ({
             {/* Introduction/Notes */}
             {proposalData?.notes && (
               <Box sx={{ mb: 4 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 'bold', mb: 1, color: '#2c3e50' }}
+                >
                   INTRODUCTION
                 </Typography>
                 <Typography variant="body2" paragraph>
@@ -380,7 +441,7 @@ const ProposalDocumentNew = ({
 
             {/* Services and Job Orders */}
             <Box sx={{ mb: 4 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, color: '#2c3e50' }}>
                 SERVICES
               </Typography>
 
@@ -394,14 +455,29 @@ const ProposalDocumentNew = ({
                     display: 'flex',
                   }}
                 >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', flex: 3 }}>
-                    Description
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ width: '8%', fontWeight: 'bold', color: '#2c3e50' }}
+                  >
+                    No
                   </Typography>
                   <Typography
                     variant="subtitle2"
-                    sx={{ fontWeight: 'bold', flex: 1, textAlign: 'right' }}
+                    sx={{ width: '52%', fontWeight: 'bold', color: '#2c3e50' }}
                   >
-                    Amount
+                    Particulars
+                  </Typography>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ width: '20%', fontWeight: 'bold', textAlign: 'right', color: '#2c3e50' }}
+                  >
+                    Estimated Fees
+                  </Typography>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ width: '20%', fontWeight: 'bold', textAlign: 'right', color: '#2c3e50' }}
+                  >
+                    Service Fee
                   </Typography>
                 </Box>
 
@@ -418,8 +494,12 @@ const ProposalDocumentNew = ({
                           backgroundColor: '#fff',
                         }}
                       >
-                        <Box sx={{ flex: 3 }}>
-                          <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                        <Typography sx={{ width: '8%', color: '#2c3e50' }}>{index + 1}</Typography>
+                        <Box sx={{ width: '52%' }}>
+                          <Typography
+                            variant="body1"
+                            sx={{ fontWeight: 'medium', color: '#2c3e50' }}
+                          >
                             {service.service_name || 'Service'}
                           </Typography>
                           {service.description && (
@@ -428,11 +508,10 @@ const ProposalDocumentNew = ({
                             </Typography>
                           )}
                         </Box>
-                        <Box sx={{ flex: 1, textAlign: 'right' }}>
-                          <Typography variant="body1">
-                            ₱{parseFloat(service.price || 0).toFixed(2)}
-                          </Typography>
-                        </Box>
+                        <Typography sx={{ width: '20%', textAlign: 'right' }}></Typography>
+                        <Typography sx={{ width: '20%', textAlign: 'right' }}>
+                          {formatCurrency(service.price)}
+                        </Typography>
                       </Box>
 
                       {/* Job Order Rows */}
@@ -442,26 +521,23 @@ const ProposalDocumentNew = ({
                             key={`${index}-${joIndex}`}
                             sx={{
                               p: 2,
-                              pl: 4, // Extra padding for indentation
+                              pl: 4,
                               borderBottom: '1px solid #eee',
                               display: 'flex',
                               backgroundColor: '#fafafa',
                             }}
                           >
-                            <Box sx={{ flex: 3 }}>
-                              <Typography
-                                variant="body2"
-                                sx={{ display: 'flex', alignItems: 'center' }}
-                              >
-                                <span style={{ marginRight: '8px' }}>•</span>
-                                {jobOrder.description || 'Job Order'}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ flex: 1, textAlign: 'right' }}>
-                              <Typography variant="body2">
-                                ₱{parseFloat(jobOrder.estimated_fee || 0).toFixed(2)}
-                              </Typography>
-                            </Box>
+                            <Typography sx={{ width: '8%' }}></Typography>
+                            <Typography
+                              sx={{ width: '52%', display: 'flex', alignItems: 'center' }}
+                            >
+                              <span style={{ marginRight: '8px' }}>•</span>
+                              {jobOrder.description || 'Job Order'}
+                            </Typography>
+                            <Typography sx={{ width: '20%', textAlign: 'right' }}>
+                              {formatCurrency(jobOrder.estimated_fee)}
+                            </Typography>
+                            <Typography sx={{ width: '20%', textAlign: 'right' }}></Typography>
                           </Box>
                         ))}
                     </React.Fragment>
@@ -475,38 +551,101 @@ const ProposalDocumentNew = ({
                 {/* Totals */}
                 {(() => {
                   const { subtotal, vat, total } = calculateTotals();
+
+                  // Calculate totals separately for estimated fees and service fees
+                  const totalEstimatedFees = services.reduce((sum, service) => {
+                    return (
+                      sum +
+                      (Array.isArray(service.jobOrders)
+                        ? service.jobOrders.reduce(
+                            (sum, jo) => sum + parseFloat(jo.estimated_fee || 0),
+                            0
+                          )
+                        : 0)
+                    );
+                  }, 0);
+
+                  const totalServiceFees = services.reduce((sum, service) => {
+                    return sum + parseFloat(service.price || 0);
+                  }, 0);
+
+                  const netServiceFee = totalServiceFees;
+                  const vatAmount = netServiceFee * 0.12;
+                  const totalVatInvoice = netServiceFee + vatAmount;
+                  const grandTotal = totalVatInvoice + totalEstimatedFees;
+
                   return (
-                    <Box sx={{ p: 2, borderTop: '2px solid #eee', backgroundColor: '#fafafa' }}>
-                      <Box sx={{ display: 'flex', mb: 1 }}>
-                        <Typography variant="body1" sx={{ flex: 3, textAlign: 'right', pr: 2 }}>
-                          Subtotal:
+                    <Box sx={{ backgroundColor: '#fafafa', p: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold', marginRight: 2 }}>
+                          Total Estimated Fees:
                         </Typography>
-                        <Typography variant="body1" sx={{ flex: 1, textAlign: 'right' }}>
-                          ₱{subtotal}
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', mb: 1 }}>
-                        <Typography variant="body1" sx={{ flex: 3, textAlign: 'right', pr: 2 }}>
-                          VAT (12%):
-                        </Typography>
-                        <Typography variant="body1" sx={{ flex: 1, textAlign: 'right' }}>
-                          ₱{vat}
+                        <Typography variant="body1" sx={{ width: '120px', textAlign: 'right' }}>
+                          {formatCurrency(totalEstimatedFees)}
                         </Typography>
                       </Box>
 
-                      <Box sx={{ display: 'flex' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold', marginRight: 2 }}>
+                          Total Service Fees:
+                        </Typography>
+                        <Typography variant="body1" sx={{ width: '120px', textAlign: 'right' }}>
+                          {formatCurrency(totalServiceFees)}
+                        </Typography>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          mb: 1,
+                          mt: 2,
+                          paddingTop: 1,
+                          borderTop: '1px solid #eee',
+                        }}
+                      >
+                        <Typography variant="body1" sx={{ fontWeight: 'bold', marginRight: 2 }}>
+                          NET SERVICE FEE:
+                        </Typography>
+                        <Typography variant="body1" sx={{ width: '120px', textAlign: 'right' }}>
+                          {formatCurrency(netServiceFee)}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold', marginRight: 2 }}>
+                          VAT 12%:
+                        </Typography>
+                        <Typography variant="body1" sx={{ width: '120px', textAlign: 'right' }}>
+                          {formatCurrency(vatAmount)}
+                        </Typography>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          mb: 1,
+                          paddingTop: 1,
+                          borderTop: '1px solid #eee',
+                        }}
+                      >
                         <Typography
-                          variant="subtitle1"
-                          sx={{ flex: 3, textAlign: 'right', pr: 2, fontWeight: 'bold' }}
+                          variant="body1"
+                          sx={{ fontWeight: 'bold', marginRight: 2, color: '#2c3e50' }}
                         >
-                          Total:
+                          TOTAL VAT INVOICE:
                         </Typography>
                         <Typography
-                          variant="subtitle1"
-                          sx={{ flex: 1, textAlign: 'right', fontWeight: 'bold' }}
+                          variant="body1"
+                          sx={{
+                            width: '120px',
+                            textAlign: 'right',
+                            fontWeight: 'bold',
+                            color: '#2c3e50',
+                          }}
                         >
-                          ₱{total}
+                          {formatCurrency(totalVatInvoice)}
                         </Typography>
                       </Box>
                     </Box>
@@ -517,7 +656,7 @@ const ProposalDocumentNew = ({
 
             {/* Payment Instructions */}
             <Box sx={{ mb: 4 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1, color: '#2c3e50' }}>
                 PAYMENT INSTRUCTIONS
               </Typography>
               <Typography variant="body2" paragraph>
@@ -541,7 +680,10 @@ const ProposalDocumentNew = ({
             {/* Terms and Conditions */}
             {proposalData?.terms && (
               <Box sx={{ mb: 4 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 'bold', mb: 1, color: '#2c3e50' }}
+                >
                   TERMS AND CONDITIONS
                 </Typography>
                 <Typography variant="body2">{proposalData.terms}</Typography>
@@ -551,11 +693,47 @@ const ProposalDocumentNew = ({
             {/* Signatures */}
             <Box sx={{ mt: 6, display: 'flex', justifyContent: 'space-between' }}>
               <Box sx={{ width: '45%', textAlign: 'center' }}>
+                {userSignature && (
+                  <Box
+                    component="img"
+                    src={userSignature}
+                    alt="User Signature"
+                    sx={{
+                      height: 58,
+                      width: 150,
+                      maxWidth: '100%',
+                      objectFit: 'contain',
+                      mb: 1,
+                      display: 'block',
+                      margin: '0 auto',
+                    }}
+                  />
+                )}
                 <Divider sx={{ mb: 1 }} />
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                  {userName || 'User Name'}
+                </Typography>
                 <Typography variant="body2">Prepared By</Typography>
               </Box>
               <Box sx={{ width: '45%', textAlign: 'center' }}>
+                <Box
+                  component="img"
+                  src={defaultSignaturePath}
+                  alt="Default Signature"
+                  sx={{
+                    height: 58,
+                    width: 150,
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                    mb: 1,
+                    display: 'block',
+                    margin: '0 auto',
+                  }}
+                />
                 <Divider sx={{ mb: 1 }} />
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                  Administrator
+                </Typography>
                 <Typography variant="body2">Approved By</Typography>
               </Box>
             </Box>

@@ -5,25 +5,35 @@ import DownloadIcon from '@mui/icons-material/Download';
 import { PDFViewer, pdf } from '@react-pdf/renderer';
 import ProposalPDF from './ProposalPDF';
 
-const ProposalDocument = ({ companyInfo, proposalData, clientName, services, onDocumentGenerated }) => {
+const ProposalDocument = ({
+  companyInfo,
+  proposalData,
+  clientName,
+  services,
+  onDocumentGenerated,
+  userSignature,
+}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pdfBlob, setPdfBlob] = useState(null);
 
   useEffect(() => {
-  const generatePDF = async () => {
+    const generatePDF = async () => {
       try {
         setLoading(true);
         setError(null);
 
         // Generate PDF blob
-        const doc = <ProposalPDF 
-          companyInfo={companyInfo} 
-          proposalData={proposalData} 
-          clientName={clientName} 
-          services={services} 
-        />;
-        
+        const doc = (
+          <ProposalPDF
+            companyInfo={companyInfo}
+            proposalData={proposalData}
+            clientName={clientName}
+            services={services}
+            userSignature={userSignature}
+          />
+        );
+
         const asPdf = pdf();
         asPdf.updateContainer(doc);
         const blob = await asPdf.toBlob();
@@ -31,15 +41,15 @@ const ProposalDocument = ({ companyInfo, proposalData, clientName, services, onD
 
         // If callback is provided, convert blob to base64 and call it
         if (onDocumentGenerated) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          onDocumentGenerated({
-            base64: reader.result,
-              name: `${proposalData.proposal_reference || 'proposal'}.pdf`
-          });
-        };
-        reader.readAsDataURL(blob);
-      }
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            onDocumentGenerated({
+              base64: reader.result,
+              name: `${proposalData.proposal_reference || 'proposal'}.pdf`,
+            });
+          };
+          reader.readAsDataURL(blob);
+        }
 
         setLoading(false);
       } catch (err) {
@@ -52,18 +62,18 @@ const ProposalDocument = ({ companyInfo, proposalData, clientName, services, onD
     if (companyInfo && proposalData && clientName && services) {
       generatePDF();
     }
-  }, [companyInfo, proposalData, clientName, services, onDocumentGenerated]);
+  }, [companyInfo, proposalData, clientName, services, onDocumentGenerated, userSignature]);
 
   const handlePrint = async () => {
     if (!pdfBlob) return;
-    
+
     try {
       const url = URL.createObjectURL(pdfBlob);
       const iframe = document.createElement('iframe');
       iframe.style.display = 'none';
       iframe.src = url;
       document.body.appendChild(iframe);
-      
+
       iframe.onload = () => {
         setTimeout(() => {
           iframe.contentWindow.print();
@@ -77,7 +87,7 @@ const ProposalDocument = ({ companyInfo, proposalData, clientName, services, onD
 
   const handleDownload = () => {
     if (!pdfBlob) return;
-    
+
     try {
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
@@ -116,35 +126,42 @@ const ProposalDocument = ({ companyInfo, proposalData, clientName, services, onD
 
       <Box sx={{ height: 'calc(100vh - 200px)', border: '1px solid #ddd' }}>
         {loading ? (
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%' 
-          }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+            }}
+          >
             <CircularProgress />
-            <Typography variant="body2" sx={{ mt: 2 }}>Generating PDF preview...</Typography>
+            <Typography variant="body2" sx={{ mt: 2 }}>
+              Generating PDF preview...
+            </Typography>
           </Box>
         ) : error ? (
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%',
-            color: 'error.main'
-          }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: 'error.main',
+            }}
+          >
             <Typography variant="h6">Error</Typography>
             <Typography variant="body2">{error}</Typography>
           </Box>
         ) : (
           <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
-            <ProposalPDF 
-              companyInfo={companyInfo} 
-              proposalData={proposalData} 
-              clientName={clientName} 
-              services={services} 
+            <ProposalPDF
+              companyInfo={companyInfo}
+              proposalData={proposalData}
+              clientName={clientName}
+              services={services}
+              userSignature={userSignature}
             />
           </PDFViewer>
         )}
@@ -153,4 +170,4 @@ const ProposalDocument = ({ companyInfo, proposalData, clientName, services, onD
   );
 };
 
-export default ProposalDocument; 
+export default ProposalDocument;

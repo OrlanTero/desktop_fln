@@ -16,12 +16,15 @@ import Settings from './pages/Settings';
 import Proposals from './pages/Proposals';
 import ProposalForm from './pages/ProposalForm';
 import ProposalConversion from './pages/ProposalConversion';
+import ProposalView from './pages/ProposalView';
 import Projects from './pages/Projects';
 import ProjectForm from './pages/ProjectForm';
 import ProjectView from './pages/ProjectView';
+import ProjectEdit from './pages/ProjectEdit';
 import JobOrders from './pages/JobOrders';
 import Tasks from './pages/Tasks';
 import Profile from './pages/Profile';
+import Billing from './pages/Billing';
 
 // Import components
 import SplashScreen from './components/SplashScreen';
@@ -300,175 +303,221 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route 
-        path="/login" 
-        element={
-          isAuthenticated() ? 
-            <Navigate to="/dashboard" replace /> : 
-            <Login />
-        } 
+      <Route
+        path="/login"
+        element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
       />
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/dashboard"
         element={
-          isAuthenticated() ? 
-            <Dashboard user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <Dashboard user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/users" 
+      <Route
+        path="/users"
         element={
-          isAuthenticated() ? 
-            <Users user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <Users user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/clients" 
+      <Route
+        path="/clients"
         element={
-          isAuthenticated() ? 
-            <Clients user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <Clients user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/client-types" 
+      <Route
+        path="/client-types"
         element={
-          isAuthenticated() ? 
-            <ClientTypes user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <ClientTypes user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/service-categories" 
+      <Route
+        path="/service-categories"
         element={
-          isAuthenticated() ? 
-            <ServiceCategories user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <ServiceCategories user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/services" 
+      <Route
+        path="/services"
         element={
-          isAuthenticated() ? 
-            <Services user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <Services user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
       {/* Proposals Routes */}
-      <Route 
-        path="/proposals" 
+      <Route
+        path="/proposals"
         element={
-          isAuthenticated() ? 
-            <Proposals user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <Proposals user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/proposals/new" 
+      <Route
+        path="/proposals/new"
         element={
-          isAuthenticated() ? 
-            <ProposalForm user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <ProposalForm user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/proposals/edit/:id" 
+      <Route
+        path="/proposals/edit/:id"
         element={
-          isAuthenticated() ? 
-            <ProposalForm user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <ProposalForm user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/proposal-conversion" 
+      <Route
+        path="/proposals/view/:id"
         element={
-          isAuthenticated() ? 
-            <ProposalConversion user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <ProposalView user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
+      />
+      <Route
+        path="/proposal-conversion"
+        element={
+          isAuthenticated() ? (
+            <ProposalConversion user={currentUser} onLogout={logout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
       />
       {/* Projects Routes */}
-      <Route 
-        path="/projects" 
+      <Route
+        path="/projects"
         element={
-          isAuthenticated() ? 
-            <Projects user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <Projects user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/projects/new" 
+      <Route
+        path="/projects/new"
         element={
-          isAuthenticated() ? 
-            <ProjectForm user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <ProjectForm user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/projects/edit/:id" 
+      <Route
+        path="/projects/edit/:id"
         element={
-          isAuthenticated() ? 
-            <ProjectForm user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <ProjectEdit user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/projects/view/:id" 
+      <Route
+        path="/projects/view/:id"
         element={
-          isAuthenticated() ? 
-            <ProjectView user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <ProjectView user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/settings" 
+      <Route
+        path="/settings"
         element={
-          isAuthenticated() ? 
-            <Settings user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <Settings user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/job-orders" 
+      <Route
+        path="/job-orders"
         element={
-          isAuthenticated() ? 
-            <JobOrders user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <JobOrders user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/tasks" 
+      <Route
+        path="/tasks"
         element={
-          isAuthenticated() ? 
-            <Tasks user={currentUser} onLogout={logout} /> : 
+          isAuthenticated() ? (
+            <Tasks user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/profile" 
+      <Route
+        path="/profile"
+        element={isAuthenticated() ? <Profile /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/billing"
         element={
-          isAuthenticated() ? 
-            <Profile /> : 
+          isAuthenticated() ? (
+            <Billing user={currentUser} onLogout={logout} />
+          ) : (
             <Navigate to="/login" replace />
-        } 
+          )
+        }
       />
-      <Route 
-        path="/" 
-        element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} 
+      <Route
+        path="/"
+        element={<Navigate to={isAuthenticated() ? '/dashboard' : '/login'} replace />}
       />
-      <Route 
-        path="/main_window" 
-        element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} 
+      <Route
+        path="/main_window"
+        element={<Navigate to={isAuthenticated() ? '/dashboard' : '/login'} replace />}
       />
-      <Route 
-        path="/main_window/*" 
-        element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} 
+      <Route
+        path="/main_window/*"
+        element={<Navigate to={isAuthenticated() ? '/dashboard' : '/login'} replace />}
       />
-      <Route 
-        path="*" 
-        element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} 
+      <Route
+        path="*"
+        element={<Navigate to={isAuthenticated() ? '/dashboard' : '/login'} replace />}
       />
     </Routes>
   );
@@ -485,4 +534,4 @@ const App = () => {
   );
 };
 
-export default App; 
+export default App;

@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Paper,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
+import { Box, TextField, Button, Typography, Paper, CircularProgress, Alert } from '@mui/material';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import SendIcon from '@mui/icons-material/Send';
@@ -22,11 +14,11 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
 
   useEffect(() => {
     const fetchDocument = async () => {
-      if (proposalData?.proposal_id) {
+      if (proposalData?.id) {
         try {
-          const response = await window.api.document.getByProposal(proposalData.proposal_id);
+          const response = await window.api.document.getByProposal(proposalData.id);
 
-          console.log(response)
+          console.log(response);
           if (response.success && response.data) {
             setDocumentContent(response.data.base64);
           } else {
@@ -43,24 +35,30 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
 
   const modules = {
     toolbar: [
-      [{ 'header': [1, 2, false] }],
+      [{ header: [1, 2, false] }],
       ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-      [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+      [{ list: 'ordered' }, { list: 'bullet' }, { indent: '-1' }, { indent: '+1' }],
       ['link'],
-      ['clean']
+      ['clean'],
     ],
   };
 
   const formats = [
     'header',
-    'bold', 'italic', 'underline', 'strike', 'blockquote',
-    'list', 'bullet', 'indent',
-    'link'
+    'bold',
+    'italic',
+    'underline',
+    'strike',
+    'blockquote',
+    'list',
+    'bullet',
+    'indent',
+    'link',
   ];
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    
+
     if (!documentContent) {
       setError('Document content is not available');
       return;
@@ -77,16 +75,18 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
         message: message,
         proposalData: proposalData,
         clientName: proposalData.client_name,
-        attachments: [{
-          filename: `${proposalData.proposal_reference || 'proposal'}.pdf`,
-          content: documentContent,
-          encoding: 'base64',
-          mimeType: 'application/pdf'
-        }],
+        attachments: [
+          {
+            filename: `${proposalData.proposal_reference || 'proposal'}.pdf`,
+            content: documentContent,
+            encoding: 'base64',
+            mimeType: 'application/pdf',
+          },
+        ],
         credentials: {
           email: 'flnservicescorporation1@gmail.com',
-          password: 'lqsolhpcdlwopzik'
-        }
+          password: 'lqsolhpcdlwopzik',
+        },
       };
 
       // Send email
@@ -96,12 +96,13 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
         throw new Error(emailResponse.message || 'Failed to send email');
       }
 
-     
-
       // Update proposal status to Pending
-      const updateResponse = await window.api.proposal.updateOnlyStatus(proposalData.proposal_id, 'Sent');
+      const updateResponse = await window.api.proposal.updateOnlyStatus(
+        proposalData.proposal_id,
+        'Sent'
+      );
 
-      console.log(updateResponse)
+      console.log(updateResponse);
 
       if (!updateResponse.success) {
         throw new Error('Email sent but failed to update proposal status');
@@ -110,7 +111,6 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
       if (onEmailSent) {
         onEmailSent();
       }
-     
     } catch (err) {
       setError(err.message || 'Failed to send email');
     } finally {
@@ -130,7 +130,7 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
             label="Recipient Email"
             type="email"
             value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
+            onChange={e => setRecipient(e.target.value)}
             required
             fullWidth
           />
@@ -138,21 +138,23 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
           <TextField
             label="Subject"
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={e => setSubject(e.target.value)}
             required
             fullWidth
           />
 
-          <Box sx={{ 
-            '.ql-container': {
-              height: '250px',
-              fontSize: '1rem',
-              fontFamily: 'inherit'
-            },
-            '.ql-editor': {
-              minHeight: '200px'
-            }
-          }}>
+          <Box
+            sx={{
+              '.ql-container': {
+                height: '250px',
+                fontSize: '1rem',
+                fontFamily: 'inherit',
+              },
+              '.ql-editor': {
+                minHeight: '200px',
+              },
+            }}
+          >
             <ReactQuill
               value={message}
               onChange={setMessage}
@@ -185,4 +187,4 @@ const EmailProposalForm = ({ proposalData, onEmailSent }) => {
   );
 };
 
-export default EmailProposalForm; 
+export default EmailProposalForm;

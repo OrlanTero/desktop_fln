@@ -30,20 +30,19 @@ if ($method === 'GET' && isset($pathParts[0]) && is_numeric($pathParts[0])) {
     // Get user profile by ID
     $userId = intval($pathParts[0]);
     $result = $controller->getProfile($userId);
-    
+
     // Set response code
     http_response_code($result['success'] ? 200 : 404);
-    
+
     // Return response
     echo json_encode($result);
-} 
-else if ($method === 'PUT' && isset($pathParts[0]) && is_numeric($pathParts[0])) {
+} else if ($method === 'PUT' && isset($pathParts[0]) && is_numeric($pathParts[0])) {
     // Update user profile
     $userId = intval($pathParts[0]);
-    
+
     // Get request data
     $data = json_decode(file_get_contents("php://input"));
-    
+
     if (!$data) {
         http_response_code(400);
         echo json_encode(array(
@@ -52,19 +51,18 @@ else if ($method === 'PUT' && isset($pathParts[0]) && is_numeric($pathParts[0]))
         ));
         exit;
     }
-    
+
     $result = $controller->updateProfile($userId, $data);
-    
+
     // Set response code
     http_response_code($result['success'] ? 200 : 400);
-    
+
     // Return response
     echo json_encode($result);
-}
-else if ($method === 'POST' && isset($pathParts[0]) && is_numeric($pathParts[0]) && isset($pathParts[1]) && $pathParts[1] === 'photo') {
+} else if ($method === 'POST' && isset($pathParts[0]) && is_numeric($pathParts[0]) && isset($pathParts[1]) && $pathParts[1] === 'photo') {
     // Upload profile photo
     $userId = intval($pathParts[0]);
-    
+
     if (!isset($_FILES['photo'])) {
         http_response_code(400);
         echo json_encode(array(
@@ -73,20 +71,39 @@ else if ($method === 'POST' && isset($pathParts[0]) && is_numeric($pathParts[0])
         ));
         exit;
     }
-    
+
     $result = $controller->uploadPhoto($userId, $_FILES['photo']);
-    
+
     // Set response code
     http_response_code($result['success'] ? 200 : 400);
-    
+
     // Return response
     echo json_encode($result);
-}
-else {
+} else if ($method === 'POST' && isset($pathParts[0]) && is_numeric($pathParts[0]) && isset($pathParts[1]) && $pathParts[1] === 'signature') {
+    // Upload signature
+    $userId = intval($pathParts[0]);
+
+    if (!isset($_FILES['signature'])) {
+        http_response_code(400);
+        echo json_encode(array(
+            "success" => false,
+            "message" => "No signature file uploaded"
+        ));
+        exit;
+    }
+
+    $result = $controller->uploadSignature($userId, $_FILES['signature']);
+
+    // Set response code
+    http_response_code($result['success'] ? 200 : 400);
+
+    // Return response
+    echo json_encode($result);
+} else {
     // Invalid request
     http_response_code(404);
     echo json_encode(array(
         "success" => false,
         "message" => "Invalid request"
     ));
-} 
+}

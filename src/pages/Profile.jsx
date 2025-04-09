@@ -17,6 +17,10 @@ import {
   Chip,
   InputAdornment,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -29,6 +33,10 @@ import {
   Work as WorkIcon,
   Business as BusinessIcon,
   Person as PersonIcon,
+  Lock as LockIcon,
+  Fingerprint as FingerprintIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
@@ -36,7 +44,7 @@ import PageHeader from '../components/PageHeader';
 import { API_BASE_URL } from '../config/api';
 
 const Profile = () => {
-  const { currentUser, updateProfile } = useAuth();
+  const { currentUser, updateProfile, updatePassword } = useAuth();
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -56,6 +64,26 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Signature upload states
+  const [signatureFile, setSignatureFile] = useState(null);
+  const [signaturePreview, setSignaturePreview] = useState(null);
+  const [uploadingSignature, setUploadingSignature] = useState(false);
+  const signatureInputRef = useRef(null);
+
+  // Password change states
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+  const [passwordErrors, setPasswordErrors] = useState({});
 
   // Fetch user profile data
   useEffect(() => {
@@ -253,6 +281,144 @@ const Profile = () => {
     setError('');
   };
 
+  // Handle signature file selection
+  const handleSignatureChange = e => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSignatureFile(file);
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = e => {
+        setSignaturePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle signature upload
+  const handleSignatureUpload = async () => {
+    if (!signatureFile || !currentUser) return;
+
+    setUploadingSignature(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('signature', signatureFile);
+
+      // Use the existing photo upload endpoint as a model
+      // We're assuming signature uploads would work similarly
+      const response = await window.api.userProfile.uploadSignature(currentUser.id, signatureFile);
+
+      if (response.success) {
+        setSuccess('Signature uploaded successfully');
+
+        // Update profile data with new signature URL
+        if (profileData && profileData.user) {
+          setProfileData({
+            ...profileData,
+            user: {
+              ...profileData.user,
+              signature_url: response.data?.signature_url || profileData.user.signature_url,
+            },
+          });
+        }
+
+        // Reset signature file and preview
+        setSignatureFile(null);
+      } else {
+        setError(response.message || 'Failed to upload signature');
+      }
+    } catch (err) {
+      setError('Error uploading signature: ' + (err.message || 'Unknown error'));
+      console.error('Signature upload error:', err);
+    } finally {
+      setUploadingSignature(false);
+    }
+  };
+
+  // Handle password field changes
+  const handlePasswordChange = e => {
+    const { name, value } = e.target;
+    setPasswordData({
+      ...passwordData,
+      [name]: value,
+    });
+  };
+
+  // Toggle password visibility
+  const togglePasswordVisibility = field => {
+    setShowPassword({
+      ...showPassword,
+      [field]: !showPassword[field],
+    });
+  };
+
+  // Validate password form
+  const validatePasswordForm = () => {
+    const errors = {};
+
+    if (!passwordData.currentPassword) {
+      errors.currentPassword = 'Current password is required';
+    }
+
+    if (!passwordData.newPassword) {
+      errors.newPassword = 'New password is required';
+    } else if (passwordData.newPassword.length < 6) {
+      errors.newPassword = 'Password must be at least 6 characters';
+    }
+
+    if (!passwordData.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    setPasswordErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle password update
+  const handlePasswordUpdate = async () => {
+    if (!validatePasswordForm()) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await updatePassword(currentUser.id, {
+        current_password: passwordData.currentPassword,
+        new_password: passwordData.newPassword,
+      });
+
+      if (response.success) {
+        setSuccess('Password updated successfully');
+        setPasswordDialogOpen(false);
+
+        // Reset form
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+      } else {
+        setError(response.message || 'Failed to update password');
+      }
+    } catch (err) {
+      setError('Error updating password: ' + (err.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Open password change dialog
+  const openPasswordDialog = () => {
+    setPasswordDialogOpen(true);
+    // Reset any previous errors
+    setPasswordErrors({});
+  };
+
   // Render loading state
   if (loading && !profileData) {
     return (
@@ -273,14 +439,24 @@ const Profile = () => {
         subtitle="View and manage your profile information"
         actionButton={
           !editMode ? (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<EditIcon />}
-              onClick={() => setEditMode(true)}
-            >
-              Edit Profile
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<LockIcon />}
+                onClick={openPasswordDialog}
+              >
+                Change Password
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<EditIcon />}
+                onClick={() => setEditMode(true)}
+              >
+                Edit Profile
+              </Button>
+            </Box>
           ) : (
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
@@ -323,7 +499,7 @@ const Profile = () => {
                   src={
                     photoPreview ||
                     (profileData?.user?.photo_url
-                      ? `${API_BASE_URL}${profileData.user.photo_url}`
+                      ? window.api.utils.formatUploadUrl(profileData.user.photo_url)
                       : '')
                   }
                   alt={profileData?.user?.name || 'User'}
@@ -432,9 +608,97 @@ const Profile = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Signature Upload Card */}
+          <Card sx={{ mb: 3, borderRadius: 2 }}>
+            <CardContent>
+              <Typography
+                variant="h6"
+                sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                <FingerprintIcon color="primary" />
+                Your Signature
+              </Typography>
+
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                {signaturePreview || profileData?.user?.signature_url ? (
+                  <Box
+                    component="img"
+                    src={
+                      signaturePreview ||
+                      window.api.utils.formatUploadUrl(profileData?.user?.signature_url)
+                    }
+                    alt="Your signature"
+                    sx={{
+                      maxWidth: '100%',
+                      height: 100,
+                      objectFit: 'contain',
+                      border: '1px solid #eee',
+                      borderRadius: 1,
+                      p: 1,
+                      mb: 2,
+                      backgroundColor: '#f9f9f9',
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: 100,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px dashed #ccc',
+                      borderRadius: 1,
+                      mb: 2,
+                      backgroundColor: '#f9f9f9',
+                    }}
+                  >
+                    <Typography color="text.secondary">No signature uploaded</Typography>
+                  </Box>
+                )}
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  ref={signatureInputRef}
+                  onChange={handleSignatureChange}
+                />
+
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => signatureInputRef.current.click()}
+                  startIcon={<FingerprintIcon />}
+                  fullWidth
+                >
+                  Choose Signature Image
+                </Button>
+
+                {signatureFile && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    onClick={handleSignatureUpload}
+                    disabled={uploadingSignature}
+                    startIcon={uploadingSignature ? <CircularProgress size={20} /> : null}
+                    sx={{ mt: 2 }}
+                  >
+                    {uploadingSignature ? 'Uploading...' : 'Upload Signature'}
+                  </Button>
+                )}
+              </Box>
+
+              <Typography variant="body2" color="text.secondary">
+                Upload your signature as an image. This will be used for documents and approvals.
+              </Typography>
+            </CardContent>
+          </Card>
         </Grid>
 
-        {/* Profile Details */}
+        {/* Main Profile Information */}
         <Grid item xs={12} md={8}>
           <Card sx={{ borderRadius: 2 }}>
             <CardContent>
@@ -610,6 +874,117 @@ const Profile = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Password Change Dialog */}
+      <Dialog
+        open={passwordDialogOpen}
+        onClose={() => setPasswordDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Change Password</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 1 }}>
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Current Password"
+              name="currentPassword"
+              type={showPassword.current ? 'text' : 'password'}
+              value={passwordData.currentPassword}
+              onChange={handlePasswordChange}
+              error={!!passwordErrors.currentPassword}
+              helperText={passwordErrors.currentPassword}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => togglePasswordVisibility('current')}>
+                      {showPassword.current ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              fullWidth
+              margin="normal"
+              label="New Password"
+              name="newPassword"
+              type={showPassword.new ? 'text' : 'password'}
+              value={passwordData.newPassword}
+              onChange={handlePasswordChange}
+              error={!!passwordErrors.newPassword}
+              helperText={passwordErrors.newPassword}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => togglePasswordVisibility('new')}>
+                      {showPassword.new ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Confirm New Password"
+              name="confirmPassword"
+              type={showPassword.confirm ? 'text' : 'password'}
+              value={passwordData.confirmPassword}
+              onChange={handlePasswordChange}
+              error={!!passwordErrors.confirmPassword}
+              helperText={passwordErrors.confirmPassword}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => togglePasswordVisibility('confirm')}>
+                      {showPassword.confirm ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPasswordDialogOpen(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handlePasswordUpdate}
+            color="primary"
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} />
+                Updating...
+              </>
+            ) : (
+              'Update Password'
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Success and Error Messages */}
       <Snackbar open={!!success} autoHideDuration={6000} onClose={handleSnackbarClose}>

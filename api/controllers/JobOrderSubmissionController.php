@@ -3,18 +3,20 @@ require_once 'models/JobOrderSubmission.php';
 require_once 'controllers/JobOrderController.php';
 require_once 'controllers/AssignedJobOrderController.php';
 
-class JobOrderSubmissionController {
+class JobOrderSubmissionController
+{
     private $jobOrderSubmission;
     private $conn;
     private $upload_dir;
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->conn = $db;
         $this->jobOrderSubmission = new JobOrderSubmission($db);
-        
+
         // Set upload directory
         $this->upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/job_orders/';
-        
+
         // Create upload directory if it doesn't exist
         if (!file_exists($this->upload_dir)) {
             mkdir($this->upload_dir, 0777, true);
@@ -22,7 +24,8 @@ class JobOrderSubmissionController {
     }
 
     // Create a new job order submission
-    public function create($data) {
+    public function create($data)
+    {
         try {
             // Validate required fields
             if (!isset($data->job_order_id) || !isset($data->liaison_id) || !isset($data->expenses)) {
@@ -52,10 +55,10 @@ class JobOrderSubmissionController {
                     $data->notes ?? '',
                     $total_expenses
                 );
-                
+
                 // Delete existing expenses for this submission
                 $this->jobOrderSubmission->deleteExpenses($submissionId);
-                
+
                 // Re-add all expenses
                 foreach ($data->expenses as $expense) {
                     $this->jobOrderSubmission->addExpense(
@@ -64,7 +67,7 @@ class JobOrderSubmissionController {
                         $expense->amount
                     );
                 }
-                
+
                 // Handle attachments
                 $this->handleAttachmentsUpdate($submissionId, $data);
             } else {
@@ -93,7 +96,7 @@ class JobOrderSubmissionController {
                 if (isset($_FILES['attachments'])) {
                     $this->processAttachments($submissionId, $_FILES['attachments']);
                 }
-                
+
                 // Process manual attachments if any
                 if (isset($data->manual_attachments)) {
                     $this->processManualAttachments($submissionId, $data->manual_attachments);
@@ -104,10 +107,10 @@ class JobOrderSubmissionController {
             if (isset($data->update_job_order_status) && $data->update_job_order_status === 'true') {
                 // Get the job order controller
                 $jobOrderController = new JobOrderController($this->conn);
-                
+
                 // Update the job order status to Submitted
                 $jobOrderController->updateStatus($data->job_order_id, 'SUBMITTED');
-                
+
                 // Also update the assigned job order status
                 $assignedJobOrderController = new AssignedJobOrderController($this->conn);
                 $assignedJobOrderController->updateStatus($data->job_order_id, ['status' => 'SUBMITTED']);
@@ -127,52 +130,54 @@ class JobOrderSubmissionController {
         } catch (Exception $e) {
             // Rollback transaction on error
             $this->conn->rollBack();
-            
+
             // Define isUpdate if it's not set (in case the error happens before it's defined)
             if (!isset($isUpdate)) {
                 $isUpdate = isset($data->is_update) && $data->is_update === 'true';
             }
-            
+
             return [
                 'success' => false,
                 'message' => 'Error ' . ($isUpdate ? 'updating' : 'creating') . ' job order submission: ' . $e->getMessage()
             ];
         }
     }
-    
+
     // Handle attachments update
-    private function handleAttachmentsUpdate($submissionId, $data) {
+    private function handleAttachmentsUpdate($submissionId, $data)
+    {
         try {
             // Get existing attachment IDs to keep
             $existingAttachmentIds = [];
             if (isset($data->existing_attachment_ids)) {
                 $existingAttachmentIds = json_decode($data->existing_attachment_ids);
             }
-            
+
             // Delete attachments not in the existing_attachment_ids list
             $this->jobOrderSubmission->deleteAttachmentsExcept($submissionId, $existingAttachmentIds);
-            
+
             // Process new attachments if any
             if (isset($_FILES['attachments'])) {
                 $this->processAttachments($submissionId, $_FILES['attachments']);
             }
-            
+
             // Process manual attachments if any
             if (isset($data->manual_attachments)) {
                 $this->processManualAttachments($submissionId, $data->manual_attachments);
             }
-            
+
             return true;
         } catch (Exception $e) {
             throw new Exception("Error handling attachments update: " . $e->getMessage());
         }
     }
-    
+
     // Process manual attachments
-    private function processManualAttachments($submissionId, $manualAttachmentsJson) {
+    private function processManualAttachments($submissionId, $manualAttachmentsJson)
+    {
         try {
             $manualAttachments = json_decode($manualAttachmentsJson);
-            
+
             if (is_array($manualAttachments)) {
                 foreach ($manualAttachments as $attachmentName) {
                     // Add a manual attachment record
@@ -185,7 +190,7 @@ class JobOrderSubmissionController {
                     );
                 }
             }
-            
+
             return true;
         } catch (Exception $e) {
             throw new Exception("Error processing manual attachments: " . $e->getMessage());
@@ -193,7 +198,8 @@ class JobOrderSubmissionController {
     }
 
     // Process file attachments
-    private function processAttachments($submission_id, $files) {
+    private function processAttachments($submission_id, $files)
+    {
         // If single file
         if (!is_array($files['name'])) {
             $this->processFile($submission_id, $files);
@@ -217,7 +223,8 @@ class JobOrderSubmissionController {
     }
 
     // Process a single file
-    private function processFile($submission_id, $file) {
+    private function processFile($submission_id, $file)
+    {
         // Check if file was uploaded without errors
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new Exception("File upload error: " . $this->getUploadErrorMessage($file['error']));
@@ -245,7 +252,8 @@ class JobOrderSubmissionController {
     }
 
     // Get upload error message
-    private function getUploadErrorMessage($error_code) {
+    private function getUploadErrorMessage($error_code)
+    {
         switch ($error_code) {
             case UPLOAD_ERR_INI_SIZE:
                 return "The uploaded file exceeds the upload_max_filesize directive in php.ini";
@@ -267,10 +275,11 @@ class JobOrderSubmissionController {
     }
 
     // Get submission by ID
-    public function getById($id) {
+    public function getById($id)
+    {
         try {
             $submission = $this->jobOrderSubmission->getById($id);
-            
+
             if (!$submission) {
                 return [
                     'success' => false,
@@ -291,7 +300,8 @@ class JobOrderSubmissionController {
     }
 
     // Get submissions by job order ID
-    public function getByJobOrderId($job_order_id) {
+    public function getByJobOrderId($job_order_id)
+    {
         try {
             // Query to get submissions for this job order
             $query = "SELECT * FROM " . $this->jobOrderSubmission->getTableName() . " 
@@ -306,9 +316,9 @@ class JobOrderSubmissionController {
 
             // Execute query
             $stmt->execute();
-            
+
             $submissions = [];
-            
+
             // Fetch all submissions
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 // Get full submission details including expenses and attachments
@@ -331,7 +341,8 @@ class JobOrderSubmissionController {
     }
 
     // Get submissions by liaison ID
-    public function getByLiaisonId($liaison_id) {
+    public function getByLiaisonId($liaison_id)
+    {
         try {
             $stmt = $this->jobOrderSubmission->getByLiaisonId($liaison_id);
             $submissions = [];
@@ -353,7 +364,8 @@ class JobOrderSubmissionController {
     }
 
     // Update submission status
-    public function updateStatus($id, $status) {
+    public function updateStatus($id, $status)
+    {
         try {
             // Validate status
             $valid_statuses = ['pending', 'approved', 'rejected'];
@@ -365,7 +377,7 @@ class JobOrderSubmissionController {
             }
 
             $result = $this->jobOrderSubmission->updateStatus($id, $status);
-            
+
             if (!$result) {
                 return [
                     'success' => false,
@@ -386,11 +398,12 @@ class JobOrderSubmissionController {
     }
 
     // Delete a submission
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             // Get submission to check if it exists and get attachment paths
             $submission = $this->jobOrderSubmission->getById($id);
-            
+
             if (!$submission) {
                 return [
                     'success' => false,
@@ -410,7 +423,7 @@ class JobOrderSubmissionController {
 
             // Delete submission from database
             $result = $this->jobOrderSubmission->delete($id);
-            
+
             if (!$result) {
                 return [
                     'success' => false,
@@ -431,10 +444,11 @@ class JobOrderSubmissionController {
     }
 
     // Delete an attachment
-    public function deleteAttachment($id) {
+    public function deleteAttachment($id)
+    {
         try {
             $result = $this->jobOrderSubmission->deleteAttachment($id);
-            
+
             if ($result) {
                 return [
                     'success' => true,
@@ -453,4 +467,4 @@ class JobOrderSubmissionController {
             ];
         }
     }
-} 
+}

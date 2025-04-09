@@ -1,5 +1,6 @@
 <?php
-class JobOrderSubmission {
+class JobOrderSubmission
+{
     // Database connection and table name
     private $conn;
     private $table_name = "job_order_submissions";
@@ -17,12 +18,14 @@ class JobOrderSubmission {
     public $updated_at;
 
     // Constructor with database connection
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->conn = $db;
     }
 
     // Create a new submission
-    public function create($liaison_id, $job_order_id, $notes, $total_expenses) {
+    public function create($liaison_id, $job_order_id, $notes, $total_expenses)
+    {
         try {
             // Insert query
             $query = "INSERT INTO " . $this->table_name . " 
@@ -56,7 +59,8 @@ class JobOrderSubmission {
     }
 
     // Add an expense to a submission
-    public function addExpense($submission_id, $description, $amount) {
+    public function addExpense($submission_id, $description, $amount)
+    {
         try {
             // Insert query
             $query = "INSERT INTO " . $this->expenses_table . " 
@@ -86,7 +90,8 @@ class JobOrderSubmission {
     }
 
     // Add an attachment to a submission
-    public function addAttachment($submission_id, $file_name, $file_path, $file_type, $file_size) {
+    public function addAttachment($submission_id, $file_name, $file_path, $file_type, $file_size)
+    {
         try {
             // Insert query
             $query = "INSERT INTO " . $this->attachments_table . " 
@@ -120,7 +125,8 @@ class JobOrderSubmission {
     }
 
     // Get submission by ID with expenses and attachments
-    public function getById($id) {
+    public function getById($id)
+    {
         try {
             // Query to get submission
             $query = "SELECT s.*, jo.description as job_order_title, u.name as liaison_name 
@@ -149,7 +155,7 @@ class JobOrderSubmission {
             $stmt->bindParam(":submission_id", $id);
             $stmt->execute();
             $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             // Add expenses to submission
             $submission['expenses'] = $expenses;
 
@@ -159,7 +165,7 @@ class JobOrderSubmission {
             $stmt->bindParam(":submission_id", $id);
             $stmt->execute();
             $attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             // Add attachments to submission
             $submission['attachments'] = $attachments;
 
@@ -170,7 +176,8 @@ class JobOrderSubmission {
     }
 
     // Get submissions by job order ID
-    public function getByJobOrderId($job_order_id) {
+    public function getByJobOrderId($job_order_id)
+    {
         try {
             // Query to get submissions
             $query = "SELECT s.*, u.name as liaison_name 
@@ -187,7 +194,7 @@ class JobOrderSubmission {
 
             // Execute query
             $stmt->execute();
-            
+
             return $stmt;
         } catch (Exception $e) {
             throw new Exception("Error retrieving submissions: " . $e->getMessage());
@@ -195,7 +202,8 @@ class JobOrderSubmission {
     }
 
     // Get submissions by liaison ID
-    public function getByLiaisonId($liaison_id) {
+    public function getByLiaisonId($liaison_id)
+    {
         try {
             // Query to get submissions
             $query = "SELECT s.*, jo.title as job_order_title 
@@ -212,7 +220,7 @@ class JobOrderSubmission {
 
             // Execute query
             $stmt->execute();
-            
+
             return $stmt;
         } catch (Exception $e) {
             throw new Exception("Error retrieving submissions: " . $e->getMessage());
@@ -220,7 +228,8 @@ class JobOrderSubmission {
     }
 
     // Update submission status
-    public function updateStatus($id, $status) {
+    public function updateStatus($id, $status)
+    {
         try {
             // Update query
             $query = "UPDATE " . $this->table_name . " 
@@ -248,7 +257,8 @@ class JobOrderSubmission {
     }
 
     // Delete a submission and its related expenses and attachments
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             // Start transaction
             $this->conn->beginTransaction();
@@ -273,7 +283,7 @@ class JobOrderSubmission {
 
             // Commit transaction
             $this->conn->commit();
-            
+
             return true;
         } catch (Exception $e) {
             // Rollback transaction on error
@@ -283,7 +293,8 @@ class JobOrderSubmission {
     }
 
     // Update an existing submission
-    public function updateSubmission($id, $notes, $total_expenses) {
+    public function updateSubmission($id, $notes, $total_expenses)
+    {
         try {
             // Update query
             $query = "UPDATE " . $this->table_name . " 
@@ -313,7 +324,8 @@ class JobOrderSubmission {
     }
 
     // Delete all expenses for a submission
-    public function deleteExpenses($submission_id) {
+    public function deleteExpenses($submission_id)
+    {
         try {
             // Delete query
             $query = "DELETE FROM " . $this->expenses_table . " WHERE submission_id = :submission_id";
@@ -336,7 +348,8 @@ class JobOrderSubmission {
     }
 
     // Delete attachments except those with specified IDs
-    public function deleteAttachmentsExcept($submission_id, $attachment_ids = []) {
+    public function deleteAttachmentsExcept($submission_id, $attachment_ids = [])
+    {
         try {
             // If no attachment IDs provided, delete all attachments
             if (empty($attachment_ids)) {
@@ -372,7 +385,8 @@ class JobOrderSubmission {
     }
 
     // Delete a specific attachment
-    public function deleteAttachment($attachment_id) {
+    public function deleteAttachment($attachment_id)
+    {
         try {
             // Get attachment info first to delete the file
             $query = "SELECT file_path FROM " . $this->attachments_table . " WHERE id = :id";
@@ -405,7 +419,8 @@ class JobOrderSubmission {
     }
 
     // Get table name
-    public function getTableName() {
+    public function getTableName()
+    {
         return $this->table_name;
     }
-} 
+}

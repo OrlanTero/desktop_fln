@@ -1,36 +1,39 @@
 <?php
-class ProjectController {
+class ProjectController
+{
     // Database connection and table name
     private $conn;
     private $table_name = "projects";
 
     // Constructor with DB connection
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->conn = $db;
     }
 
     // Get all projects
-    public function getAll() {
+    public function getAll()
+    {
         try {
             // Create query
             $query = "SELECT p.*, c.client_name 
                       FROM " . $this->table_name . " p
                       LEFT JOIN clients c ON p.client_id = c.client_id
                       ORDER BY p.created_at DESC";
-            
+
             // Prepare statement
             $stmt = $this->conn->prepare($query);
-            
+
             // Execute query
             $stmt->execute();
-            
+
             // Check if any projects found
-            if($stmt->rowCount() > 0) {
+            if ($stmt->rowCount() > 0) {
                 // Projects array
                 $projects_arr = array();
-                
+
                 // Fetch records
-                while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
                     $project_item = array(
                         "id" => $row['project_id'],
@@ -49,14 +52,14 @@ class ProjectController {
                         "paid_amount" => $row['paid_amount'],
                         "created_at" => $row['created_at'],
                         "updated_at" => $row['updated_at'],
-                        
+
                         "total_tasks" => $this->getTotalTasks($row['project_id']),
                         "completed_tasks" => $this->getCompletedTasks($row['project_id']),
                     );
-                    
+
                     array_push($projects_arr, $project_item);
                 }
-                
+
                 return array(
                     "status" => "success",
                     "data" => $projects_arr
@@ -67,7 +70,7 @@ class ProjectController {
                     "data" => []
                 );
             }
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return array(
                 "status" => "error",
                 "message" => "Error fetching projects: " . $e->getMessage()
@@ -76,56 +79,60 @@ class ProjectController {
     }
 
     // Get total tasks for a project
-    private function getTotalTasks($project_id) {
+    private function getTotalTasks($project_id)
+    {
         $query = "SELECT COUNT(*) as total_jobs FROM job_orders WHERE project_id = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $project_id);
-        $stmt->execute();   
-        
+        $stmt->execute();
+
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row['total_jobs'];
     }
 
     // Get completed tasks for a project
-    private function getCompletedTasks($project_id) {
+    private function getCompletedTasks($project_id)
+    {
         $query = "SELECT COUNT(*) as completed_jobs FROM job_orders WHERE project_id = ? AND status = 'COMPLETED'";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $project_id);
         $stmt->execute();
-        
+
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row['completed_jobs'];
     }
 
     // Get project by ID
-    public function getById($id) {
+    public function getById($id)
+    {
         try {
             // Create query
             $query = "SELECT p.*, c.client_name 
                       FROM " . $this->table_name . " p
                       LEFT JOIN clients c ON p.client_id = c.client_id
-                      WHERE p.id = ?";
-            
+                      WHERE p.project_id = ?";
+
             // Prepare statement
             $stmt = $this->conn->prepare($query);
-            
+
             // Bind ID
             $stmt->bindParam(1, $id);
-            
+
             // Execute query
             $stmt->execute();
-            
+
             // Check if project found
-            if($stmt->rowCount() > 0) {
+            if ($stmt->rowCount() > 0) {
                 // Fetch record
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                
+
                 // Extract data
                 extract($row);
-                
+
                 // Create project array
                 $project_arr = array(
-                    "id" => $id,
+                    "id" => $project_id,
+                    "project_id" => $project_id,
                     "project_name" => $project_name,
                     "client_id" => $client_id,
                     "client_name" => $client_name,
@@ -142,7 +149,7 @@ class ProjectController {
                     "created_at" => $created_at,
                     "updated_at" => $updated_at
                 );
-                
+
                 return array(
                     "status" => "success",
                     "data" => $project_arr
@@ -153,7 +160,7 @@ class ProjectController {
                     "message" => "Project not found"
                 );
             }
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return array(
                 "status" => "error",
                 "message" => "Error fetching project: " . $e->getMessage()
@@ -162,7 +169,8 @@ class ProjectController {
     }
 
     // Create project
-    public function create($data) {
+    public function create($data)
+    {
         try {
             // Create query
             $query = "INSERT INTO " . $this->table_name . " 
@@ -178,10 +186,10 @@ class ProjectController {
                           notes = :notes, 
                           total_amount = :total_amount,
                           paid_amount = :paid_amount";
-            
+
             // Prepare statement
             $stmt = $this->conn->prepare($query);
-            
+
             // Sanitize and bind data
             $project_name = htmlspecialchars(strip_tags($data['project_name']));
             $client_id = htmlspecialchars(strip_tags($data['client_id']));
@@ -195,7 +203,7 @@ class ProjectController {
             $notes = isset($data['notes']) ? htmlspecialchars(strip_tags($data['notes'])) : null;
             $total_amount = isset($data['total_amount']) ? htmlspecialchars(strip_tags($data['total_amount'])) : 0;
             $paid_amount = isset($data['paid_amount']) ? htmlspecialchars(strip_tags($data['paid_amount'])) : 0;
-            
+
             $stmt->bindParam(':project_name', $project_name);
             $stmt->bindParam(':client_id', $client_id);
             $stmt->bindParam(':proposal_id', $proposal_id);
@@ -208,11 +216,11 @@ class ProjectController {
             $stmt->bindParam(':notes', $notes);
             $stmt->bindParam(':total_amount', $total_amount);
             $stmt->bindParam(':paid_amount', $paid_amount);
-            
+
             // Execute query
-            if($stmt->execute()) {
+            if ($stmt->execute()) {
                 $last_id = $this->conn->lastInsertId();
-                
+
                 return array(
                     "status" => "success",
                     "message" => "Project created successfully",
@@ -224,7 +232,7 @@ class ProjectController {
                     "message" => "Failed to create project"
                 );
             }
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return array(
                 "status" => "error",
                 "message" => "Error creating project: " . $e->getMessage()
@@ -233,7 +241,8 @@ class ProjectController {
     }
 
     // Update project
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
         try {
             // Create query
             $query = "UPDATE " . $this->table_name . " 
@@ -250,11 +259,11 @@ class ProjectController {
                           total_amount = :total_amount,
                           paid_amount = :paid_amount,
                           updated_at = NOW()
-                      WHERE id = :id";
-            
+                      WHERE project_id = :id";
+
             // Prepare statement
             $stmt = $this->conn->prepare($query);
-            
+
             // Sanitize and bind data
             $project_name = htmlspecialchars(strip_tags($data['project_name']));
             $client_id = htmlspecialchars(strip_tags($data['client_id']));
@@ -268,7 +277,7 @@ class ProjectController {
             $notes = isset($data['notes']) ? htmlspecialchars(strip_tags($data['notes'])) : null;
             $total_amount = isset($data['total_amount']) ? htmlspecialchars(strip_tags($data['total_amount'])) : 0;
             $paid_amount = isset($data['paid_amount']) ? htmlspecialchars(strip_tags($data['paid_amount'])) : 0;
-            
+
             $stmt->bindParam(':project_name', $project_name);
             $stmt->bindParam(':client_id', $client_id);
             $stmt->bindParam(':proposal_id', $proposal_id);
@@ -282,9 +291,9 @@ class ProjectController {
             $stmt->bindParam(':total_amount', $total_amount);
             $stmt->bindParam(':paid_amount', $paid_amount);
             $stmt->bindParam(':id', $id);
-            
+
             // Execute query
-            if($stmt->execute()) {
+            if ($stmt->execute()) {
                 return array(
                     "status" => "success",
                     "message" => "Project updated successfully"
@@ -295,7 +304,7 @@ class ProjectController {
                     "message" => "Failed to update project"
                 );
             }
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return array(
                 "status" => "error",
                 "message" => "Error updating project: " . $e->getMessage()
@@ -304,31 +313,32 @@ class ProjectController {
     }
 
     // Update project status
-    public function updateStatus($id, $data) {
+    public function updateStatus($id, $data)
+    {
         try {
             // Create query
             $query = "UPDATE " . $this->table_name . " 
                       SET status = :status,
                           updated_at = NOW()
                       WHERE project_id = :id";
-            
+
             // Prepare statement
             $stmt = $this->conn->prepare($query);
-            
+
             // Get status from data
             $status = is_array($data) ? $data : $data;
             if (is_array($data) && isset($data['status'])) {
                 $status = $data['status'];
             }
-            
+
             // Sanitize and bind data
             $status = htmlspecialchars(strip_tags($status));
-            
+
             $stmt->bindParam(':status', $status);
             $stmt->bindParam(':id', $id);
-            
+
             // Execute query
-            if($stmt->execute()) {
+            if ($stmt->execute()) {
                 return array(
                     "status" => "success",
                     "message" => "Project status updated successfully"
@@ -339,7 +349,7 @@ class ProjectController {
                     "message" => "Failed to update project status"
                 );
             }
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return array(
                 "status" => "error",
                 "message" => "Error updating project status: " . $e->getMessage()
@@ -348,32 +358,33 @@ class ProjectController {
     }
 
     // Record payment
-    public function recordPayment($id, $amount) {
+    public function recordPayment($id, $amount)
+    {
         try {
             // First get current paid amount
             $query = "SELECT paid_amount FROM " . $this->table_name . " WHERE project_id = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(1, $id);
             $stmt->execute();
-            
-            if($stmt->rowCount() > 0) {
+
+            if ($stmt->rowCount() > 0) {
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 $current_paid = $row['paid_amount'];
-                
+
                 // Calculate new paid amount
                 $new_paid = $current_paid + $amount;
-                
+
                 // Update the paid amount
                 $update_query = "UPDATE " . $this->table_name . " 
                                 SET paid_amount = :paid_amount,
                                     updated_at = NOW()
                                 WHERE project_id = :id";
-                
+
                 $update_stmt = $this->conn->prepare($update_query);
                 $update_stmt->bindParam(':paid_amount', $new_paid);
                 $update_stmt->bindParam(':id', $id);
-                
-                if($update_stmt->execute()) {
+
+                if ($update_stmt->execute()) {
                     return array(
                         "status" => "success",
                         "message" => "Payment recorded successfully",
@@ -393,7 +404,7 @@ class ProjectController {
                     "message" => "Project not found"
                 );
             }
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return array(
                 "status" => "error",
                 "message" => "Error recording payment: " . $e->getMessage()
@@ -402,7 +413,8 @@ class ProjectController {
     }
 
     // Get project status history
-    public function getStatusHistory($id) {
+    public function getStatusHistory($id)
+    {
         try {
             // For now, we'll just return a simple response
             // In a real implementation, you would query a status_history table
@@ -421,7 +433,7 @@ class ProjectController {
                     )
                 )
             );
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return array(
                 "status" => "error",
                 "message" => "Error getting status history: " . $e->getMessage()
@@ -430,7 +442,8 @@ class ProjectController {
     }
 
     // Get project timeline
-    public function getTimeline($id) {
+    public function getTimeline($id)
+    {
         try {
             // For now, we'll just return a simple response
             // In a real implementation, you would query a timeline table
@@ -454,16 +467,17 @@ class ProjectController {
                     )
                 )
             );
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return array(
                 "status" => "error",
                 "message" => "Error getting timeline: " . $e->getMessage()
             );
         }
     }
-    
+
     // Update project timeline
-    public function updateTimeline($id, $data) {
+    public function updateTimeline($id, $data)
+    {
         try {
             // For now, we'll just return a success response
             // In a real implementation, you would update a timeline table
@@ -471,7 +485,7 @@ class ProjectController {
                 "status" => "success",
                 "message" => "Timeline updated successfully"
             );
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return array(
                 "status" => "error",
                 "message" => "Error updating timeline: " . $e->getMessage()
@@ -480,19 +494,20 @@ class ProjectController {
     }
 
     // Delete project
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             // Create query
             $query = "DELETE FROM " . $this->table_name . " WHERE project_id = ?";
-            
+
             // Prepare statement
             $stmt = $this->conn->prepare($query);
-            
+
             // Bind ID
             $stmt->bindParam(1, $id);
-            
+
             // Execute query
-            if($stmt->execute()) {
+            if ($stmt->execute()) {
                 return array(
                     "status" => "success",
                     "message" => "Project deleted successfully"
@@ -503,7 +518,7 @@ class ProjectController {
                     "message" => "Failed to delete project"
                 );
             }
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             return array(
                 "status" => "error",
                 "message" => "Error deleting project: " . $e->getMessage()
@@ -512,20 +527,21 @@ class ProjectController {
     }
 
     // Create project from proposal
-    public function createFromProposal($proposal_id, $data) {
+    public function createFromProposal($proposal_id, $data)
+    {
         try {
             // Begin transaction
             $this->conn->beginTransaction();
-            
+
             // First get the proposal details
             $query = "SELECT * FROM proposals WHERE id = ?";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(1, $proposal_id);
             $stmt->execute();
-            
-            if($stmt->rowCount() > 0) {
+
+            if ($stmt->rowCount() > 0) {
                 $proposal = $stmt->fetch(PDO::FETCH_ASSOC);
-                
+
                 // Create project data
                 $project_data = array(
                     "project_name" => isset($data['project_name']) ? $data['project_name'] : $proposal['proposal_name'],
@@ -541,7 +557,7 @@ class ProjectController {
                     "total_amount" => $proposal['total_amount'],
                     "paid_amount" => 0
                 );
-                
+
                 // Create project
                 $create_query = "INSERT INTO " . $this->table_name . " 
                                 SET project_name = :project_name, 
@@ -556,9 +572,9 @@ class ProjectController {
                                     notes = :notes, 
                                     total_amount = :total_amount,
                                     paid_amount = :paid_amount";
-                
+
                 $create_stmt = $this->conn->prepare($create_query);
-                
+
                 $create_stmt->bindParam(':project_name', $project_data['project_name']);
                 $create_stmt->bindParam(':client_id', $project_data['client_id']);
                 $create_stmt->bindParam(':proposal_id', $project_data['proposal_id']);
@@ -571,19 +587,19 @@ class ProjectController {
                 $create_stmt->bindParam(':notes', $project_data['notes']);
                 $create_stmt->bindParam(':total_amount', $project_data['total_amount']);
                 $create_stmt->bindParam(':paid_amount', $project_data['paid_amount']);
-                
-                if($create_stmt->execute()) {
+
+                if ($create_stmt->execute()) {
                     $project_id = $this->conn->lastInsertId();
-                    
+
                     // Update proposal status to accepted
                     $update_query = "UPDATE proposals SET status = 'accepted' WHERE id = ?";
                     $update_stmt = $this->conn->prepare($update_query);
                     $update_stmt->bindParam(1, $proposal_id);
                     $update_stmt->execute();
-                    
+
                     // Commit transaction
                     $this->conn->commit();
-                    
+
                     return array(
                         "status" => "success",
                         "message" => "Project created from proposal successfully",
@@ -592,7 +608,7 @@ class ProjectController {
                 } else {
                     // Rollback transaction
                     $this->conn->rollBack();
-                    
+
                     return array(
                         "status" => "error",
                         "message" => "Failed to create project from proposal"
@@ -604,14 +620,14 @@ class ProjectController {
                     "message" => "Proposal not found"
                 );
             }
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             // Rollback transaction
             $this->conn->rollBack();
-            
+
             return array(
                 "status" => "error",
                 "message" => "Error creating project from proposal: " . $e->getMessage()
             );
         }
     }
-} 
+}

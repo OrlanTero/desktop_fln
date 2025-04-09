@@ -34,6 +34,7 @@ import {
   Grid,
   TablePagination,
   LinearProgress,
+  Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -46,6 +47,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PauseCircleIcon from '@mui/icons-material/PauseCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import Navigation from '../components/Navigation';
 import { format } from 'date-fns';
 import Layout from '../components/Layout';
@@ -73,6 +75,7 @@ const Projects = ({ user, onLogout }) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [billingDialogOpen, setBillingDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [paymentAmount, setPaymentAmount] = useState(0);
@@ -93,6 +96,16 @@ const Projects = ({ user, onLogout }) => {
     dateRange: '',
     progressRange: '',
   });
+
+  // Add new status to the status options
+  const statusOptions = [
+    { value: 'PENDING', label: 'Pending' },
+    { value: 'IN PROGRESS', label: 'In Progress' },
+    { value: 'ON HOLD', label: 'On Hold' },
+    { value: 'COMPLETED', label: 'Completed' },
+    { value: 'CANCELLED', label: 'Cancelled' },
+    { value: 'READY_FOR_BILLING', label: 'Ready for Billing' },
+  ];
 
   // Fetch clients from API
   const fetchClients = async () => {
@@ -239,8 +252,10 @@ const Projects = ({ user, onLogout }) => {
     }
   };
 
-  // Handle status change
+  // Handle project status change safely
   const handleStatusClick = (project, status) => {
+    if (!project) return;
+
     console.log('handleStatusClick - project:', project);
     console.log('handleStatusClick - status:', status);
     setSelectedProject(project);
@@ -277,8 +292,10 @@ const Projects = ({ user, onLogout }) => {
     }
   };
 
-  // Handle payment
+  // Handle payment click safely
   const handlePaymentClick = project => {
+    if (!project) return;
+
     setSelectedProject(project);
     setPaymentAmount(0);
     setPaymentDialogOpen(true);
@@ -327,8 +344,11 @@ const Projects = ({ user, onLogout }) => {
 
   // Get status chip color
   const getStatusColor = status => {
+    // If status is null or undefined, return default
+    if (!status) return 'default';
+
     // Normalize status to uppercase for comparison
-    const normalizedStatus = status ? status.toUpperCase() : '';
+    const normalizedStatus = status.toUpperCase();
 
     switch (normalizedStatus) {
       case 'NOT STARTED':
@@ -380,8 +400,11 @@ const Projects = ({ user, onLogout }) => {
     }
   };
 
-  // Add progress calculation function
+  // Calculate progress calculation function
   const calculateProgress = project => {
+    // Check if project is null or undefined
+    if (!project) return 0;
+
     // If no tasks, return 0
     if (!project.total_tasks || project.total_tasks === 0) return 0;
 
@@ -390,6 +413,17 @@ const Projects = ({ user, onLogout }) => {
 
     // Calculate percentage
     return Math.round((completedTasks / project.total_tasks) * 100);
+  };
+
+  // Add a function to check if project is ready for billing
+  const isReadyForBilling = project => {
+    // Check if project is null or undefined
+    if (!project) return false;
+
+    return (
+      calculateProgress(project) === 100 &&
+      (project.status === 'COMPLETED' || project.status === 'IN PROGRESS')
+    );
   };
 
   // Get paginated data
@@ -474,6 +508,77 @@ const Projects = ({ user, onLogout }) => {
     </Box>
   );
 
+  // Add new handler for billing status
+  const handleBillingClick = project => {
+    if (!project) return;
+
+    setSelectedProject(project);
+    setBillingDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handleBillingConfirm = async () => {
+    if (!selectedProject) return;
+
+    setLoading(true);
+    try {
+      const projectId = selectedProject.id || selectedProject.project_id;
+      const response = await window.api.project.updateStatus(projectId, {
+        status: 'READY_FOR_BILLING',
+      });
+
+      if (response.success) {
+        setSuccess('Project marked as ready for billing');
+        // Update the project status in the local state
+        setProjects(prevProjects =>
+          prevProjects.map(project =>
+            project.project_id === projectId ? { ...project, status: 'READY_FOR_BILLING' } : project
+          )
+        );
+      } else {
+        setError('Failed to update project status: ' + response.message);
+      }
+    } catch (err) {
+      setError('Error updating project status: ' + err.message);
+    } finally {
+      setLoading(false);
+      setBillingDialogOpen(false);
+      setSelectedProject(null);
+    }
+  };
+
+  // Add these functions if they don't exist
+  const handleViewTasks = projectId => {
+    navigate(`/projects/tasks/${projectId}`);
+  };
+
+  const handleViewTimeline = projectId => {
+    navigate(`/projects/timeline/${projectId}`);
+  };
+
+  const handleOpenDialog = (type, project) => {
+    if (!project) {
+      setError('No project selected');
+      return;
+    }
+
+    // Get the project ID from either id or project_id
+    const projectId = project.id || project.project_id;
+    if (!projectId) {
+      setError('Project ID not found');
+      return;
+    }
+
+    if (type === 'add') {
+      navigate('/projects/new');
+    } else if (type === 'edit') {
+      navigate(`/projects/edit/${projectId}`);
+    } else if (type === 'delete') {
+      setSelectedProject(project);
+      setDeleteDialogOpen(true);
+    }
+  };
+
   if (loading && projects.length === 0) {
     return (
       <Box
@@ -528,11 +633,11 @@ const Projects = ({ user, onLogout }) => {
                   label="Status"
                 >
                   <MenuItem value="">All</MenuItem>
-                  <MenuItem value="PENDING">Pending</MenuItem>
-                  <MenuItem value="IN PROGRESS">In Progress</MenuItem>
-                  <MenuItem value="ON HOLD">On Hold</MenuItem>
-                  <MenuItem value="COMPLETED">Completed</MenuItem>
-                  <MenuItem value="CANCELLED">Cancelled</MenuItem>
+                  {statusOptions.map(option => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -633,13 +738,25 @@ const Projects = ({ user, onLogout }) => {
                 </TableRow>
               ) : (
                 paginatedProjects.map(project => (
-                  <TableRow key={project.project_id}>
-                    <TableCell>{project.project_name}</TableCell>
-                    <TableCell>{project.client_name}</TableCell>
+                  <TableRow key={project.project_id || `project-${Math.random()}`}>
+                    <TableCell>{project?.project_name || 'Unnamed Project'}</TableCell>
+                    <TableCell>{project?.client_name || 'No Client'}</TableCell>
                     <TableCell>
                       <Chip
-                        label={project.status}
-                        color={getStatusColor(project.status)}
+                        label={
+                          !project?.status
+                            ? 'Unknown'
+                            : project.status === 'READY_FOR_BILLING'
+                            ? 'Ready for Billing'
+                            : project.status
+                        }
+                        color={
+                          !project?.status
+                            ? 'default'
+                            : project.status === 'READY_FOR_BILLING'
+                            ? 'secondary'
+                            : getStatusColor(project.status)
+                        }
                         size="small"
                       />
                     </TableCell>
@@ -648,36 +765,87 @@ const Projects = ({ user, onLogout }) => {
                         <LinearProgress
                           variant="determinate"
                           value={calculateProgress(project)}
-                          sx={{ flexGrow: 1 }}
+                          sx={{
+                            flexGrow: 1,
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor: isReadyForBilling(project) ? '#842624' : undefined,
+                            },
+                          }}
                         />
-                        <Typography variant="body2">{calculateProgress(project)}%</Typography>
+                        <Typography variant="body2">
+                          {calculateProgress(project)}%
+                          {project &&
+                            isReadyForBilling(project) &&
+                            project.status !== 'READY_FOR_BILLING' && (
+                              <Chip
+                                label="Ready for Billing"
+                                color="secondary"
+                                size="small"
+                                sx={{ ml: 1, fontSize: '0.7rem' }}
+                              />
+                            )}
+                        </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>{new Date(project.start_date).toLocaleDateString()}</TableCell>
-                    <TableCell>{new Date(project.due_date).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {project?.start_date
+                        ? new Date(project.start_date).toLocaleDateString()
+                        : 'Not set'}
+                    </TableCell>
+                    <TableCell>
+                      {project?.due_date
+                        ? new Date(project.due_date).toLocaleDateString()
+                        : 'Not set'}
+                    </TableCell>
                     <TableCell align="right">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleViewTasks(project.project_id)}
-                      >
-                        <TaskIcon />
-                      </IconButton>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleViewTimeline(project.project_id)}
-                      >
-                        <TimelineIcon />
-                      </IconButton>
-                      <IconButton color="primary" onClick={() => handleOpenDialog('edit', project)}>
-                        <EditIcon />
-                      </IconButton>
-                      {project.status !== 'COMPLETED' && project.status !== 'CANCELLED' && (
+                      <Tooltip title="View Tasks">
                         <IconButton
-                          color="error"
-                          onClick={() => handleOpenDialog('delete', project)}
+                          color="primary"
+                          onClick={() => handleViewTasks(project.project_id)}
                         >
-                          <DeleteIcon />
+                          <TaskIcon />
                         </IconButton>
+                      </Tooltip>
+                      <Tooltip title="View Timeline">
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleViewTimeline(project.project_id)}
+                        >
+                          <TimelineIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Edit Project">
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleOpenDialog('edit', project)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      {project &&
+                        isReadyForBilling(project) &&
+                        project.status !== 'READY_FOR_BILLING' && (
+                          <Tooltip title="Mark as Ready for Billing">
+                            <IconButton
+                              color="secondary"
+                              onClick={() => handleBillingClick(project)}
+                            >
+                              <ReceiptIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      {(!project?.status ||
+                        (project.status !== 'COMPLETED' &&
+                          project.status !== 'CANCELLED' &&
+                          project.status !== 'READY_FOR_BILLING')) && (
+                        <Tooltip title="Delete Project">
+                          <IconButton
+                            color="error"
+                            onClick={() => handleOpenDialog('delete', project)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
                       )}
                     </TableCell>
                   </TableRow>
@@ -698,48 +866,58 @@ const Projects = ({ user, onLogout }) => {
 
         {/* Actions Menu */}
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-          <MenuItem onClick={() => handlePaymentClick(menuProject)}>
-            <ListItemIcon>
-              <PaymentIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Record Payment</ListItemText>
-          </MenuItem>
-          <MenuItem
-            disabled={menuProject?.status?.toUpperCase() === 'IN PROGRESS'}
-            onClick={() => handleStatusClick(menuProject, 'IN PROGRESS')}
-          >
-            <ListItemIcon>
-              <AssignmentIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Mark as In Progress</ListItemText>
-          </MenuItem>
-          <MenuItem
-            disabled={menuProject?.status?.toUpperCase() === 'ON HOLD'}
-            onClick={() => handleStatusClick(menuProject, 'ON HOLD')}
-          >
-            <ListItemIcon>
-              <PauseCircleIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Put On Hold</ListItemText>
-          </MenuItem>
-          <MenuItem
-            disabled={menuProject?.status?.toUpperCase() === 'COMPLETED'}
-            onClick={() => handleStatusClick(menuProject, 'COMPLETED')}
-          >
-            <ListItemIcon>
-              <CheckCircleIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Mark as Completed</ListItemText>
-          </MenuItem>
-          <MenuItem
-            disabled={menuProject?.status?.toUpperCase() === 'CANCELLED'}
-            onClick={() => handleStatusClick(menuProject, 'CANCELLED')}
-          >
-            <ListItemIcon>
-              <CancelIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Cancel Project</ListItemText>
-          </MenuItem>
+          {menuProject && (
+            <>
+              <MenuItem onClick={() => handlePaymentClick(menuProject)}>
+                <ListItemIcon>
+                  <PaymentIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Record Payment</ListItemText>
+              </MenuItem>
+              {(!menuProject.status || menuProject.status.toUpperCase() !== 'IN PROGRESS') && (
+                <MenuItem onClick={() => handleStatusClick(menuProject, 'IN PROGRESS')}>
+                  <ListItemIcon>
+                    <AssignmentIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Mark as In Progress</ListItemText>
+                </MenuItem>
+              )}
+              {(!menuProject.status || menuProject.status.toUpperCase() !== 'ON HOLD') && (
+                <MenuItem onClick={() => handleStatusClick(menuProject, 'ON HOLD')}>
+                  <ListItemIcon>
+                    <PauseCircleIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Put On Hold</ListItemText>
+                </MenuItem>
+              )}
+              {(!menuProject.status || menuProject.status.toUpperCase() !== 'COMPLETED') && (
+                <MenuItem onClick={() => handleStatusClick(menuProject, 'COMPLETED')}>
+                  <ListItemIcon>
+                    <CheckCircleIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Mark as Completed</ListItemText>
+                </MenuItem>
+              )}
+              {(!menuProject.status || menuProject.status.toUpperCase() !== 'CANCELLED') && (
+                <MenuItem onClick={() => handleStatusClick(menuProject, 'CANCELLED')}>
+                  <ListItemIcon>
+                    <CancelIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Cancel Project</ListItemText>
+                </MenuItem>
+              )}
+              {isReadyForBilling(menuProject) &&
+                (!menuProject.status ||
+                  menuProject.status.toUpperCase() !== 'READY_FOR_BILLING') && (
+                  <MenuItem onClick={() => handleBillingClick(menuProject)}>
+                    <ListItemIcon>
+                      <ReceiptIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Mark as Ready for Billing</ListItemText>
+                  </MenuItem>
+                )}
+            </>
+          )}
         </Menu>
 
         {/* Delete Confirmation Dialog */}
@@ -825,6 +1003,25 @@ const Projects = ({ user, onLogout }) => {
               disabled={loading || paymentAmount <= 0}
             >
               {loading ? <CircularProgress size={24} /> : 'Record Payment'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Billing Dialog */}
+        <Dialog open={billingDialogOpen} onClose={() => setBillingDialogOpen(false)}>
+          <DialogTitle>Mark Project as Ready for Billing</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to mark the project "{selectedProject?.project_name}" as ready
+              for billing?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setBillingDialogOpen(false)} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={handleBillingConfirm} color="primary" disabled={loading}>
+              {loading ? <CircularProgress size={24} /> : 'Confirm'}
             </Button>
           </DialogActions>
         </Dialog>
