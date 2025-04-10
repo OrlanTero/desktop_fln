@@ -2,31 +2,34 @@
 
 require_once 'models/JobOrder.php';
 
-class JobOrderController {
+class JobOrderController
+{
     private $db;
     private $jobOrder;
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
         $this->jobOrder = new JobOrder($db);
     }
 
-    public function create($request) {
+    public function create($request)
+    {
         // Get posted data
-        $data = json_decode($request->body(), true);
-        
-    
+        $data = $request;
+
         if (!$data) {
             return [
                 'success' => false,
                 'message' => 'Invalid JSON data',
-               
             ];
         }
 
         // Validate required fields
-        if (empty($data['service_id']) || 
-            empty($data['description']) || !isset($data['estimated_fee'])) {
+        if (
+            empty($data['service_id']) ||
+            empty($data['description']) || !isset($data['estimated_fee'])
+        ) {
             return [
                 'success' => false,
                 'message' => 'Missing required fields'
@@ -40,7 +43,7 @@ class JobOrderController {
         $this->jobOrder->description = $data['description'];
         $this->jobOrder->estimated_fee = $data['estimated_fee'];
         $this->jobOrder->status = $data['status'] ?? 'Pending';
-        
+
         // Create job order
         if ($this->jobOrder->create()) {
             return [
@@ -58,7 +61,8 @@ class JobOrderController {
         ];
     }
 
-    public function getById($jobOrderId) {
+    public function getById($jobOrderId)
+    {
         $result = $this->jobOrder->getById($jobOrderId);
         $jobOrder = $result->fetch(PDO::FETCH_ASSOC);
 
@@ -66,7 +70,7 @@ class JobOrderController {
 
             $controller = new JobOrderSubmissionController($this->db);
             $jobOrder['submission'] = $controller->getByJobOrderId($jobOrderId);
-            
+
 
             return [
                 'success' => true,
@@ -79,9 +83,10 @@ class JobOrderController {
             'message' => 'Job order not found'
         ];
     }
-    
 
-    public function getByService($serviceId, $proposalId) {
+
+    public function getByService($serviceId, $proposalId)
+    {
         $result = $this->jobOrder->getByService($serviceId, $proposalId);
         $jobOrders = $result->fetchAll(PDO::FETCH_ASSOC);
 
@@ -98,7 +103,8 @@ class JobOrderController {
         ];
     }
 
-    public function getAll() {
+    public function getAll()
+    {
         $result = $this->jobOrder->getAll();
         $jobOrders = $result->fetchAll(PDO::FETCH_ASSOC);
 
@@ -116,7 +122,8 @@ class JobOrderController {
         ];
     }
 
-    public function getByProject($projectId) {
+    public function getByProject($projectId)
+    {
         $result = $this->jobOrder->getByProject($projectId);
         $jobOrders = $result->fetchAll(PDO::FETCH_ASSOC);
 
@@ -134,7 +141,8 @@ class JobOrderController {
         ];
     }
 
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
 
         if (!$data) {
             return [
@@ -162,7 +170,8 @@ class JobOrderController {
         ];
     }
 
-    public function updateStatus($id, $status) {
+    public function updateStatus($id, $status)
+    {
         $this->jobOrder->id = $id;
         $this->jobOrder->status = $status;
 
@@ -179,7 +188,8 @@ class JobOrderController {
         ];
     }
 
-    public function delete($id) {
+    public function delete($id)
+    {
         $this->jobOrder->id = $id;
 
         if ($this->jobOrder->delete()) {
@@ -194,4 +204,4 @@ class JobOrderController {
             'message' => 'Failed to delete job order'
         ];
     }
-} 
+}

@@ -24,15 +24,15 @@ const RootStack = createStackNavigator();
 
 // Auth navigator (when user is not logged in)
 const AuthNavigator = () => (
-  <AuthStack.Navigator 
-    screenOptions={{ 
+  <AuthStack.Navigator
+    screenOptions={{
       headerShown: false,
       cardStyle: { backgroundColor: 'transparent' },
     }}
   >
-    <AuthStack.Screen 
-      name="Login" 
-      component={LoginScreen} 
+    <AuthStack.Screen
+      name="Login"
+      component={LoginScreen}
       options={{
         animationEnabled: false,
       }}
@@ -42,68 +42,68 @@ const AuthNavigator = () => (
 
 // App navigator (when user is logged in)
 const AppNavigator = () => (
-  <AppStack.Navigator 
-    screenOptions={{ 
+  <AppStack.Navigator
+    screenOptions={{
       headerShown: false,
       cardStyle: { backgroundColor: 'transparent' },
     }}
   >
-    <AppStack.Screen 
-      name="Main" 
-      component={TabNavigator} 
+    <AppStack.Screen
+      name="Main"
+      component={TabNavigator}
       options={{
         animationEnabled: false,
       }}
     />
-    <AppStack.Screen 
-      name="Projects" 
+    <AppStack.Screen
+      name="Projects"
       component={ProjectsScreen}
       options={{
         animationEnabled: true,
       }}
     />
-    <AppStack.Screen 
-      name="JobOrdersByProject" 
+    <AppStack.Screen
+      name="JobOrdersByProject"
       component={JobOrdersByProjectScreen}
-      options={({ route }) => ({ 
+      options={({ route }) => ({
         title: route.params?.projectName || 'Job Orders',
-        headerShown: true
+        headerShown: true,
       })}
     />
-    <AppStack.Screen 
-      name="JobOrderSubmission" 
+    <AppStack.Screen
+      name="JobOrderSubmission"
       component={JobOrderSubmissionScreen}
-      options={({ route }) => ({ 
+      options={({ route }) => ({
         title: 'Submit Job Order',
-        headerShown: true
+        headerShown: true,
       })}
     />
-    <AppStack.Screen 
-      name="TaskSubmission" 
+    <AppStack.Screen
+      name="TaskSubmission"
       component={TaskSubmissionScreen}
-      options={({ route }) => ({ 
+      options={({ route }) => ({
         title: 'Submit Task',
-        headerShown: true
+        headerShown: true,
       })}
     />
-    <AppStack.Screen 
-      name="Conversation" 
+    <AppStack.Screen
+      name="Conversation"
       component={ConversationScreen}
       options={{
         headerShown: false,
         animationEnabled: true,
       }}
     />
-    <AppStack.Screen 
-      name="UserList" 
+    <AppStack.Screen
+      name="UserList"
       component={UserListScreen}
       options={{
         headerShown: false,
         animationEnabled: true,
       }}
     />
-    <AppStack.Screen 
-      name="ProfileEdit" 
+    <AppStack.Screen
+      name="ProfileEdit"
       component={ProfileEditScreen}
       options={{
         headerShown: false,
@@ -121,15 +121,15 @@ const RootNavigator = () => {
   // Show splash screen while checking authentication
   if (isLoading) {
     return (
-      <RootStack.Navigator 
-        screenOptions={{ 
+      <RootStack.Navigator
+        screenOptions={{
           headerShown: false,
           cardStyle: { backgroundColor: 'transparent' },
         }}
       >
-        <RootStack.Screen 
-          name="Splash" 
-          component={SplashScreen} 
+        <RootStack.Screen
+          name="Splash"
+          component={SplashScreen}
           options={{
             animationEnabled: false,
           }}
@@ -139,24 +139,24 @@ const RootNavigator = () => {
   }
 
   return (
-    <RootStack.Navigator 
-      screenOptions={{ 
+    <RootStack.Navigator
+      screenOptions={{
         headerShown: false,
         cardStyle: { backgroundColor: 'transparent' },
       }}
     >
       {isAuthenticated ? (
-        <RootStack.Screen 
-          name="App" 
-          component={AppNavigator} 
+        <RootStack.Screen
+          name="App"
+          component={AppNavigator}
           options={{
             animationEnabled: false,
           }}
         />
       ) : (
-        <RootStack.Screen 
-          name="Auth" 
-          component={AuthNavigator} 
+        <RootStack.Screen
+          name="Auth"
+          component={AuthNavigator}
           options={{
             animationEnabled: false,
           }}
@@ -205,4 +205,4 @@ const Navigation = () => {
   );
 };
 
-export default Navigation; 
+export default Navigation;

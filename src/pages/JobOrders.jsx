@@ -76,17 +76,23 @@ const JobOrders = ({ user, onLogout }) => {
   // Form state
   const [formData, setFormData] = useState({
     project_id: '',
+    service_category_id: '',
     service_id: '',
     description: '',
     status: 'PENDING',
     progress: 0,
     due_date: '',
     assigned_to: '',
+    estimated_fee: '0',
     liaison_id: '',
   });
 
   // Services state
   const [services, setServices] = useState([]);
+
+  // Service categories state
+  const [serviceCategories, setServiceCategories] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
 
   // Add new state variables for submission review
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
@@ -108,6 +114,7 @@ const JobOrders = ({ user, onLogout }) => {
     fetchProjects();
     fetchServices();
     fetchLiaisons();
+    fetchServiceCategories();
   }, []);
 
   // Fetch job orders when selected project changes
@@ -149,6 +156,20 @@ const JobOrders = ({ user, onLogout }) => {
       }
     } catch (err) {
       console.error('Error in fetchServices:', err);
+    }
+  };
+
+  // Fetch service categories from API
+  const fetchServiceCategories = async () => {
+    try {
+      const response = await window.api.serviceCategory.getAll();
+      if (response && response.success) {
+        setServiceCategories(response.data || []);
+      } else {
+        console.error('Failed to load service categories:', response?.message);
+      }
+    } catch (err) {
+      console.error('Error in fetchServiceCategories:', err);
     }
   };
 
@@ -252,24 +273,41 @@ const JobOrders = ({ user, onLogout }) => {
   // Handle form input changes
   const handleInputChange = e => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+
+    if (name === 'service_category_id') {
+      // Filter services based on selected category
+      const categoryServices = services.filter(service => service.service_category_id === value);
+      setFilteredServices(categoryServices);
+
+      // Reset service_id when category changes
+      setFormData({
+        ...formData,
+        [name]: value,
+        service_id: '',
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
   };
 
   // Handle create dialog open
   const handleCreateDialogOpen = () => {
     setFormData({
       project_id: projects[selectedProjectIndex]?.id || '',
+      service_category_id: '',
       service_id: '',
       description: '',
       status: 'PENDING',
       progress: 0,
       due_date: '',
       assigned_to: '',
+      estimated_fee: '0',
       liaison_id: '',
     });
+    setFilteredServices([]);
     setCreateDialogOpen(true);
   };
 
@@ -277,15 +315,55 @@ const JobOrders = ({ user, onLogout }) => {
   const handleCreateJobOrder = async () => {
     setLoading(true);
     try {
-      const response = await window.api.jobOrders.create(formData);
+      // Simple data structure with only required fields
+      const jobOrderData = {
+        project_id: formData.project_id,
+        service_id: formData.service_id,
+        description: formData.description || 'No description provided',
+        estimated_fee: formData.estimated_fee || '0',
+        status: formData.status || 'PENDING',
+      };
+
+      console.log('Creating job order with data:', jobOrderData);
+
+      // Use the API from preload
+      const response = await window.api.jobOrders.create(jobOrderData);
+
+      console.log('Job order creation response:', response);
+
       if (response && response.success) {
         setSuccess('Job order created successfully');
+
+        // If liaison is specified, assign the job order to the liaison
+        if (formData.liaison_id && response.data?.job_order_id) {
+          try {
+            const jobOrderId = response.data.job_order_id;
+            const assignmentData = {
+              job_order_id: jobOrderId,
+              liaison_id: formData.liaison_id,
+              status: 'In Progress',
+              notes: 'Assigned during creation',
+            };
+
+            const assignResponse = await window.api.jobOrders.assign(assignmentData);
+            console.log('Assignment response:', assignResponse);
+
+            if (!assignResponse.success) {
+              console.error('Assignment failed:', assignResponse.message);
+            }
+          } catch (assignErr) {
+            console.error('Error assigning job order:', assignErr);
+          }
+        }
+
         setCreateDialogOpen(false);
         fetchJobOrdersByProject(formData.project_id);
       } else {
+        console.error('API Error:', response);
         setError('Failed to create job order: ' + (response?.message || 'Unknown error'));
       }
     } catch (err) {
+      console.error('Error creating job order:', err);
       setError('Error creating job order: ' + (err?.message || 'Unknown error'));
     } finally {
       setLoading(false);
@@ -295,15 +373,28 @@ const JobOrders = ({ user, onLogout }) => {
   // Handle edit dialog open
   const handleEditDialogOpen = jobOrder => {
     setSelectedJobOrder(jobOrder);
+
+    // Get the service to determine its category
+    const service = services.find(
+      s => s.id === jobOrder.service_id || s.service_id === jobOrder.service_id
+    );
+    const service_category_id = service ? service.service_category_id : '';
+
+    // Filter services by the category
+    const categoryServices = services.filter(s => s.service_category_id === service_category_id);
+    setFilteredServices(categoryServices);
+
     setFormData({
       project_id: jobOrder.project_id,
+      service_category_id: service_category_id,
       service_id: jobOrder.service_id,
       description: jobOrder.description,
       status: jobOrder.status,
       progress: jobOrder.progress || 0,
       due_date: jobOrder.due_date,
-      assigned_to: jobOrder.assigned_to,
-      liaison_id: jobOrder.liaison_id,
+      assigned_to: jobOrder.assigned_to || '',
+      estimated_fee: jobOrder.estimated_fee || '0',
+      liaison_id: jobOrder.liaison_id || '',
     });
     setEditDialogOpen(true);
   };
@@ -314,15 +405,57 @@ const JobOrders = ({ user, onLogout }) => {
 
     setLoading(true);
     try {
-      const response = await window.api.jobOrders.update(selectedJobOrder.id, formData);
+      // Simple data structure with only required fields
+      const jobOrderData = {
+        project_id: formData.project_id,
+        service_id: formData.service_id,
+        description: formData.description || 'No description provided',
+        estimated_fee: formData.estimated_fee || '0',
+        status: formData.status || 'PENDING',
+      };
+
+      console.log('Updating job order with data:', jobOrderData);
+
+      const jobOrderId = selectedJobOrder.id || selectedJobOrder.job_order_id;
+
+      // Use the API from preload
+      const response = await window.api.jobOrders.update(jobOrderId, jobOrderData);
+
+      console.log('Job order update response:', response);
+
       if (response && response.success) {
         setSuccess('Job order updated successfully');
+
+        // Handle liaison assignment if changed
+        const currentLiaisonId = selectedJobOrder.liaison_id;
+        if (formData.liaison_id && formData.liaison_id !== currentLiaisonId) {
+          try {
+            const assignmentData = {
+              job_order_id: jobOrderId,
+              liaison_id: formData.liaison_id,
+              status: 'In Progress',
+              notes: 'Assigned during update',
+            };
+
+            const assignResponse = await window.api.jobOrders.assign(assignmentData);
+            console.log('Assignment response:', assignResponse);
+
+            if (!assignResponse.success) {
+              console.error('Assignment failed:', assignResponse.message);
+            }
+          } catch (assignErr) {
+            console.error('Error assigning job order:', assignErr);
+          }
+        }
+
         setEditDialogOpen(false);
         fetchJobOrdersByProject(formData.project_id);
       } else {
+        console.error('API Error:', response);
         setError('Failed to update job order: ' + (response?.message || 'Unknown error'));
       }
     } catch (err) {
+      console.error('Error updating job order:', err);
       setError('Error updating job order: ' + (err?.message || 'Unknown error'));
     } finally {
       setLoading(false);
@@ -1126,6 +1259,27 @@ const JobOrders = ({ user, onLogout }) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
+                  <InputLabel id="service-category-label">Service Category</InputLabel>
+                  <Select
+                    labelId="service-category-label"
+                    name="service_category_id"
+                    value={formData.service_category_id}
+                    onChange={handleInputChange}
+                    label="Service Category"
+                  >
+                    {serviceCategories.map(category => (
+                      <MenuItem
+                        key={category.service_category_id}
+                        value={category.service_category_id}
+                      >
+                        {category.service_category_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
                   <InputLabel id="service-label">Service</InputLabel>
                   <Select
                     labelId="service-label"
@@ -1133,13 +1287,36 @@ const JobOrders = ({ user, onLogout }) => {
                     value={formData.service_id}
                     onChange={handleInputChange}
                     label="Service"
+                    disabled={!formData.service_category_id}
                   >
-                    {services.map(service => (
+                    {filteredServices.map(service => (
                       <MenuItem
                         key={service.id || service.service_id}
                         value={service.id || service.service_id}
                       >
                         {service.service_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel id="liaison-label">Assign Liaison (Optional)</InputLabel>
+                  <Select
+                    labelId="liaison-label"
+                    name="liaison_id"
+                    value={formData.liaison_id}
+                    onChange={handleInputChange}
+                    label="Assign Liaison (Optional)"
+                  >
+                    <MenuItem value="">None</MenuItem>
+                    {liaisons.map(liaison => (
+                      <MenuItem
+                        key={liaison.id || liaison.user_id}
+                        value={liaison.id || liaison.user_id}
+                      >
+                        {liaison.name || liaison.username}
                       </MenuItem>
                     ))}
                   </Select>
@@ -1200,13 +1377,17 @@ const JobOrders = ({ user, onLogout }) => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
-                  name="assigned_to"
-                  label="Assigned To"
-                  value={formData.assigned_to}
+                  name="estimated_fee"
+                  label="Estimated Fee"
+                  type="number"
+                  value={formData.estimated_fee}
                   onChange={handleInputChange}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">₱</InputAdornment>,
+                  }}
                 />
               </Grid>
             </Grid>
@@ -1218,7 +1399,12 @@ const JobOrders = ({ user, onLogout }) => {
             <Button
               onClick={handleCreateJobOrder}
               color="primary"
-              disabled={loading || !formData.project_id || !formData.service_id}
+              disabled={
+                loading ||
+                !formData.project_id ||
+                !formData.service_category_id ||
+                !formData.service_id
+              }
             >
               {loading ? <CircularProgress size={24} /> : 'Create'}
             </Button>
@@ -1258,6 +1444,27 @@ const JobOrders = ({ user, onLogout }) => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
+                  <InputLabel id="service-category-label-edit">Service Category</InputLabel>
+                  <Select
+                    labelId="service-category-label-edit"
+                    name="service_category_id"
+                    value={formData.service_category_id}
+                    onChange={handleInputChange}
+                    label="Service Category"
+                  >
+                    {serviceCategories.map(category => (
+                      <MenuItem
+                        key={category.service_category_id}
+                        value={category.service_category_id}
+                      >
+                        {category.service_category_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
                   <InputLabel id="service-label">Service</InputLabel>
                   <Select
                     labelId="service-label"
@@ -1265,13 +1472,36 @@ const JobOrders = ({ user, onLogout }) => {
                     value={formData.service_id}
                     onChange={handleInputChange}
                     label="Service"
+                    disabled={!formData.service_category_id}
                   >
-                    {services.map(service => (
+                    {filteredServices.map(service => (
                       <MenuItem
                         key={service.id || service.service_id}
                         value={service.id || service.service_id}
                       >
                         {service.service_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel id="liaison-label-edit">Assign Liaison (Optional)</InputLabel>
+                  <Select
+                    labelId="liaison-label-edit"
+                    name="liaison_id"
+                    value={formData.liaison_id}
+                    onChange={handleInputChange}
+                    label="Assign Liaison (Optional)"
+                  >
+                    <MenuItem value="">None</MenuItem>
+                    {liaisons.map(liaison => (
+                      <MenuItem
+                        key={liaison.id || liaison.user_id}
+                        value={liaison.id || liaison.user_id}
+                      >
+                        {liaison.name || liaison.username}
                       </MenuItem>
                     ))}
                   </Select>
@@ -1332,13 +1562,17 @@ const JobOrders = ({ user, onLogout }) => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
-                  name="assigned_to"
-                  label="Assigned To"
-                  value={formData.assigned_to}
+                  name="estimated_fee"
+                  label="Estimated Fee"
+                  type="number"
+                  value={formData.estimated_fee}
                   onChange={handleInputChange}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">₱</InputAdornment>,
+                  }}
                 />
               </Grid>
             </Grid>
@@ -1350,7 +1584,12 @@ const JobOrders = ({ user, onLogout }) => {
             <Button
               onClick={handleEditJobOrder}
               color="primary"
-              disabled={loading || !formData.project_id || !formData.service_id}
+              disabled={
+                loading ||
+                !formData.project_id ||
+                !formData.service_category_id ||
+                !formData.service_id
+              }
             >
               {loading ? <CircularProgress size={24} /> : 'Save Changes'}
             </Button>
@@ -1412,9 +1651,13 @@ const JobOrders = ({ user, onLogout }) => {
                   onChange={handleInputChange}
                   label="Liaison"
                 >
+                  <MenuItem value="">None</MenuItem>
                   {liaisons.map(liaison => (
-                    <MenuItem key={liaison.id} value={liaison.id}>
-                      {liaison.name}
+                    <MenuItem
+                      key={liaison.id || liaison.user_id}
+                      value={liaison.id || liaison.user_id}
+                    >
+                      {liaison.name || liaison.username}
                     </MenuItem>
                   ))}
                 </Select>

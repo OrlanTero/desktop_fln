@@ -115,27 +115,21 @@ const ProposalForm = ({ user, onLogout }) => {
 
   // Calculate totals
   const calculateSubtotal = () => {
+    if (!selectedServices || selectedServices.length === 0) {
+      return 0;
+    }
     return selectedServices.reduce((total, service) => {
-      // Convert service.price to number and handle undefined or NaN cases
-      const price = parseFloat(service.price || 0);
-
-      // Include job order estimated fees
-      const jobOrderTotal = localJobOrders[service.service_id]
-        ? localJobOrders[service.service_id].reduce((sum, jobOrder) => {
-            const estimatedFee = parseFloat(jobOrder.estimated_fee || 0);
-            return sum + (isNaN(estimatedFee) ? 0 : estimatedFee);
-          }, 0)
-        : 0;
-
-      return total + (isNaN(price) ? 0 : price) + jobOrderTotal;
+      // Ensure service.price is a valid number
+      const price = parseFloat(service.price) || 0;
+      return total + price;
     }, 0);
   };
 
   const calculateDownpayment = () => {
-    if (!formData.has_downpayment) return 0;
-
-    const amount = parseFloat(formData.downpayment_amount || 0);
-    return isNaN(amount) ? 0 : amount;
+    if (!formData.has_downpayment) {
+      return 0;
+    }
+    return parseFloat(formData.downpayment_amount) || 0;
   };
 
   const handleDocumentGenerated = document => {
@@ -448,7 +442,7 @@ const ProposalForm = ({ user, onLogout }) => {
         project_start: formData.project_start ? format(formData.project_start, 'yyyy-MM-dd') : null,
         project_end: formData.project_end ? format(formData.project_end, 'yyyy-MM-dd') : null,
         valid_until: formData.valid_until ? format(formData.valid_until, 'yyyy-MM-dd') : null,
-        total_amount: calculateSubtotal() || 0,
+        total_amount: calculateSubtotal(),
         status: 'Draft',
       };
 
@@ -482,7 +476,7 @@ const ProposalForm = ({ user, onLogout }) => {
         project_start: formData.project_start ? format(formData.project_start, 'yyyy-MM-dd') : null,
         project_end: formData.project_end ? format(formData.project_end, 'yyyy-MM-dd') : null,
         valid_until: formData.valid_until ? format(formData.valid_until, 'yyyy-MM-dd') : null,
-        total_amount: calculateSubtotal() || 0,
+        total_amount: calculateSubtotal(),
       };
 
       // Create or update proposal

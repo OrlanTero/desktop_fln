@@ -39,7 +39,6 @@ require_once 'controllers/JobOrderSubmissionController.php';
 require_once 'controllers/TaskController.php';
 require_once 'controllers/MessageController.php';
 require_once 'controllers/UserProfileController.php';
-require_once 'controllers/NotificationController.php';
 
 // Add new includes
 require_once 'models/CompanyInfo.php';
@@ -50,7 +49,6 @@ require_once 'models/JobOrderSubmission.php';
 require_once 'models/Task.php';
 require_once 'models/Message.php';
 require_once 'models/UserProfile.php';
-require_once 'models/Notification.php';
 
 // Initialize Klein router
 $router = new \Klein\Klein();
@@ -77,7 +75,6 @@ $jobOrderSubmissionController = new JobOrderSubmissionController($db);
 $taskController = new TaskController($db);
 $messageController = new MessageController($db);
 $userProfileController = new UserProfileController($db);
-$notificationController = new NotificationController($db);
 
 // Test route to check if API is working
 $router->respond('GET', '/test', function () {
@@ -1051,48 +1048,6 @@ $router->respond('POST', '/user_profile/[i:id]/photo', function ($request) use (
 // Upload signature
 $router->respond('POST', '/user_profile/[i:id]/signature', function ($request) use ($userProfileController) {
     echo json_encode($userProfileController->uploadSignature($request->id, $_FILES['signature']));
-});
-
-// Notification routes
-// Get all notifications for a user
-$router->respond('GET', '/users/[i:id]/notifications', function ($request) use ($notificationController) {
-    echo json_encode($notificationController->getAllForUser($request->id, $_GET));
-});
-
-// Get unread count for a user
-$router->respond('GET', '/users/[i:id]/notifications/unread-count', function ($request) use ($notificationController) {
-    echo json_encode($notificationController->getUnreadCount($request->id));
-});
-
-// Get notification by ID
-$router->respond('GET', '/notifications/[i:id]', function ($request) use ($notificationController) {
-    echo json_encode($notificationController->getById($request->id));
-});
-
-// Create notification
-$router->respond('POST', '/notifications', function () use ($notificationController) {
-    $data = json_decode(file_get_contents("php://input"), true);
-    echo json_encode($notificationController->create($data));
-});
-
-// Mark notification as read
-$router->respond('PUT', '/notifications/[i:id]/read', function ($request) use ($notificationController) {
-    echo json_encode($notificationController->markAsRead($request->id));
-});
-
-// Mark all notifications as read for a user
-$router->respond('PUT', '/users/[i:id]/notifications/read-all', function ($request) use ($notificationController) {
-    echo json_encode($notificationController->markAllAsRead($request->id));
-});
-
-// Delete notification
-$router->respond('DELETE', '/notifications/[i:id]', function ($request) use ($notificationController) {
-    echo json_encode($notificationController->delete($request->id));
-});
-
-// Delete all notifications for a user
-$router->respond('DELETE', '/users/[i:id]/notifications', function ($request) use ($notificationController) {
-    echo json_encode($notificationController->deleteAllForUser($request->id));
 });
 
 // Dispatch the router

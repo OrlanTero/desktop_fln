@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  TextInput
+  TextInput,
 } from 'react-native';
 import { apiService } from '../services/api';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
@@ -27,48 +27,48 @@ const DocumentsScreen = ({ navigation }) => {
       // if (response.data.status === 'success') {
       //   setDocuments(response.data.data);
       // }
-      
+
       // Placeholder data until API is connected
       setDocuments([
-        { 
-          id: 1, 
-          name: 'Project Proposal - ABC Company.pdf', 
+        {
+          id: 1,
+          name: 'Project Proposal - ABC Company.pdf',
           type: 'pdf',
           size: '2.4 MB',
           lastModified: '2023-07-05',
-          project: 'Website Development'
+          project: 'Website Development',
         },
-        { 
-          id: 2, 
-          name: 'Contract Agreement.docx', 
+        {
+          id: 2,
+          name: 'Contract Agreement.docx',
           type: 'docx',
           size: '1.8 MB',
           lastModified: '2023-07-03',
-          project: 'Logo Design'
+          project: 'Logo Design',
         },
-        { 
-          id: 3, 
-          name: 'UI Mockups.sketch', 
+        {
+          id: 3,
+          name: 'UI Mockups.sketch',
           type: 'sketch',
           size: '5.2 MB',
           lastModified: '2023-06-28',
-          project: 'Mobile App Development'
+          project: 'Mobile App Development',
         },
-        { 
-          id: 4, 
-          name: 'SEO Report - June 2023.xlsx', 
+        {
+          id: 4,
+          name: 'SEO Report - June 2023.xlsx',
           type: 'xlsx',
           size: '1.1 MB',
           lastModified: '2023-06-30',
-          project: 'SEO Optimization'
+          project: 'SEO Optimization',
         },
-        { 
-          id: 5, 
-          name: 'Content Calendar.xlsx', 
+        {
+          id: 5,
+          name: 'Content Calendar.xlsx',
           type: 'xlsx',
           size: '0.9 MB',
           lastModified: '2023-07-01',
-          project: 'Content Writing'
+          project: 'Content Writing',
         },
       ]);
     } catch (err) {
@@ -89,12 +89,13 @@ const DocumentsScreen = ({ navigation }) => {
     loadDocuments();
   };
 
-  const filteredDocuments = documents.filter(document => 
-    document.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    document.project.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredDocuments = documents.filter(
+    document =>
+      document.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      document.project.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getDocumentIcon = (type) => {
+  const getDocumentIcon = type => {
     switch (type.toLowerCase()) {
       case 'pdf':
         return '📄';
@@ -121,7 +122,7 @@ const DocumentsScreen = ({ navigation }) => {
 
   const renderDocumentItem = ({ item }) => {
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.documentItem}
         onPress={() => {
           // Navigate to document details or preview when implemented
@@ -131,9 +132,11 @@ const DocumentsScreen = ({ navigation }) => {
         <View style={styles.documentIcon}>
           <Text style={styles.iconText}>{getDocumentIcon(item.type)}</Text>
         </View>
-        
+
         <View style={styles.documentContent}>
-          <Text style={styles.documentName} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.documentName} numberOfLines={1}>
+            {item.name}
+          </Text>
           <Text style={styles.documentInfo}>
             {item.size} • Last modified: {item.lastModified}
           </Text>
@@ -159,7 +162,7 @@ const DocumentsScreen = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Documents</Text>
       </View>
-      
+
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -168,14 +171,11 @@ const DocumentsScreen = ({ navigation }) => {
           onChangeText={setSearchQuery}
         />
       </View>
-      
+
       {error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton}
-            onPress={loadDocuments}
-          >
+          <TouchableOpacity style={styles.retryButton} onPress={loadDocuments}>
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -186,11 +186,7 @@ const DocumentsScreen = ({ navigation }) => {
           keyExtractor={item => item.id.toString()}
           contentContainerStyle={styles.listContainer}
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={['#007BFF']}
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#007BFF']} />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -201,8 +197,8 @@ const DocumentsScreen = ({ navigation }) => {
           }
         />
       )}
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         style={styles.uploadButton}
         onPress={() => {
           // Navigate to document upload screen when implemented
@@ -355,4 +351,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DocumentsScreen; 
+export default DocumentsScreen;

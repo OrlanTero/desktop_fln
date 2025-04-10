@@ -8,17 +8,38 @@ import {
   ScrollView,
   Switch,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { apiService } from '../services/api';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
+import UserAvatar from '../components/UserAvatar';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen = ({ navigation }) => {
   const { user, logout, updateUser } = useAuth();
+  const { theme, isDarkMode, toggleDarkMode } = useTheme();
   const [loading, setLoading] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  const [appVersion, setAppVersion] = useState('1.0.0');
+
+  useEffect(() => {
+    // Load notification settings
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const notifSetting = await AsyncStorage.getItem('@fln_liaison_notifications');
+      if (notifSetting !== null) {
+        setNotificationsEnabled(notifSetting === 'true');
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -32,15 +53,18 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  const toggleNotifications = () => {
-    setNotificationsEnabled(previous => !previous);
-    // Here you would typically update this setting in your backend or local storage
+  const toggleNotifications = async () => {
+    try {
+      const newValue = !notificationsEnabled;
+      setNotificationsEnabled(newValue);
+      await AsyncStorage.setItem('@fln_liaison_notifications', newValue.toString());
+    } catch (error) {
+      console.error('Error saving notification setting:', error);
+    }
   };
 
-  const toggleDarkMode = () => {
-    setDarkModeEnabled(previous => !previous);
-    // Here you would typically update this setting in your backend or local storage
-    // and apply the theme change
+  const handleToggleDarkMode = () => {
+    toggleDarkMode();
   };
 
   const navigateToEditProfile = () => {
@@ -53,100 +77,172 @@ const ProfileScreen = ({ navigation }) => {
 
   const navigateToHelp = () => {
     // Navigate to help screen when implemented
-    // navigation.navigate('Help');
     Alert.alert('Coming Soon', 'Help and support feature is coming soon!');
   };
 
   return (
     <SafeAreaWrapper edges={['top']}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
+      <ScrollView
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border },
+          ]}
+        >
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Profile</Text>
         </View>
-        
-        <View style={styles.profileSection}>
-          <Image 
-            source={{ uri: user?.avatar || 'https://randomuser.me/api/portraits/men/1.jpg' }} 
-            style={styles.profileImage}
+
+        <View style={[styles.profileSection, { backgroundColor: theme.colors.card }]}>
+          <UserAvatar
+            name={user?.name || 'Liaison User'}
+            photoUrl={user?.avatar || user?.photo_url || null}
+            size={100}
           />
-          <Text style={styles.profileName}>{user?.name || 'Liaison User'}</Text>
-          <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
-          <Text style={styles.profileRole}>Role: {user?.role || 'Liaison'}</Text>
-          
-          <TouchableOpacity 
-            style={styles.editProfileButton}
+          <Text style={[styles.profileName, { color: theme.colors.text }]}>
+            {user?.name || 'Liaison User'}
+          </Text>
+          <Text style={[styles.profileEmail, { color: theme.colors.textSecondary }]}>
+            {user?.email || 'user@example.com'}
+          </Text>
+          <Text style={[styles.profileRole, { color: theme.colors.textSecondary }]}>
+            Role: {user?.role || 'Liaison'}
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.editProfileButton, { backgroundColor: `${theme.colors.primary}15` }]}
             onPress={navigateToEditProfile}
           >
-            <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+            <Text style={[styles.editProfileButtonText, { color: theme.colors.primary }]}>
+              Edit Profile
+            </Text>
           </TouchableOpacity>
         </View>
-        
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Settings</Text>
-          
-          <TouchableOpacity 
-            style={styles.settingItem}
+
+        <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Account Settings</Text>
+
+          <TouchableOpacity
+            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
             onPress={navigateToChangePassword}
           >
-            <Text style={styles.settingLabel}>Change Password</Text>
-            <Text style={styles.settingArrow}>›</Text>
+            <View style={styles.settingLabelContainer}>
+              <MaterialIcons
+                name="vpn-key"
+                size={22}
+                color={theme.colors.primary}
+                style={styles.settingIcon}
+              />
+              <Text style={[styles.settingLabel, { color: theme.colors.text }]}>
+                Change Password
+              </Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color={theme.colors.textSecondary} />
           </TouchableOpacity>
-          
-          <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Notifications</Text>
+
+          <View style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}>
+            <View style={styles.settingLabelContainer}>
+              <MaterialIcons
+                name="notifications"
+                size={22}
+                color={theme.colors.info}
+                style={styles.settingIcon}
+              />
+              <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Notifications</Text>
+            </View>
             <Switch
               value={notificationsEnabled}
               onValueChange={toggleNotifications}
-              trackColor={{ false: '#d1d1d1', true: '#a7c8ff' }}
-              thumbColor={notificationsEnabled ? '#007BFF' : '#f4f3f4'}
+              trackColor={{ false: theme.colors.border, true: `${theme.colors.primary}80` }}
+              thumbColor={notificationsEnabled ? theme.colors.primary : theme.colors.disabled}
+              ios_backgroundColor={theme.colors.border}
             />
           </View>
-          
-          <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Dark Mode</Text>
+
+          <View style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}>
+            <View style={styles.settingLabelContainer}>
+              <MaterialIcons
+                name={isDarkMode ? 'brightness-7' : 'brightness-2'}
+                size={22}
+                color={isDarkMode ? theme.colors.warning : theme.colors.secondary}
+                style={styles.settingIcon}
+              />
+              <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Dark Mode</Text>
+            </View>
             <Switch
-              value={darkModeEnabled}
-              onValueChange={toggleDarkMode}
-              trackColor={{ false: '#d1d1d1', true: '#a7c8ff' }}
-              thumbColor={darkModeEnabled ? '#007BFF' : '#f4f3f4'}
+              value={isDarkMode}
+              onValueChange={handleToggleDarkMode}
+              trackColor={{ false: theme.colors.border, true: `${theme.colors.primary}80` }}
+              thumbColor={isDarkMode ? theme.colors.primary : theme.colors.disabled}
+              ios_backgroundColor={theme.colors.border}
             />
           </View>
         </View>
-        
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          
-          <TouchableOpacity 
-            style={styles.settingItem}
+
+        <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Support</Text>
+
+          <TouchableOpacity
+            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
             onPress={navigateToHelp}
           >
-            <Text style={styles.settingLabel}>Help & Support</Text>
-            <Text style={styles.settingArrow}>›</Text>
+            <View style={styles.settingLabelContainer}>
+              <MaterialIcons
+                name="help-outline"
+                size={22}
+                color={theme.colors.info}
+                style={styles.settingIcon}
+              />
+              <Text style={[styles.settingLabel, { color: theme.colors.text }]}>
+                Help & Support
+              </Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color={theme.colors.textSecondary} />
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => Alert.alert('Coming Soon', 'About feature is coming soon!')}
+
+          <TouchableOpacity
+            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
+            onPress={() =>
+              Alert.alert(
+                'About FLN Liaison',
+                `Version ${appVersion}\n\nFLN Liaison App is designed to help freelancers manage job orders, tasks, and client communications efficiently.`
+              )
+            }
           >
-            <Text style={styles.settingLabel}>About</Text>
-            <Text style={styles.settingArrow}>›</Text>
+            <View style={styles.settingLabelContainer}>
+              <MaterialIcons
+                name="info-outline"
+                size={22}
+                color={theme.colors.secondary}
+                style={styles.settingIcon}
+              />
+              <Text style={[styles.settingLabel, { color: theme.colors.text }]}>About</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity 
-          style={styles.logoutButton}
+
+        <TouchableOpacity
+          style={[styles.logoutButton, { backgroundColor: theme.colors.error }]}
           onPress={handleLogout}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.logoutButtonText}>Logout</Text>
+            <View style={styles.logoutButtonContent}>
+              <MaterialIcons name="logout" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </View>
           )}
         </TouchableOpacity>
-        
+
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
+          <Text style={[styles.versionText, { color: theme.colors.textSecondary }]}>
+            Version {appVersion}
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaWrapper>
@@ -156,67 +252,51 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#fff',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
   },
   profileSection: {
-    backgroundColor: '#fff',
     padding: 20,
     alignItems: 'center',
-    marginBottom: 15,
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
     marginBottom: 15,
   },
   profileName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    marginTop: 15,
     marginBottom: 5,
   },
   profileEmail: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 5,
   },
   profileRole: {
     fontSize: 14,
-    color: '#999',
     marginBottom: 15,
   },
   editProfileButton: {
-    backgroundColor: '#f0f0f0',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 5,
+    borderRadius: 20,
+    marginTop: 5,
   },
   editProfileButtonText: {
-    color: '#333',
     fontSize: 14,
     fontWeight: '500',
   },
   section: {
-    backgroundColor: '#fff',
     marginBottom: 15,
     paddingVertical: 10,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
     paddingHorizontal: 15,
     paddingVertical: 10,
   },
@@ -227,22 +307,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+  },
+  settingLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingIcon: {
+    marginRight: 10,
   },
   settingLabel: {
     fontSize: 16,
-    color: '#333',
-  },
-  settingArrow: {
-    fontSize: 20,
-    color: '#999',
   },
   logoutButton: {
-    backgroundColor: '#dc3545',
     margin: 15,
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 10,
     alignItems: 'center',
+  },
+  logoutButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logoutButtonText: {
     color: '#fff',
@@ -251,12 +336,11 @@ const styles = StyleSheet.create({
   },
   versionContainer: {
     alignItems: 'center',
-    padding: 20,
+    marginTop: 10,
   },
   versionText: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: 12,
   },
 });
 
-export default ProfileScreen; 
+export default ProfileScreen;

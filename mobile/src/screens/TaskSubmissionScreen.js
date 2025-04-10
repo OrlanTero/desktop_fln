@@ -12,7 +12,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   FlatList,
-  Modal
+  Modal,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -20,11 +20,13 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { apiService } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/ThemeContext';
 
 const TaskSubmissionScreen = ({ route, navigation }) => {
+  const { theme, isDarkMode } = useTheme();
   // Extract task details from route params
   const { taskId, taskTitle, currentStatus, serviceName } = route.params || {};
-  
+
   // State variables
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -67,24 +69,28 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log(`Loading task details for ID: ${taskId}`);
-      
+
       if (!taskId) {
         throw new Error('No task ID provided');
       }
-      
+
       // Fetch task details from API
       try {
         console.log('Calling getById API for task:', taskId);
         const response = await apiService.tasks.getById(taskId);
         console.log('Task API response:', response);
-        
-        if (response && response.data && (response.data.success || response.data.status === 'success')) {
+
+        if (
+          response &&
+          response.data &&
+          (response.data.success || response.data.status === 'success')
+        ) {
           const taskData = response.data.data || {};
           console.log('Task details loaded:', taskData);
           setTask(taskData);
-          
+
           // Check if this task has already been submitted
           if (taskData.status && taskData.status.toUpperCase() === 'SUBMITTED') {
             console.log('This task has been submitted. Checking for existing submission...');
@@ -98,26 +104,26 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
         }
       } catch (err) {
         console.error('Error fetching task details, using fallback:', err.message);
-        
+
         // Use route params as fallback
         setTask({
           id: taskId,
           description: taskTitle,
           status: currentStatus,
-          service_name: serviceName
+          service_name: serviceName,
         });
-        
+
         // Check if the fallback status is SUBMITTED
         if (currentStatus && currentStatus.toUpperCase() === 'SUBMITTED') {
           console.log('Task status from params is SUBMITTED, checking for submission...');
           await checkForExistingSubmission(taskId);
         }
-        
+
         console.log('Using fallback task data:', {
           id: taskId,
           description: taskTitle,
           status: currentStatus,
-          service_name: serviceName
+          service_name: serviceName,
         });
       }
     } catch (err) {
@@ -128,39 +134,44 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
     }
   };
 
-  const checkForExistingSubmission = async (taskId) => {
+  const checkForExistingSubmission = async taskId => {
     try {
       console.log('Checking for existing submission for task:', taskId);
       const response = await apiService.tasks.getSubmissions(taskId);
       console.log('Submissions response:', response);
-      
-      if (response && response.data && 
-          (response.data.success || response.data.status === 'success')) {
-        
+
+      if (
+        response &&
+        response.data &&
+        (response.data.success || response.data.status === 'success')
+      ) {
         const submissions = response.data.data || [];
         console.log('Found submissions:', submissions);
-        
+
         if (submissions.length > 0) {
           // Get the most recent submission
           const latestSubmission = submissions[0];
           console.log('Using latest submission:', latestSubmission);
-          
+
           // Check if the submission has expenses
           if (latestSubmission.expenses && Array.isArray(latestSubmission.expenses)) {
             console.log('Submission has expenses:', latestSubmission.expenses);
-          } else if (latestSubmission.expenses_data && Array.isArray(latestSubmission.expenses_data)) {
+          } else if (
+            latestSubmission.expenses_data &&
+            Array.isArray(latestSubmission.expenses_data)
+          ) {
             console.log('Submission has expenses_data:', latestSubmission.expenses_data);
           } else {
             console.log('Submission missing expenses, fetching separately');
             await fetchExpensesForSubmission(latestSubmission.id);
           }
-          
+
           // Check if the submission has attachments
           if (!latestSubmission.attachments || !Array.isArray(latestSubmission.attachments)) {
             console.log('Submission missing attachments, fetching separately');
             await fetchAttachmentsForSubmission(latestSubmission.id);
           }
-          
+
           // Load the submission data
           loadExistingSubmissionData(latestSubmission);
         } else {
@@ -174,21 +185,21 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
     }
   };
 
-  const loadExistingSubmissionData = (submission) => {
+  const loadExistingSubmissionData = submission => {
     try {
       console.log('Loading existing submission data:', submission);
-      
+
       // Set notes
       if (submission.notes) {
         setNotes(submission.notes);
       }
-      
+
       // Load expenses
       console.log('Checking for expenses in submission:', submission);
-      
+
       // Check different possible locations for expenses data
       let expensesData = [];
-      
+
       if (submission.expenses && Array.isArray(submission.expenses)) {
         console.log('Found expenses array directly in submission');
         expensesData = submission.expenses;
@@ -196,15 +207,15 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
         console.log('Found expenses in expenses_data property');
         expensesData = submission.expenses_data;
       }
-      
+
       if (expensesData.length > 0) {
         console.log('Processing expenses data:', expensesData);
         const formattedExpenses = expensesData.map(exp => ({
           id: exp.id || Date.now() + Math.random(),
           description: exp.description || '',
-          amount: exp.amount ? exp.amount.toString() : ''
+          amount: exp.amount ? exp.amount.toString() : '',
         }));
-        
+
         console.log('Setting formatted expenses:', formattedExpenses);
         setExpenses(formattedExpenses);
       } else {
@@ -212,7 +223,7 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
         console.log('No expenses found, setting empty expense');
         setExpenses([{ description: '', amount: '', id: Date.now() }]);
       }
-      
+
       // Load attachments
       console.log('Loading attachments from submission:', submission);
       if (submission.attachments && Array.isArray(submission.attachments)) {
@@ -221,32 +232,30 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
           let type = 'document';
           const fileType = att.file_type || att.type || '';
           const fileName = att.filename || att.name || '';
-          
-          if (fileType.startsWith('image/') || 
-              fileName.match(/\.(jpg|jpeg|png|gif)$/i)) {
+
+          if (fileType.startsWith('image/') || fileName.match(/\.(jpg|jpeg|png|gif)$/i)) {
             type = 'image';
           } else if (att.file_path === 'manual_attachment') {
             type = 'manual';
           }
-          
+
           return {
             id: att.id || Date.now() + Math.random(),
-            uri: att.file_path === 'manual_attachment' ? null : (att.file_url || att.file_path),
+            uri: att.file_path === 'manual_attachment' ? null : att.file_url || att.file_path,
             name: att.filename || fileName,
             type: type,
             isExisting: true,
-            attachmentId: att.id
+            attachmentId: att.id,
           };
         });
-        
+
         console.log('Setting formatted attachments:', formattedAttachments);
         setAttachments(formattedAttachments);
       }
-      
+
       // Set editing mode
       setIsEditing(true);
       setExistingSubmission(submission);
-      
     } catch (err) {
       console.error('Error loading existing submission data:', err);
       Alert.alert('Error', 'Failed to load existing submission data: ' + err.message);
@@ -254,21 +263,23 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
   };
 
   // Fetch expenses for a submission
-  const fetchExpensesForSubmission = async (submissionId) => {
+  const fetchExpensesForSubmission = async submissionId => {
     try {
       console.log('Fetching expenses for submission:', submissionId);
       const response = await apiService.tasks.getSubmissionById(submissionId);
       console.log('Submission details response:', response);
-      
-      if (response && response.data && 
-          (response.data.success || response.data.status === 'success')) {
-        
+
+      if (
+        response &&
+        response.data &&
+        (response.data.success || response.data.status === 'success')
+      ) {
         const submissionData = response.data.data || {};
         console.log('Submission details:', submissionData);
-        
+
         // Check different possible locations for expenses data
         let expensesData = [];
-        
+
         if (submissionData.expenses && Array.isArray(submissionData.expenses)) {
           console.log('Found expenses array directly in submission');
           expensesData = submissionData.expenses;
@@ -276,15 +287,15 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
           console.log('Found expenses in expenses_data property');
           expensesData = submissionData.expenses_data;
         }
-        
+
         if (expensesData.length > 0) {
           console.log('Processing expenses data:', expensesData);
           const formattedExpenses = expensesData.map(exp => ({
             id: exp.id || Date.now() + Math.random(),
             description: exp.description || '',
-            amount: exp.amount ? exp.amount.toString() : ''
+            amount: exp.amount ? exp.amount.toString() : '',
           }));
-          
+
           console.log('Setting formatted expenses:', formattedExpenses);
           setExpenses(formattedExpenses);
         } else {
@@ -304,57 +315,58 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
   const addExpense = () => {
     setExpenses([...expenses, { description: '', amount: '', id: Date.now() }]);
   };
-  
+
   // Remove an expense row
-  const removeExpense = (id) => {
+  const removeExpense = id => {
     setExpenses(expenses.filter(expense => expense.id !== id));
   };
-  
+
   // Update expense field
   const updateExpense = (id, field, value) => {
-    setExpenses(expenses.map(expense => 
-      expense.id === id ? { ...expense, [field]: value } : expense
-    ));
+    setExpenses(
+      expenses.map(expense => (expense.id === id ? { ...expense, [field]: value } : expense))
+    );
   };
 
-  const fetchAttachmentsForSubmission = async (submissionId) => {
+  const fetchAttachmentsForSubmission = async submissionId => {
     try {
       console.log('Fetching attachments for submission:', submissionId);
       const response = await apiService.tasks.getSubmissionById(submissionId);
       console.log('Submission details response:', response);
-      
-      if (response && response.data && 
-          (response.data.success || response.data.status === 'success')) {
-        
+
+      if (
+        response &&
+        response.data &&
+        (response.data.success || response.data.status === 'success')
+      ) {
         const submissionData = response.data.data || {};
         console.log('Submission details:', submissionData);
-        
+
         if (submissionData.attachments && Array.isArray(submissionData.attachments)) {
           console.log('Found attachments:', submissionData.attachments);
-          
+
           const formattedAttachments = submissionData.attachments.map(att => {
             // Determine attachment type based on file extension or mime type
             let type = 'document';
             const fileType = att.file_type || att.type || '';
             const fileName = att.filename || att.name || '';
-            
-            if (fileType.startsWith('image/') || 
-                fileName.match(/\.(jpg|jpeg|png|gif)$/i)) {
+
+            if (fileType.startsWith('image/') || fileName.match(/\.(jpg|jpeg|png|gif)$/i)) {
               type = 'image';
             } else if (att.file_path === 'manual_attachment') {
               type = 'manual';
             }
-            
+
             return {
               id: att.id || Date.now() + Math.random(),
-              uri: att.file_path === 'manual_attachment' ? null : (att.file_url || att.file_path),
+              uri: att.file_path === 'manual_attachment' ? null : att.file_url || att.file_path,
               name: att.filename || fileName,
               type: type,
               isExisting: true,
-              attachmentId: att.id
+              attachmentId: att.id,
             };
           });
-          
+
           console.log('Setting formatted attachments:', formattedAttachments);
           setAttachments(formattedAttachments);
         } else {
@@ -373,10 +385,10 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
     try {
       // Request permissions
       if (Platform.OS !== 'web') {
-        const { status } = useCamera 
+        const { status } = useCamera
           ? await ImagePicker.requestCameraPermissionsAsync()
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
-          
+
         if (status !== 'granted') {
           Alert.alert(
             'Permission Required',
@@ -385,22 +397,22 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
           return;
         }
       }
-      
+
       // Launch camera or image picker with fixed options - disable cropping
       const options = {
         quality: 0.8,
         allowsEditing: false, // Disable cropping
       };
-      
+
       let result;
       if (useCamera) {
         result = await ImagePicker.launchCameraAsync(options);
       } else {
         result = await ImagePicker.launchImageLibraryAsync(options);
       }
-      
+
       console.log('Image picker result:', result);
-      
+
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const newAttachment = {
           uri: result.assets[0].uri,
@@ -408,7 +420,7 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
           name: `image_${Date.now()}.jpg`,
           id: Date.now(),
         };
-        
+
         setAttachments([...attachments, newAttachment]);
         console.log('Image added:', newAttachment);
       }
@@ -423,12 +435,12 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
     try {
       // Use simpler options for document picker
       const options = {
-        type: '*/*'
+        type: '*/*',
       };
-      
+
       const result = await DocumentPicker.getDocumentAsync(options);
       console.log('Document picker result:', result);
-      
+
       if (result.type === 'success') {
         const newAttachment = {
           uri: result.uri,
@@ -436,7 +448,7 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
           name: result.name || `document_${Date.now()}`,
           id: Date.now(),
         };
-        
+
         setAttachments([...attachments, newAttachment]);
         console.log('Document added:', newAttachment);
       }
@@ -447,10 +459,10 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
   };
 
   // Handle removing an attachment
-  const removeAttachment = (id) => {
+  const removeAttachment = id => {
     // Check if this is an existing attachment
     const attachmentToRemove = attachments.find(att => att.id === id);
-    
+
     if (attachmentToRemove && attachmentToRemove.isExisting) {
       // Confirm deletion of existing attachment
       Alert.alert(
@@ -459,7 +471,7 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
         [
           {
             text: 'Cancel',
-            style: 'cancel'
+            style: 'cancel',
           },
           {
             text: 'Delete',
@@ -469,11 +481,11 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
               if (attachmentToRemove.attachmentId) {
                 deleteAttachment(attachmentToRemove.attachmentId);
               }
-              
+
               // Remove from local state
               setAttachments(attachments.filter(attachment => attachment.id !== id));
-            }
-          }
+            },
+          },
         ]
       );
     } else {
@@ -483,13 +495,16 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
   };
 
   // Delete an attachment from the server
-  const deleteAttachment = async (attachmentId) => {
+  const deleteAttachment = async attachmentId => {
     try {
       console.log('Deleting attachment:', attachmentId);
       const response = await apiService.tasks.deleteSubmissionAttachment(attachmentId);
-      
-      if (response && response.data && 
-          (response.data.success || response.data.status === 'success')) {
+
+      if (
+        response &&
+        response.data &&
+        (response.data.success || response.data.status === 'success')
+      ) {
         console.log('Attachment deleted successfully');
       } else {
         throw new Error(response?.data?.message || 'Failed to delete attachment');
@@ -506,13 +521,13 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
       Alert.alert('Error', 'Please enter a name for the attachment');
       return;
     }
-    
+
     const newAttachment = {
       id: Date.now(),
       name: manualAttachmentName,
-      type: 'manual'
+      type: 'manual',
     };
-    
+
     setAttachments([...attachments, newAttachment]);
     setManualAttachmentName('');
     setShowManualAttachmentModal(false);
@@ -521,22 +536,34 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
   const handleSubmit = async () => {
     try {
       // Validate input
-      if (!notes.trim() && attachments.length === 0 && expenses.every(exp => !exp.description && !exp.amount)) {
-        Alert.alert('Validation Error', 'Please add notes, expenses, or attachments to submit the task');
+      if (
+        !notes.trim() &&
+        attachments.length === 0 &&
+        expenses.every(exp => !exp.description && !exp.amount)
+      ) {
+        Alert.alert(
+          'Validation Error',
+          'Please add notes, expenses, or attachments to submit the task'
+        );
         return;
       }
-      
+
       // Validate expenses
-      if (expenses.some(exp => (exp.description && !exp.amount) || (!exp.description && exp.amount))) {
-        Alert.alert('Validation Error', 'Please complete both description and amount for all expenses');
+      if (
+        expenses.some(exp => (exp.description && !exp.amount) || (!exp.description && exp.amount))
+      ) {
+        Alert.alert(
+          'Validation Error',
+          'Please complete both description and amount for all expenses'
+        );
         return;
       }
-      
+
       // Confirm submission
       Alert.alert(
         'Submit Task',
-        isEditing 
-          ? 'Are you sure you want to update this task submission?' 
+        isEditing
+          ? 'Are you sure you want to update this task submission?'
           : 'Are you sure you want to submit this task as completed?',
         [
           {
@@ -558,7 +585,7 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
   const submitTask = async () => {
     try {
       setSubmitting(true);
-      
+
       console.log(`${isEditing ? 'Updating' : 'Submitting'} task with:`, {
         taskId,
         submissionId: existingSubmission?.id,
@@ -567,40 +594,45 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
         notes,
         attachments: attachments.map(a => a.name),
       });
-      
+
       // Create form data
       const formData = new FormData();
-      
+
       // Add task ID
       formData.append('task_id', taskId);
-      
+
       // Add notes
       formData.append('notes', notes);
-      
+
       // Add liaison ID
       if (user && user.id) {
         formData.append('liaison_id', user.id);
       }
-      
+
       // If editing, include the submission ID
       if (isEditing && existingSubmission?.id) {
         formData.append('submission_id', existingSubmission.id);
       }
-      
+
       // Add expenses
       const validExpenses = expenses.filter(exp => exp.description && exp.amount);
       if (validExpenses.length > 0) {
-        formData.append('expenses', JSON.stringify(validExpenses.map(exp => ({
-          description: exp.description,
-          amount: parseFloat(exp.amount),
-          id: exp.id // Include ID for existing expenses
-        }))));
+        formData.append(
+          'expenses',
+          JSON.stringify(
+            validExpenses.map(exp => ({
+              description: exp.description,
+              amount: parseFloat(exp.amount),
+              id: exp.id, // Include ID for existing expenses
+            }))
+          )
+        );
       }
-      
+
       // Add attachments
       const attachmentNames = [];
       const existingAttachmentIds = [];
-      
+
       attachments.forEach((attachment, index) => {
         // For existing attachments, just add the ID to the list
         if (attachment.isExisting && attachment.attachmentId) {
@@ -614,7 +646,7 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
           // Create a file object from the uri
           const uriParts = attachment.uri.split('.');
           const fileType = uriParts[uriParts.length - 1];
-          
+
           formData.append('attachments[]', {
             uri: Platform.OS === 'ios' ? attachment.uri.replace('file://', '') : attachment.uri,
             type: attachment.type === 'image' ? `image/${fileType}` : 'application/octet-stream',
@@ -622,19 +654,19 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
           });
         }
       });
-      
+
       // Add manual attachment names as a separate field
       if (attachmentNames.length > 0) {
         formData.append('manual_attachments', JSON.stringify(attachmentNames));
       }
-      
+
       // Add existing attachment IDs
       if (existingAttachmentIds.length > 0) {
         formData.append('existing_attachment_ids', JSON.stringify(existingAttachmentIds));
       }
-      
+
       console.log('Submitting task with form data:', formData);
-      
+
       // Submit to API
       let response;
       if (isEditing && existingSubmission) {
@@ -644,16 +676,19 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
         // Create new submission
         response = await apiService.tasks.submitCompletion(formData);
       }
-      
+
       console.log('Task submission response:', response);
-      
-      if (response && response.data && 
-          (response.data.success || response.data.status === 'success')) {
+
+      if (
+        response &&
+        response.data &&
+        (response.data.success || response.data.status === 'success')
+      ) {
         // Update task status to SUBMITTED (only for new submissions)
         if (!isEditing) {
           await apiService.tasks.updateStatus(taskId, { status: 'SUBMITTED' });
         }
-        
+
         // Show success message
         Alert.alert(
           'Success',
@@ -678,22 +713,28 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
 
   // Render an attachment item
   const renderAttachmentItem = ({ item }) => (
-    <View style={styles.attachmentItem}>
+    <View style={[styles.attachmentItem, { backgroundColor: theme.colors.cardBackground }]}>
       {item.type === 'image' ? (
         <Image source={{ uri: item.uri }} style={styles.attachmentThumbnail} />
       ) : item.type === 'document' ? (
-        <View style={styles.documentIcon}>
-          <MaterialIcons name="description" size={24} color="#007BFF" />
+        <View
+          style={[styles.documentIcon, { backgroundColor: isDarkMode ? '#1a3a5a' : '#e3f2fd' }]}
+        >
+          <MaterialIcons name="description" size={24} color={theme.colors.primary} />
         </View>
       ) : (
-        <View style={styles.manualIcon}>
+        <View style={[styles.manualIcon, { backgroundColor: isDarkMode ? '#3a2e1a' : '#fff3e0' }]}>
           <MaterialIcons name="note" size={24} color="#FF9800" />
         </View>
       )}
-      <Text style={styles.attachmentName} numberOfLines={1} ellipsizeMode="middle">
+      <Text
+        style={[styles.attachmentName, { color: theme.colors.text }]}
+        numberOfLines={1}
+        ellipsizeMode="middle"
+      >
         {item.name}
       </Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.removeAttachmentButton}
         onPress={() => removeAttachment(item.id)}
       >
@@ -704,41 +745,61 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007BFF" />
-        <Text style={styles.loadingText}>Loading task details...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={[styles.loadingText, { color: theme.colors.secondaryText }]}>
+          Loading task details...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          style={{ backgroundColor: theme.colors.background }}
+        >
           {/* Task Details */}
           <View style={styles.taskHeader}>
-            <Text style={styles.taskTitle}>{task?.description || taskTitle}</Text>
+            <Text style={[styles.taskTitle, { color: theme.colors.text }]}>
+              {task?.description || taskTitle}
+            </Text>
             <View style={styles.taskMeta}>
               {task?.service_name && (
-                <Text style={styles.taskService}>Service: {task.service_name}</Text>
+                <Text style={[styles.taskService, { color: theme.colors.secondaryText }]}>
+                  Service: {task.service_name}
+                </Text>
               )}
-              <Text style={styles.taskStatus}>
-                Status: <Text style={styles.statusText}>{task?.status || currentStatus}</Text>
+              <Text style={[styles.taskStatus, { color: theme.colors.secondaryText }]}>
+                Status:{' '}
+                <Text style={[styles.statusText, { color: theme.colors.primary }]}>
+                  {task?.status || currentStatus}
+                </Text>
               </Text>
             </View>
           </View>
 
           {/* Notes */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notes</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Notes</Text>
             <TextInput
-              style={styles.notesInput}
+              style={[
+                styles.notesInput,
+                {
+                  borderColor: theme.colors.border,
+                  backgroundColor: theme.colors.inputBackground,
+                  color: theme.colors.text,
+                },
+              ]}
               multiline
               placeholder="Add notes about the completed task..."
+              placeholderTextColor={theme.colors.placeholderText}
               value={notes}
               onChangeText={setNotes}
               textAlignVertical="top"
@@ -747,25 +808,41 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
 
           {/* Expenses Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Expenses</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Expenses</Text>
             {expenses.map((expense, index) => (
               <View key={expense.id} style={styles.expenseRow}>
                 <View style={styles.expenseInputs}>
                   <TextInput
-                    style={styles.descriptionInput}
+                    style={[
+                      styles.descriptionInput,
+                      {
+                        borderColor: theme.colors.border,
+                        backgroundColor: theme.colors.inputBackground,
+                        color: theme.colors.text,
+                      },
+                    ]}
                     placeholder="Description"
+                    placeholderTextColor={theme.colors.placeholderText}
                     value={expense.description}
-                    onChangeText={(text) => updateExpense(expense.id, 'description', text)}
+                    onChangeText={text => updateExpense(expense.id, 'description', text)}
                   />
                   <TextInput
-                    style={styles.amountInput}
+                    style={[
+                      styles.amountInput,
+                      {
+                        borderColor: theme.colors.border,
+                        backgroundColor: theme.colors.inputBackground,
+                        color: theme.colors.text,
+                      },
+                    ]}
                     placeholder="Amount"
+                    placeholderTextColor={theme.colors.placeholderText}
                     keyboardType="numeric"
                     value={expense.amount}
-                    onChangeText={(text) => updateExpense(expense.id, 'amount', text)}
+                    onChangeText={text => updateExpense(expense.id, 'amount', text)}
                   />
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.removeButton}
                   onPress={() => removeExpense(expense.id)}
                 >
@@ -773,9 +850,9 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
                 </TouchableOpacity>
               </View>
             ))}
-            
-            <TouchableOpacity 
-              style={styles.addButton}
+
+            <TouchableOpacity
+              style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
               onPress={addExpense}
             >
               <MaterialIcons name="add-circle" size={20} color="#fff" />
@@ -785,42 +862,74 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
 
           {/* Attachments */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Attachments</Text>
-            
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Attachments</Text>
+
             <View style={styles.attachmentButtons}>
-              <TouchableOpacity 
-                style={styles.attachmentButton}
+              <TouchableOpacity
+                style={[
+                  styles.attachmentButton,
+                  {
+                    backgroundColor: theme.colors.cardBackground,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
                 onPress={() => pickImage(false)}
               >
-                <MaterialIcons name="photo-library" size={20} color="#007BFF" />
-                <Text style={styles.attachmentButtonText}>Gallery</Text>
+                <MaterialIcons name="photo-library" size={20} color={theme.colors.primary} />
+                <Text style={[styles.attachmentButtonText, { color: theme.colors.text }]}>
+                  Gallery
+                </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.attachmentButton}
+
+              <TouchableOpacity
+                style={[
+                  styles.attachmentButton,
+                  {
+                    backgroundColor: theme.colors.cardBackground,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
                 onPress={() => pickImage(true)}
               >
-                <MaterialIcons name="camera-alt" size={20} color="#007BFF" />
-                <Text style={styles.attachmentButtonText}>Camera</Text>
+                <MaterialIcons name="camera-alt" size={20} color={theme.colors.primary} />
+                <Text style={[styles.attachmentButtonText, { color: theme.colors.text }]}>
+                  Camera
+                </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.attachmentButton}
+
+              <TouchableOpacity
+                style={[
+                  styles.attachmentButton,
+                  {
+                    backgroundColor: theme.colors.cardBackground,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
                 onPress={pickDocument}
               >
-                <MaterialIcons name="attach-file" size={20} color="#007BFF" />
-                <Text style={styles.attachmentButtonText}>Document</Text>
+                <MaterialIcons name="attach-file" size={20} color={theme.colors.primary} />
+                <Text style={[styles.attachmentButtonText, { color: theme.colors.text }]}>
+                  Document
+                </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.attachmentButton}
+
+              <TouchableOpacity
+                style={[
+                  styles.attachmentButton,
+                  {
+                    backgroundColor: theme.colors.cardBackground,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
                 onPress={() => setShowManualAttachmentModal(true)}
               >
-                <MaterialIcons name="note-add" size={20} color="#007BFF" />
-                <Text style={styles.attachmentButtonText}>Manual</Text>
+                <MaterialIcons name="note-add" size={20} color={theme.colors.primary} />
+                <Text style={[styles.attachmentButtonText, { color: theme.colors.text }]}>
+                  Manual
+                </Text>
               </TouchableOpacity>
             </View>
-            
+
             {/* Attachments List */}
             {attachments.length > 0 && (
               <View style={styles.attachmentsList}>
@@ -845,7 +954,7 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-      
+
       {/* Manual Attachment Modal */}
       <Modal
         visible={showManualAttachmentModal}
@@ -854,17 +963,27 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
         onRequestClose={() => setShowManualAttachmentModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Attachment Name</Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.cardBackground }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+              Add Attachment Name
+            </Text>
             <TextInput
-              style={styles.modalInput}
+              style={[
+                styles.modalInput,
+                {
+                  borderColor: theme.colors.border,
+                  backgroundColor: theme.colors.inputBackground,
+                  color: theme.colors.text,
+                },
+              ]}
               placeholder="Enter attachment name"
+              placeholderTextColor={theme.colors.placeholderText}
               value={manualAttachmentName}
               onChangeText={setManualAttachmentName}
               autoFocus
             />
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
                   setShowManualAttachmentModal(false);
@@ -873,7 +992,7 @@ const TaskSubmissionScreen = ({ route, navigation }) => {
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalButton, styles.addModalButton]}
                 onPress={addManualAttachment}
               >
@@ -1138,4 +1257,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TaskSubmissionScreen; 
+export default TaskSubmissionScreen;

@@ -4,6 +4,7 @@ import { View, StyleSheet, Platform, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { useTheme } from '../context/ThemeContext';
 
 // Import screens
 import JobOrdersScreen from '../screens/JobOrdersScreen';
@@ -11,68 +12,91 @@ import TasksScreen from '../screens/TasksScreen';
 import MessengerScreen from '../screens/MessengerScreen';
 import DocumentsScreen from '../screens/DocumentsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import DashboardScreen from '../screens/DashboardScreen';
 
 // Create bottom tab navigator
 const Tab = createBottomTabNavigator();
 
 // Custom tab bar icon with badge for messages
-const TabBarIcon = ({ IconComponent, iconName, focused, badge }) => (
-  <View style={styles.iconContainer}>
-    <View style={[
-      styles.iconWrapper,
-      focused ? styles.activeIconWrapper : {}
-    ]}>
-      <IconComponent 
-        name={iconName} 
-        size={22} 
-        color={focused ? '#FFFFFF' : '#666'}
-      />
-    </View>
-    {badge > 0 && (
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+const TabBarIcon = ({ IconComponent, iconName, focused, badge }) => {
+  const { theme } = useTheme();
+
+  return (
+    <View style={styles.iconContainer}>
+      <View
+        style={[
+          styles.iconWrapper,
+          focused ? [styles.activeIconWrapper, { backgroundColor: theme.colors.primary }] : {},
+        ]}
+      >
+        <IconComponent
+          name={iconName}
+          size={22}
+          color={focused ? '#FFFFFF' : theme.colors.textSecondary}
+        />
       </View>
-    )}
-  </View>
-);
+      {badge > 0 && (
+        <View
+          style={[
+            styles.badge,
+            { backgroundColor: theme.colors.notification, borderColor: theme.colors.card },
+          ]}
+        >
+          <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+        </View>
+      )}
+    </View>
+  );
+};
 
 const TabNavigator = () => {
   // Get safe area insets
   const insets = useSafeAreaInsets();
-  
+  const { theme } = useTheme();
+
   // Mock unread message count - replace with actual data from your API
   const unreadMessages = 3;
 
   // Calculate tab bar height based on device
-  const tabBarHeight = Platform.OS === 'ios' 
-    ? (insets.bottom > 0 ? 70 : 60) // iPhone with notch vs without
-    : 60; // Android
+  const tabBarHeight =
+    Platform.OS === 'ios'
+      ? insets.bottom > 0
+        ? 70
+        : 60 // iPhone with notch vs without
+      : 60; // Android
 
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          ...styles.tabBar,
+          backgroundColor: theme.colors.tabBar,
           height: tabBarHeight,
           paddingBottom: insets.bottom > 0 ? insets.bottom - 10 : 0,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
         },
-        tabBarActiveTintColor: '#842624',
-        tabBarInactiveTintColor: '#666',
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
         tabBarShowLabel: false,
         tabBarHideOnKeyboard: true,
         safeAreaInsets: { bottom: 0 },
       }}
       safeAreaInsets={{ bottom: 0 }}
     >
-      <Tab.Screen 
-        name="JobOrders" 
-        component={JobOrdersScreen} 
+      <Tab.Screen
+        name="Dashboard"
+        component={DashboardScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon 
-              IconComponent={MaterialIcons} 
-              iconName="assignment" 
+            <TabBarIcon
+              IconComponent={MaterialIcons}
+              iconName="dashboard"
               focused={focused}
               badge={0}
             />
@@ -80,59 +104,69 @@ const TabNavigator = () => {
           unmountOnBlur: false,
         }}
       />
-      <Tab.Screen 
-        name="Tasks" 
-        component={TasksScreen} 
+      <Tab.Screen
+        name="JobOrders"
+        component={JobOrdersScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon 
-              IconComponent={MaterialIcons} 
-              iconName="check-circle" 
+            <TabBarIcon
+              IconComponent={MaterialIcons}
+              iconName="assignment"
+              focused={focused}
+              badge={0}
+            />
+          ),
+          unmountOnBlur: false,
+        }}
+      />
+      <Tab.Screen
+        name="Tasks"
+        component={TasksScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon
+              IconComponent={MaterialIcons}
+              iconName="check-circle"
               focused={focused}
               badge={0}
             />
           ),
         }}
       />
-      <Tab.Screen 
-        name="Messenger" 
-        component={MessengerScreen} 
+      <Tab.Screen
+        name="Messenger"
+        component={MessengerScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon 
-              IconComponent={MaterialIcons} 
-              iconName="chat" 
+            <TabBarIcon
+              IconComponent={MaterialIcons}
+              iconName="chat"
               focused={focused}
               badge={unreadMessages}
             />
           ),
         }}
       />
-      <Tab.Screen 
-        name="Documents" 
-        component={DocumentsScreen} 
+      <Tab.Screen
+        name="Documents"
+        component={DocumentsScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon 
-              IconComponent={MaterialIcons} 
-              iconName="folder" 
+            <TabBarIcon
+              IconComponent={MaterialIcons}
+              iconName="folder"
               focused={focused}
               badge={0}
             />
           ),
         }}
       />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon 
-              IconComponent={FontAwesome} 
-              iconName="user" 
-              focused={focused}
-              badge={0}
-            />
+            <TabBarIcon IconComponent={FontAwesome} iconName="user" focused={focused} badge={0} />
           ),
         }}
       />
@@ -141,17 +175,6 @@ const TabNavigator = () => {
 };
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingTop: 5,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
   iconContainer: {
     position: 'relative',
     alignItems: 'center',
@@ -168,8 +191,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activeIconWrapper: {
-    backgroundColor: '#842624',
-    shadowColor: '#842624',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
@@ -179,7 +200,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    backgroundColor: '#FF3B30',
     borderRadius: 10,
     minWidth: 18,
     height: 18,
@@ -187,14 +207,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
     borderWidth: 1.5,
-    borderColor: '#fff',
   },
   badgeText: {
     color: '#fff',
     fontSize: 10,
     fontWeight: 'bold',
     textAlign: 'center',
-  }
+  },
 });
 
-export default TabNavigator; 
+export default TabNavigator;

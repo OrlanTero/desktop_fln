@@ -1,13 +1,16 @@
 <?php
-class Document {
+class Document
+{
     private $conn;
     private $table = 'documents';
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->conn = $db;
     }
 
-    public function create($data) {
+    public function create($data)
+    {
         $query = "INSERT INTO " . $this->table . " 
                   (proposal_id, file_path, file_name, file_type) 
                   VALUES (:proposal_id, :file_path, :file_name, :file_type)";
@@ -16,7 +19,7 @@ class Document {
             error_log("Document::create - Starting document creation");
             error_log("Document::create - Query: " . $query);
             error_log("Document::create - Data: " . json_encode($data));
-            
+
             $stmt = $this->conn->prepare($query);
 
             // Sanitize inputs
@@ -48,7 +51,7 @@ class Document {
                 error_log("Document::create - Success: " . json_encode($result));
                 return $result;
             }
-            
+
             error_log("Document::create - Failed to execute query");
             return array('success' => false, 'message' => 'Failed to create document');
         } catch (Exception $e) {
@@ -57,14 +60,15 @@ class Document {
         }
     }
 
-    public function getByProposal($proposalId) {
+    public function getByProposal($proposalId)
+    {
         $query = "SELECT * FROM " . $this->table . " WHERE proposal_id = :proposal_id";
-        
+
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':proposal_id', $proposalId);
             $stmt->execute();
-            
+
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($result) {
                 return array('success' => true, 'data' => $result);
@@ -76,13 +80,14 @@ class Document {
     }
 
 
-    public function delete($documentId) {
+    public function delete($documentId)
+    {
         $query = "DELETE FROM " . $this->table . " WHERE document_id = :document_id";
-        
+
         try {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':document_id', $documentId);
-            
+
             if ($stmt->execute()) {
                 return array('success' => true);
             }
@@ -91,4 +96,4 @@ class Document {
             return array('success' => false, 'message' => $e->getMessage());
         }
     }
-} 
+}

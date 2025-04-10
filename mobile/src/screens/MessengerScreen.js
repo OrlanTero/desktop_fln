@@ -9,16 +9,18 @@ import {
   RefreshControl,
   TextInput,
   Image,
-  Alert
+  Alert,
 } from 'react-native';
 import { apiService } from '../services/api';
 import SafeAreaWrapper from '../components/SafeAreaWrapper';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import UserAvatar from '../components/UserAvatar';
 
 const MessengerScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,70 +34,73 @@ const MessengerScreen = ({ navigation }) => {
       setError('User not authenticated');
       return;
     }
-    
+
     try {
       setError(null);
       const response = await apiService.messages.getRecentConversations(user.id);
-      
+
       if (response.success && response.data && response.data.length > 0) {
         setConversations(response.data);
-        
+
         // Count total unread messages
-        const totalUnread = response.data.reduce((total, convo) => total + (convo.unread_count || 0), 0);
+        const totalUnread = response.data.reduce(
+          (total, convo) => total + (convo.unread_count || 0),
+          0
+        );
         setUnreadCount(totalUnread);
       } else {
         // Use placeholder data for testing if API returns empty or fails
         console.log('Using placeholder data for conversations');
         const placeholderData = [
-          { 
-            user_id: 1, 
-            name: 'John Smith', 
-            photo_url: 'https://randomuser.me/api/portraits/men/1.jpg', 
+          {
+            user_id: 1,
+            name: 'John Smith',
+            photo_url: 'https://randomuser.me/api/portraits/men/1.jpg',
             role: 'Client',
-            last_message: 'Can you send me the latest design files?', 
+            last_message: 'Can you send me the latest design files?',
             last_message_time: new Date().toISOString(),
             unread_count: 2,
-            is_online: true
+            is_online: true,
           },
-          { 
-            user_id: 2, 
-            name: 'Sarah Johnson', 
+          {
+            user_id: 2,
+            name: 'Sarah Johnson',
             photo_url: null, // No photo example
             role: 'Manager',
-            last_message: 'The client approved the proposal!', 
+            last_message: 'The client approved the proposal!',
             last_message_time: new Date(Date.now() - 86400000).toISOString(), // yesterday
             unread_count: 0,
-            is_online: false
+            is_online: false,
           },
-          { 
-            user_id: 3, 
-            name: 'Michael Brown', 
-            photo_url: 'https://randomuser.me/api/portraits/men/3.jpg', 
+          {
+            user_id: 3,
+            name: 'Michael Brown',
+            photo_url: 'https://randomuser.me/api/portraits/men/3.jpg',
             role: 'Designer',
-            last_message: 'When can we schedule the next meeting?', 
+            last_message: 'When can we schedule the next meeting?',
             last_message_time: new Date(Date.now() - 86400000).toISOString(), // yesterday
             unread_count: 1,
-            is_online: true
+            is_online: true,
           },
-          { 
-            user_id: 4, 
-            name: 'Emily Davis', 
+          {
+            user_id: 4,
+            name: 'Emily Davis',
             photo_url: null, // No photo example
             role: 'Developer',
-            last_message: 'I\'ve updated the project timeline.', 
+            last_message: "I've updated the project timeline.",
             last_message_time: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
             unread_count: 0,
-            is_online: false
+            is_online: false,
           },
-          { 
-            user_id: 5, 
-            name: 'David Wilson', 
-            photo_url: 'https://randomuser.me/api/portraits/men/5.jpg', 
+          {
+            user_id: 5,
+            name: 'David Wilson',
+            photo_url: 'https://randomuser.me/api/portraits/men/5.jpg',
             role: 'Admin',
-            last_message: 'Please review the contract before sending it.', 
+            last_message: 'Please review the contract before sending it.',
             last_message_time: new Date(Date.now() - 86400000 * 7).toISOString(), // 7 days ago
             unread_count: 0,
-            is_online: false
+            is_online: false,
           },
         ];
         setConversations(placeholderData);
@@ -104,28 +109,28 @@ const MessengerScreen = ({ navigation }) => {
     } catch (err) {
       console.error('Error loading conversations:', err);
       setError('Failed to load conversations. Please try again.');
-      
+
       // Use placeholder data on error
       const placeholderData = [
-        { 
-          user_id: 1, 
-          name: 'John Smith', 
-          photo_url: 'https://randomuser.me/api/portraits/men/1.jpg', 
+        {
+          user_id: 1,
+          name: 'John Smith',
+          photo_url: 'https://randomuser.me/api/portraits/men/1.jpg',
           role: 'Client',
-          last_message: 'Can you send me the latest design files?', 
+          last_message: 'Can you send me the latest design files?',
           last_message_time: new Date().toISOString(),
           unread_count: 2,
-          is_online: true
+          is_online: true,
         },
-        { 
-          user_id: 2, 
-          name: 'Sarah Johnson', 
-          photo_url: 'https://randomuser.me/api/portraits/women/2.jpg', 
+        {
+          user_id: 2,
+          name: 'Sarah Johnson',
+          photo_url: 'https://randomuser.me/api/portraits/women/2.jpg',
           role: 'Manager',
-          last_message: 'The client approved the proposal!', 
+          last_message: 'The client approved the proposal!',
           last_message_time: new Date(Date.now() - 86400000).toISOString(), // yesterday
           unread_count: 0,
-          is_online: false
+          is_online: false,
         },
       ];
       setConversations(placeholderData);
@@ -139,14 +144,14 @@ const MessengerScreen = ({ navigation }) => {
   useEffect(() => {
     if (user && user.id) {
       loadConversations();
-      
+
       // Set up polling for new messages
       const interval = setInterval(() => {
         if (!refreshing && user && user.id) {
           loadConversations();
         }
       }, 10000); // Poll every 10 seconds
-      
+
       return () => clearInterval(interval);
     }
   }, [user]);
@@ -158,7 +163,7 @@ const MessengerScreen = ({ navigation }) => {
         loadConversations();
       }
     });
-    
+
     return unsubscribe;
   }, [navigation, user]);
 
@@ -167,18 +172,18 @@ const MessengerScreen = ({ navigation }) => {
     loadConversations();
   };
 
-  const filteredConversations = conversations.filter(conversation => 
+  const filteredConversations = conversations.filter(conversation =>
     conversation.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const formatLastMessageTime = (timestamp) => {
+  const formatLastMessageTime = timestamp => {
     if (!timestamp) return '';
-    
+
     const messageDate = new Date(timestamp);
     const now = new Date();
     const diffMs = now - messageDate;
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) {
       // Today - show time
       return messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -197,46 +202,57 @@ const MessengerScreen = ({ navigation }) => {
 
   const renderConversationItem = ({ item }) => {
     return (
-      <TouchableOpacity 
-        style={styles.conversationItem}
+      <TouchableOpacity
+        style={[
+          styles.conversationItem,
+          {
+            backgroundColor: theme.colors.card,
+            shadowColor: theme.isDarkMode ? '#000' : '#000',
+            borderColor: theme.colors.border,
+          },
+        ]}
         onPress={() => {
-          navigation.navigate('Conversation', { 
+          navigation.navigate('Conversation', {
             contact: {
               id: item.user_id,
               name: item.name,
               photo_url: item.photo_url,
               role: item.role,
-              is_online: item.is_online
-            }
+              is_online: item.is_online,
+            },
           });
         }}
       >
         <View style={styles.avatarContainer}>
-          <UserAvatar 
-            name={item.name}
-            photoUrl={item.photo_url}
-            size={50}
-          />
+          <UserAvatar name={item.name} photoUrl={item.photo_url} size={50} />
           {item.is_online && (
-            <View style={styles.onlineIndicator} />
+            <View style={[styles.onlineIndicator, { borderColor: theme.colors.card }]} />
           )}
           {item.unread_count > 0 && (
-            <View style={styles.unreadBadge}>
+            <View
+              style={[
+                styles.unreadBadge,
+                { backgroundColor: theme.colors.notification, borderColor: theme.colors.card },
+              ]}
+            >
               <Text style={styles.unreadText}>{item.unread_count}</Text>
             </View>
           )}
         </View>
-        
+
         <View style={styles.conversationContent}>
           <View style={styles.conversationHeader}>
-            <Text style={styles.conversationName}>{item.name}</Text>
-            <Text style={styles.timestamp}>{formatLastMessageTime(item.last_message_time)}</Text>
+            <Text style={[styles.conversationName, { color: theme.colors.text }]}>{item.name}</Text>
+            <Text style={[styles.timestamp, { color: theme.colors.textSecondary }]}>
+              {formatLastMessageTime(item.last_message_time)}
+            </Text>
           </View>
-          
-          <Text 
+
+          <Text
             style={[
-              styles.lastMessage, 
-              item.unread_count > 0 ? styles.unreadMessage : {}
+              styles.lastMessage,
+              { color: theme.colors.textSecondary },
+              item.unread_count > 0 ? [styles.unreadMessage, { color: theme.colors.text }] : {},
             ]}
             numberOfLines={1}
           >
@@ -249,41 +265,71 @@ const MessengerScreen = ({ navigation }) => {
 
   if (loading && !refreshing) {
     return (
-      <SafeAreaWrapper edges={['top']}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#007BFF" />
-          <Text style={styles.loadingText}>Loading conversations...</Text>
+      <SafeAreaWrapper edges={['top']} backgroundColor={theme.colors.background}>
+        <View style={[styles.centerContainer, { backgroundColor: theme.colors.background }]}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+            Loading conversations...
+          </Text>
         </View>
       </SafeAreaWrapper>
     );
   }
 
   return (
-    <SafeAreaWrapper edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
+    <SafeAreaWrapper edges={['top']} backgroundColor={theme.colors.background}>
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: theme.colors.card,
+            borderBottomColor: theme.colors.border,
+          },
+        ]}
+      >
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Messages</Text>
         {unreadCount > 0 && (
-          <View style={styles.headerBadge}>
+          <View style={[styles.headerBadge, { backgroundColor: theme.colors.notification }]}>
             <Text style={styles.headerBadgeText}>{unreadCount}</Text>
           </View>
         )}
       </View>
-      
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
+
+      <View
+        style={[
+          styles.searchContainer,
+          {
+            backgroundColor: theme.colors.card,
+            borderBottomColor: theme.colors.border,
+          },
+        ]}
+      >
+        <Ionicons
+          name="search"
+          size={20}
+          color={theme.colors.textSecondary}
+          style={styles.searchIcon}
+        />
         <TextInput
-          style={styles.searchInput}
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: theme.colors.inputBackground,
+              color: theme.colors.text,
+            },
+          ]}
           placeholder="Search conversations..."
+          placeholderTextColor={theme.colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
       </View>
-      
+
       {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton}
+        <View style={[styles.errorContainer, { backgroundColor: theme.colors.background }]}>
+          <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
             onPress={loadConversations}
           >
             <Text style={styles.retryButtonText}>Retry</Text>
@@ -299,16 +345,19 @@ const MessengerScreen = ({ navigation }) => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#007BFF']}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
             />
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {searchQuery ? 'No conversations found matching your search' : 'No conversations yet'}
+            <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background }]}>
+              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                {searchQuery
+                  ? 'No conversations found matching your search'
+                  : 'No conversations yet'}
               </Text>
               <TouchableOpacity
-                style={styles.startConversationButton}
+                style={[styles.startConversationButton, { backgroundColor: theme.colors.primary }]}
                 onPress={() => navigation.navigate('UserList')}
               >
                 <Text style={styles.startConversationButtonText}>Start a new conversation</Text>
@@ -317,9 +366,15 @@ const MessengerScreen = ({ navigation }) => {
           }
         />
       )}
-      
-      <TouchableOpacity 
-        style={styles.newMessageButton}
+
+      <TouchableOpacity
+        style={[
+          styles.newMessageButton,
+          {
+            backgroundColor: theme.colors.primary,
+            shadowColor: theme.isDarkMode ? '#000' : '#000',
+          },
+        ]}
         onPress={() => navigation.navigate('UserList')}
       >
         <Ionicons name="create-outline" size={24} color="#fff" />
@@ -336,18 +391,14 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
   },
   headerBadge: {
-    backgroundColor: '#FF3B30',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -365,16 +416,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 8,
@@ -385,17 +433,16 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   conversationItem: {
-    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 12,
     marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    borderWidth: 1,
   },
   avatarContainer: {
     position: 'relative',
@@ -415,20 +462,17 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: '#fff',
   },
   unreadBadge: {
     position: 'absolute',
     top: -5,
     right: -5,
-    backgroundColor: '#FF3B30',
     minWidth: 18,
     height: 18,
     borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#fff',
     paddingHorizontal: 4,
   },
   unreadText: {
@@ -448,19 +492,15 @@ const styles = StyleSheet.create({
   conversationName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
   },
   timestamp: {
     fontSize: 12,
-    color: '#999',
   },
   lastMessage: {
     fontSize: 14,
-    color: '#666',
   },
   unreadMessage: {
     fontWeight: 'bold',
-    color: '#333',
   },
   centerContainer: {
     flex: 1,
@@ -471,7 +511,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#666',
   },
   errorContainer: {
     flex: 1,
@@ -481,12 +520,10 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: '#d32f2f',
     textAlign: 'center',
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#007BFF',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 5,
@@ -497,18 +534,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   emptyContainer: {
-    padding: 20,
+    padding: 40,
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    minHeight: 300,
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
   },
   startConversationButton: {
-    backgroundColor: '#007BFF',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 5,
@@ -526,15 +562,13 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#007BFF',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
   },
 });
 
-export default MessengerScreen; 
+export default MessengerScreen;
