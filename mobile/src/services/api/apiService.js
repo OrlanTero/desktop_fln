@@ -350,6 +350,175 @@ const apiService = {
       }),
   },
 
+  // Folders related API calls
+  folders: {
+    getAll: () =>
+      apiClient
+        .get('/folders')
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            data: response.data.data || [],
+          },
+        }))
+        .catch(error => {
+          console.error('Error fetching folders:', error);
+          return { data: { status: 'error', message: 'Failed to fetch folders', data: [] } };
+        }),
+
+    getByParent: (parentId = null) =>
+      apiClient
+        .get(`/folders${parentId ? `/parent/${parentId}` : '/root'}`)
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            data: response.data.data || [],
+          },
+        }))
+        .catch(error => {
+          console.error('Error fetching folders by parent:', error);
+          return { data: { status: 'error', message: 'Failed to fetch folders', data: [] } };
+        }),
+
+    getById: folderId =>
+      apiClient
+        .get(`/folders/${folderId}`)
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            data: response.data.data || {},
+          },
+        }))
+        .catch(error => {
+          console.error(`Error fetching folder ${folderId}:`, error);
+          return { data: { status: 'error', message: 'Failed to fetch folder', data: {} } };
+        }),
+
+    create: folderData =>
+      apiClient
+        .post('/folders', folderData)
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            data: response.data.data || {},
+            message: response.data.message || 'Folder created successfully',
+          },
+        }))
+        .catch(error => {
+          console.error('Error creating folder:', error);
+          return { data: { status: 'error', message: 'Failed to create folder' } };
+        }),
+
+    update: (folderId, folderData) =>
+      apiClient
+        .put(`/folders/${folderId}`, folderData)
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            data: response.data.data || {},
+            message: response.data.message || 'Folder updated successfully',
+          },
+        }))
+        .catch(error => {
+          console.error(`Error updating folder ${folderId}:`, error);
+          return { data: { status: 'error', message: 'Failed to update folder' } };
+        }),
+
+    delete: folderId =>
+      apiClient
+        .delete(`/folders/${folderId}`)
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            message: response.data.message || 'Folder deleted successfully',
+          },
+        }))
+        .catch(error => {
+          console.error(`Error deleting folder ${folderId}:`, error);
+          return { data: { status: 'error', message: 'Failed to delete folder' } };
+        }),
+  },
+
+  // Documents related API calls
+  documents: {
+    getAll: () =>
+      apiClient
+        .get('/documents')
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            data: response.data.data || [],
+          },
+        }))
+        .catch(error => {
+          console.error('Error fetching documents:', error);
+          return { data: { status: 'error', message: 'Failed to fetch documents', data: [] } };
+        }),
+
+    getByFolder: (folderId = null) =>
+      apiClient
+        .get(`/documents${folderId ? `/folder/${folderId}` : ''}`)
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            data: response.data.data || [],
+          },
+        }))
+        .catch(error => {
+          console.error('Error fetching documents by folder:', error);
+          return { data: { status: 'error', message: 'Failed to fetch documents', data: [] } };
+        }),
+
+    getById: documentId =>
+      apiClient
+        .get(`/documents/${documentId}`)
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            data: response.data.data || {},
+          },
+        }))
+        .catch(error => {
+          console.error(`Error fetching document ${documentId}:`, error);
+          return { data: { status: 'error', message: 'Failed to fetch document', data: {} } };
+        }),
+
+    upload: (fileData, folderId = null) => {
+      const data = {
+        file: fileData,
+        folder_id: folderId,
+      };
+
+      return apiClient
+        .post('/documents/upload', data)
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            data: response.data.data || {},
+            message: response.data.message || 'Document uploaded successfully',
+          },
+        }))
+        .catch(error => {
+          console.error('Error uploading document:', error);
+          return { data: { status: 'error', message: 'Failed to upload document' } };
+        });
+    },
+
+    delete: documentId =>
+      apiClient
+        .delete(`/documents/${documentId}`)
+        .then(response => ({
+          data: {
+            status: response.data.status,
+            message: response.data.message || 'Document deleted successfully',
+          },
+        }))
+        .catch(error => {
+          console.error(`Error deleting document ${documentId}:`, error);
+          return { data: { status: 'error', message: 'Failed to delete document' } };
+        }),
+  },
+
   // Message related API calls
   messages: {
     getConversation: (user1Id, user2Id) =>
