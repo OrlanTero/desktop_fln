@@ -25,6 +25,10 @@ import JobOrders from './pages/JobOrders';
 import Tasks from './pages/Tasks';
 import Profile from './pages/Profile';
 import Billing from './pages/Billing';
+import Reports from './pages/Reports';
+import Logs from './pages/Logs';
+import Bin from './pages/Bin';
+import Documents from './pages/Documents';
 
 // Import components
 import SplashScreen from './components/SplashScreen';
@@ -498,6 +502,46 @@ const AppContent = () => {
         element={
           isAuthenticated() ? (
             <Billing user={currentUser} onLogout={logout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          isAuthenticated() ? (
+            <Reports user={currentUser} onLogout={logout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/documents"
+        element={
+          isAuthenticated() ? (
+            <Documents user={currentUser} onLogout={logout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/logs"
+        element={
+          isAuthenticated() ? (
+            <Logs user={currentUser} onLogout={logout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/bin"
+        element={
+          isAuthenticated() ? (
+            <Bin user={currentUser} onLogout={logout} />
           ) : (
             <Navigate to="/login" replace />
           )

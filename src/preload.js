@@ -10,7 +10,7 @@ const https = require('https');
 
 // API base URL - hardcoded to ensure it's correct
 // const API_BASE_URL = 'https://fln.enutrition.site';
-const API_BASE_URL = 'http://localhost:4005';
+const API_BASE_URL = 'http://192.168.1.5:4005';
 console.log('Using API URL:', API_BASE_URL);
 
 // Helper function to manually parse URLs without using the URL constructor

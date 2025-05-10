@@ -10,7 +10,8 @@ const API_CONFIG = {
   // NGROK_URL: 'https://a39f-120-28-70-225.ngrok-free.app',
 
   // NGROK_URL: 'https://fln.enutrition.site',
-  NGROK_URL: 'https://e5af-120-28-139-19.ngrok-free.app',
+  // NGROK_URL: 'https://d792-2001-4453-409-b600-cc6f-815c-8a13-1339.ngrok-free.app',
+  NGROK_URL: 'http://192.168.1.5:4005',
 
   SERVER_ADDRESS: 'http://localhost:3001',
 };

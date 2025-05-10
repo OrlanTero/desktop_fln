@@ -180,6 +180,16 @@ const DashboardCharts = () => {
     activity: [],
   });
 
+  // Format currency to Philippine Peso
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
   useEffect(() => {
     fetchChartData(timeRange);
   }, [timeRange]);
@@ -209,12 +219,12 @@ const DashboardCharts = () => {
           ];
 
           revenueData = [
-            { label: 'Mon', value: 1200 },
-            { label: 'Tue', value: 1800 },
-            { label: 'Wed', value: 800 },
-            { label: 'Thu', value: 3200 },
-            { label: 'Fri', value: 2500 },
-            { label: 'Sat', value: 400 },
+            { label: 'Mon', value: 60000 },
+            { label: 'Tue', value: 90000 },
+            { label: 'Wed', value: 40000 },
+            { label: 'Thu', value: 160000 },
+            { label: 'Fri', value: 125000 },
+            { label: 'Sat', value: 20000 },
             { label: 'Sun', value: 0 },
           ];
         } else if (range === 'month') {
@@ -226,10 +236,10 @@ const DashboardCharts = () => {
           ];
 
           revenueData = [
-            { label: 'Week 1', value: 5200 },
-            { label: 'Week 2', value: 4800 },
-            { label: 'Week 3', value: 7500 },
-            { label: 'Week 4', value: 6200 },
+            { label: 'Week 1', value: 260000 },
+            { label: 'Week 2', value: 240000 },
+            { label: 'Week 3', value: 375000 },
+            { label: 'Week 4', value: 310000 },
           ];
         } else if (range === 'quarter') {
           proposalsData = [
@@ -239,23 +249,23 @@ const DashboardCharts = () => {
           ];
 
           revenueData = [
-            { label: 'Jan', value: 15000 },
-            { label: 'Feb', value: 18000 },
-            { label: 'Mar', value: 25000 },
+            { label: 'Jan', value: 750000 },
+            { label: 'Feb', value: 900000 },
+            { label: 'Mar', value: 1250000 },
           ];
         } else if (range === 'year') {
           proposalsData = [
             { label: 'Q1', value: 100 },
             { label: 'Q2', value: 85 },
             { label: 'Q3', value: 120 },
-            { label: 'Q4', value: 95 },
+            { label: 'Q4', value: 90 },
           ];
 
           revenueData = [
-            { label: 'Q1', value: 58000 },
-            { label: 'Q2', value: 62000 },
-            { label: 'Q3', value: 75000 },
-            { label: 'Q4', value: 68000 },
+            { label: 'Q1', value: 2900000 },
+            { label: 'Q2', value: 2500000 },
+            { label: 'Q3', value: 3500000 },
+            { label: 'Q4', value: 2700000 },
           ];
         }
 
@@ -273,10 +283,10 @@ const DashboardCharts = () => {
 
         // Project status data
         const statusData = [
-          { label: 'Completed', value: 45, color: '#4CAF50' },
-          { label: 'In Progress', value: 30, color: '#2196F3' },
-          { label: 'On Hold', value: 15, color: '#FFC107' },
-          { label: 'Cancelled', value: 10, color: '#F44336' },
+          { label: 'On Track', value: 8, color: '#4caf50' },
+          { label: 'At Risk', value: 3, color: '#ff9800' },
+          { label: 'Delayed', value: 2, color: '#f44336' },
+          { label: 'Completed', value: 5, color: '#2196f3' },
         ];
 
         // User activity data (last 30 days)
@@ -297,7 +307,7 @@ const DashboardCharts = () => {
           activity: activityData,
         });
         setLoading(false);
-      }, 1000); // Simulate API call delay
+      }, 800);
     } catch (error) {
       console.error('Error fetching chart data:', error);
       setLoading(false);
@@ -398,7 +408,7 @@ const DashboardCharts = () => {
                 Revenue from completed projects
               </Typography>
 
-              <SimpleLineChart data={chartData.revenue} title="Revenue Over Time" height={230} />
+              <SimpleLineChart data={chartData.revenue} title={`Revenue (₱)`} height={230} />
             </Paper>
           </Grid>
 

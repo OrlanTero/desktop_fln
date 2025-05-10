@@ -27,6 +27,7 @@ import {
   AttachMoney as AttachMoneyIcon,
   Assignment as AssignmentIcon,
   Timeline as TimelineIcon,
+  CurrencyExchange as CurrencyExchangeIcon,
 } from '@mui/icons-material';
 
 const StatCard = ({ title, value, previousValue, icon, color, prefix, suffix }) => {
@@ -224,16 +225,16 @@ const DashboardStats = () => {
 
         if (range === 'week') {
           data = {
-            totalRevenue: 9900,
-            previousRevenue: 8500,
-            averageDealSize: 2200,
-            previousDealSize: 2000,
+            totalRevenue: 495000,
+            previousRevenue: 425000,
+            averageDealSize: 110000,
+            previousDealSize: 100000,
             conversionRate: 32,
             previousConversionRate: 28,
             clientRetention: 86,
             previousRetention: 84,
             goalProgress: {
-              revenue: { current: 9900, goal: 12000 },
+              revenue: { current: 495000, goal: 600000 },
               clients: { current: 5, goal: 8 },
               projects: { current: 12, goal: 15 },
             },
@@ -246,119 +247,126 @@ const DashboardStats = () => {
             topClients: [
               {
                 name: 'ABC Corporation',
-                revenue: '$3,200',
+                revenue: '₱160,000',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.primary.light,
+                color: theme.palette.primary.main,
               },
               {
                 name: 'XYZ Industries',
-                revenue: '$2,800',
+                revenue: '₱145,000',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.secondary.light,
-              },
-              {
-                name: 'Global Solutions',
-                revenue: '$1,900',
-                icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.info.light,
+                color: theme.palette.secondary.main,
               },
               {
                 name: 'Tech Innovators',
-                revenue: '$1,500',
+                revenue: '₱110,000',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.success.light,
+                color: theme.palette.success.main,
+              },
+              {
+                name: 'Global Solutions',
+                revenue: '₱80,000',
+                icon: <PersonIcon fontSize="small" />,
+                color: theme.palette.warning.main,
               },
             ],
             recentProposals: [
               {
                 name: 'Website Redesign',
                 client: 'ABC Corporation',
-                value: '$4,500',
+                value: '₱75,000',
                 status: 'Pending',
-                date: '2 days ago',
+                color: theme.palette.warning.main,
               },
               {
                 name: 'Mobile App Development',
                 client: 'Tech Innovators',
-                value: '$8,200',
+                value: '₱120,000',
                 status: 'Approved',
-                date: '3 days ago',
+                color: theme.palette.success.main,
               },
               {
-                name: 'SEO Services',
-                client: 'XYZ Industries',
-                value: '$1,800',
-                status: 'Sent',
-                date: '5 days ago',
+                name: 'SEO Optimization',
+                client: 'Global Solutions',
+                value: '₱45,000',
+                status: 'Declined',
+                color: theme.palette.error.main,
+              },
+              {
+                name: 'Corporate Branding',
+                client: 'New Ventures',
+                value: '₱60,000',
+                status: 'Pending',
+                color: theme.palette.warning.main,
               },
             ],
           };
         } else if (range === 'month') {
           data = {
-            totalRevenue: 42000,
-            previousRevenue: 38000,
-            averageDealSize: 2450,
-            previousDealSize: 2300,
+            totalRevenue: 1975000,
+            previousRevenue: 1850000,
+            averageDealSize: 135000,
+            previousDealSize: 125000,
             conversionRate: 35,
-            previousConversionRate: 31,
+            previousConversionRate: 30,
             clientRetention: 88,
             previousRetention: 85,
             goalProgress: {
-              revenue: { current: 42000, goal: 50000 },
+              revenue: { current: 1975000, goal: 2500000 },
               clients: { current: 18, goal: 25 },
-              projects: { current: 35, goal: 40 },
+              projects: { current: 45, goal: 60 },
             },
             projectStatus: [
               { status: 'On Track', count: 22, color: theme.palette.success.main },
-              { status: 'At Risk', count: 8, color: theme.palette.warning.main },
-              { status: 'Delayed', count: 5, color: theme.palette.error.main },
-              { status: 'Completed', count: 18, color: theme.palette.info.main },
+              { status: 'At Risk', count: 12, color: theme.palette.warning.main },
+              { status: 'Delayed', count: 6, color: theme.palette.error.main },
+              { status: 'Completed', count: 20, color: theme.palette.info.main },
             ],
             topClients: [
               {
                 name: 'ABC Corporation',
-                revenue: '$12,500',
+                revenue: '₱550,000',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.primary.light,
+                color: theme.palette.primary.main,
               },
               {
                 name: 'XYZ Industries',
-                revenue: '$9,800',
+                revenue: '₱480,000',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.secondary.light,
-              },
-              {
-                name: 'Global Solutions',
-                revenue: '$8,200',
-                icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.info.light,
+                color: theme.palette.secondary.main,
               },
               {
                 name: 'Tech Innovators',
-                revenue: '$6,500',
+                revenue: '₱425,000',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.success.light,
+                color: theme.palette.success.main,
+              },
+              {
+                name: 'Global Solutions',
+                revenue: '₱320,000',
+                icon: <PersonIcon fontSize="small" />,
+                color: theme.palette.warning.main,
               },
             ],
             recentProposals: [
               {
                 name: 'Website Redesign',
                 client: 'ABC Corporation',
-                value: '$4,500',
+                value: '₱4,500',
                 status: 'Approved',
                 date: '2 weeks ago',
               },
               {
                 name: 'Mobile App Development',
                 client: 'Tech Innovators',
-                value: '$8,200',
+                value: '₱8,200',
                 status: 'Approved',
                 date: '3 weeks ago',
               },
               {
                 name: 'SEO Services',
                 client: 'XYZ Industries',
-                value: '$1,800',
+                value: '₱1,800',
                 status: 'Rejected',
                 date: '3 weeks ago',
               },
@@ -388,48 +396,48 @@ const DashboardStats = () => {
             topClients: [
               {
                 name: 'ABC Corporation',
-                revenue: '$28,500',
+                revenue: '₱28,500',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.primary.light,
+                color: theme.palette.primary.main,
               },
               {
                 name: 'XYZ Industries',
-                revenue: '$22,800',
+                revenue: '₱22,800',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.secondary.light,
+                color: theme.palette.secondary.main,
               },
               {
                 name: 'Global Solutions',
-                revenue: '$18,400',
+                revenue: '₱18,400',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.info.light,
+                color: theme.palette.info.main,
               },
               {
                 name: 'Tech Innovators',
-                revenue: '$15,300',
+                revenue: '₱15,300',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.success.light,
+                color: theme.palette.success.main,
               },
             ],
             recentProposals: [
               {
                 name: 'E-commerce Platform',
                 client: 'XYZ Industries',
-                value: '$24,500',
+                value: '₱24,500',
                 status: 'Approved',
                 date: '1 month ago',
               },
               {
                 name: 'CRM Implementation',
                 client: 'Global Solutions',
-                value: '$18,200',
+                value: '₱18,200',
                 status: 'Approved',
                 date: '2 months ago',
               },
               {
                 name: 'Digital Marketing Campaign',
                 client: 'ABC Corporation',
-                value: '$8,800',
+                value: '₱8,800',
                 status: 'Pending',
                 date: '2 months ago',
               },
@@ -459,48 +467,48 @@ const DashboardStats = () => {
             topClients: [
               {
                 name: 'ABC Corporation',
-                revenue: '$98,500',
+                revenue: '₱98,500',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.primary.light,
+                color: theme.palette.primary.main,
               },
               {
                 name: 'XYZ Industries',
-                revenue: '$78,800',
+                revenue: '₱78,800',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.secondary.light,
+                color: theme.palette.secondary.main,
               },
               {
                 name: 'Global Solutions',
-                revenue: '$65,400',
+                revenue: '₱65,400',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.info.light,
+                color: theme.palette.info.main,
               },
               {
                 name: 'Tech Innovators',
-                revenue: '$52,300',
+                revenue: '₱52,300',
                 icon: <PersonIcon fontSize="small" />,
-                color: theme.palette.success.light,
+                color: theme.palette.success.main,
               },
             ],
             recentProposals: [
               {
                 name: 'Enterprise Digital Transformation',
                 client: 'ABC Corporation',
-                value: '$124,500',
+                value: '₱124,500',
                 status: 'Approved',
                 date: '6 months ago',
               },
               {
                 name: 'IT Infrastructure Overhaul',
                 client: 'XYZ Industries',
-                value: '$98,200',
+                value: '₱98,200',
                 status: 'Completed',
                 date: '8 months ago',
               },
               {
                 name: 'Cloud Migration Services',
                 client: 'Global Solutions',
-                value: '$76,800',
+                value: '₱76,800',
                 status: 'Completed',
                 date: '10 months ago',
               },
@@ -510,7 +518,7 @@ const DashboardStats = () => {
 
         setStatsData(data);
         setLoading(false);
-      }, 1000); // Simulate API call delay
+      }, 800);
     } catch (error) {
       console.error('Error fetching stats data:', error);
       setLoading(false);
@@ -535,10 +543,10 @@ const DashboardStats = () => {
             displayEmpty
             sx={{ backgroundColor: 'background.paper', '& fieldset': { borderColor: 'divider' } }}
           >
-            <MenuItem value="week">Last 7 days</MenuItem>
-            <MenuItem value="month">Last 30 days</MenuItem>
-            <MenuItem value="quarter">Last 90 days</MenuItem>
-            <MenuItem value="year">Last 12 months</MenuItem>
+            <MenuItem value="week">This Week</MenuItem>
+            <MenuItem value="month">This Month</MenuItem>
+            <MenuItem value="quarter">This Quarter</MenuItem>
+            <MenuItem value="year">This Year</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -555,9 +563,9 @@ const DashboardStats = () => {
               title="Total Revenue"
               value={statsData.totalRevenue}
               previousValue={statsData.previousRevenue}
-              icon={<AttachMoneyIcon />}
-              color={theme.palette.success.main}
-              prefix="$"
+              icon={<CurrencyExchangeIcon />}
+              color={theme.palette.primary.main}
+              prefix="₱"
             />
           </Grid>
 
@@ -566,9 +574,9 @@ const DashboardStats = () => {
               title="Average Deal Size"
               value={statsData.averageDealSize}
               previousValue={statsData.previousDealSize}
-              icon={<TimelineIcon />}
-              color={theme.palette.primary.main}
-              prefix="$"
+              icon={<AttachMoneyIcon />}
+              color={theme.palette.secondary.main}
+              prefix="₱"
             />
           </Grid>
 

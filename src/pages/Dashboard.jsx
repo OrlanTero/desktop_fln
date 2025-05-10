@@ -28,6 +28,7 @@ import {
   BarChart as BarChartIcon,
   Insights as InsightsIcon,
   Home as HomeIcon,
+  CurrencyExchange as CurrencyExchangeIcon,
 } from '@mui/icons-material';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
@@ -60,9 +61,21 @@ const Dashboard = ({ user, onLogout }) => {
     totalClients: 0,
     totalProposals: 0,
     totalProjects: 0,
+    totalRevenue: 0,
+    pendingAmount: 0,
   });
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
+
+  // Format currency to Philippine Peso
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -81,6 +94,10 @@ const Dashboard = ({ user, onLogout }) => {
         const proposals = await window.api.proposal.getAll();
         const projects = await window.api.project.getAll();
 
+        // Mock revenue data
+        const totalRevenue = 2850000;
+        const pendingAmount = 650000;
+
         setStats({
           totalUsers: userData.length,
           activeUsers: userData.filter(u => u.role !== 'inactive').length,
@@ -88,6 +105,8 @@ const Dashboard = ({ user, onLogout }) => {
           totalClients: clients.success ? clients.data.length : 0,
           totalProposals: proposals.success ? proposals.data.length : 0,
           totalProjects: projects.success ? projects.data.length : 0,
+          totalRevenue,
+          pendingAmount,
         });
       }
     } catch (error) {
@@ -257,7 +276,7 @@ const Dashboard = ({ user, onLogout }) => {
                   left: 0,
                   width: '100%',
                   height: '5px',
-                  backgroundColor: 'info.main',
+                  backgroundColor: 'success.main',
                 },
               }}
             >
@@ -266,20 +285,20 @@ const Dashboard = ({ user, onLogout }) => {
               >
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Total Proposals
+                    Total Revenue
                   </Typography>
                   <Typography variant="h4" fontWeight="bold">
-                    {stats.totalProposals}
+                    {formatCurrency(stats.totalRevenue)}
                   </Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: 'info.light', p: 1 }}>
-                  <DescriptionIcon />
+                <Avatar sx={{ bgcolor: 'success.light', p: 1 }}>
+                  <CurrencyExchangeIcon />
                 </Avatar>
               </Box>
               <Box sx={{ mt: 'auto' }}>
-                <Button size="small" onClick={() => navigateTo('/proposals')} sx={{ p: 0 }}>
-                  View all proposals
-                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  {formatCurrency(stats.pendingAmount)} pending
+                </Typography>
               </Box>
             </Paper>
           </Grid>
@@ -307,7 +326,7 @@ const Dashboard = ({ user, onLogout }) => {
                   left: 0,
                   width: '100%',
                   height: '5px',
-                  backgroundColor: 'success.main',
+                  backgroundColor: 'info.main',
                 },
               }}
             >
@@ -316,13 +335,13 @@ const Dashboard = ({ user, onLogout }) => {
               >
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Total Projects
+                    Active Projects
                   </Typography>
                   <Typography variant="h4" fontWeight="bold">
                     {stats.totalProjects}
                   </Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: 'success.light', p: 1 }}>
+                <Avatar sx={{ bgcolor: 'info.light', p: 1 }}>
                   <AssignmentIcon />
                 </Avatar>
               </Box>
@@ -336,139 +355,30 @@ const Dashboard = ({ user, onLogout }) => {
         </Grid>
 
         {/* Dashboard Tabs */}
-        <Box sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            aria-label="dashboard tabs"
-          >
-            <Tab label="Overview" icon={<HomeIcon />} iconPosition="start" />
-            <Tab label="Charts & Analytics" icon={<BarChartIcon />} iconPosition="start" />
-            <Tab label="Advanced Statistics" icon={<InsightsIcon />} iconPosition="start" />
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={tabValue} onChange={handleTabChange} aria-label="dashboard tabs">
+            <Tab
+              icon={<InsightsIcon />}
+              iconPosition="start"
+              label="Analytics"
+              id="dashboard-tab-0"
+              aria-controls="dashboard-tabpanel-0"
+            />
+            <Tab
+              icon={<BarChartIcon />}
+              iconPosition="start"
+              label="Statistics"
+              id="dashboard-tab-1"
+              aria-controls="dashboard-tabpanel-1"
+            />
           </Tabs>
         </Box>
 
         <TabPanel value={tabValue} index={0}>
-          {/* Quick Actions */}
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
-            Quick Actions
-          </Typography>
-
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={4}>
-              <Card
-                sx={{
-                  height: '100%',
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-5px)',
-                  },
-                }}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-                      <AddIcon />
-                    </Avatar>
-                    <Typography variant="h6">New Client</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Add a new client to the system with contact details and preferences.
-                  </Typography>
-                </CardContent>
-                <Divider />
-                <CardActions>
-                  <Button
-                    size="small"
-                    color="primary"
-                    onClick={() => navigateTo('/clients/new')}
-                    startIcon={<AddIcon />}
-                  >
-                    Add Client
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={4}>
-              <Card
-                sx={{
-                  height: '100%',
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-5px)',
-                  },
-                }}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar sx={{ bgcolor: 'secondary.main', mr: 2 }}>
-                      <DescriptionIcon />
-                    </Avatar>
-                    <Typography variant="h6">New Proposal</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Create a new proposal for a client with detailed service offerings and pricing.
-                  </Typography>
-                </CardContent>
-                <Divider />
-                <CardActions>
-                  <Button
-                    size="small"
-                    color="secondary"
-                    onClick={() => navigateTo('/proposals/new')}
-                    startIcon={<AddIcon />}
-                  >
-                    Create Proposal
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={4}>
-              <Card
-                sx={{
-                  height: '100%',
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-5px)',
-                  },
-                }}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar sx={{ bgcolor: 'info.main', mr: 2 }}>
-                      <AssignmentIcon />
-                    </Avatar>
-                    <Typography variant="h6">New Project</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Start a new project from an approved proposal or create one from scratch.
-                  </Typography>
-                </CardContent>
-                <Divider />
-                <CardActions>
-                  <Button
-                    size="small"
-                    color="info"
-                    onClick={() => navigateTo('/projects/new')}
-                    startIcon={<AddIcon />}
-                  >
-                    Start Project
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          </Grid>
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={1}>
           <DashboardCharts />
         </TabPanel>
 
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={1}>
           <DashboardStats />
         </TabPanel>
       </Box>
